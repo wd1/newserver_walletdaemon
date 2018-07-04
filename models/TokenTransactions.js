@@ -3,12 +3,13 @@ const mongoose = require('mongoose');
 const tokenTransactionsSchema = new mongoose.Schema({
     accountId: String,
     coinId: String,
-    amount: Number,
+    amount: String,
     timestamp: Number,
     txId: String,
     from: String,
     to: String,
-    action: String
+    action: String,
+    status: String
 }, { timestamps: true });
 
 const TokenTransactions = mongoose.model('TokenTransactions', tokenTransactionsSchema);

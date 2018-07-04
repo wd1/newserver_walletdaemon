@@ -1,11 +1,11 @@
 const Web3 = require('web3');
-const web3 = new Web3(new Web3.providers.HttpProvider('https://api.myetherapi.com/rop'));
+const web3 = new Web3(new Web3.providers.HttpProvider('http://13.59.130.153:8545'));
 
-const getBalance = (address) => {
+exports.getBalance = (address) => {
     return new Promise((resolve, reject) => {
         web3.eth.getBalance(address, (err, weiBalance) => {
             if (err) {
-                console.log('getBalance: ' + err);
+                console.log('getBalance: ', err);
                 reject(err);
             }
 
@@ -14,7 +14,7 @@ const getBalance = (address) => {
     });
 };
 
-const getCOINBalance = (address) => {
+exports.getCOINBalance = (address) => {
     return new Promise((resolve, reject) => {
         const coinvestContract = new web3.eth.Contract(
             CoinvestTokenAbi,
@@ -28,7 +28,7 @@ const getCOINBalance = (address) => {
 
         coinvestContract.methods.balanceOf(address).call((err, response) => {
             if (err) {
-                console.log('getCOINBalance: ' + err);
+                console.log('getCOINBalance: ', err);
                 reject(error);
             }
 
@@ -37,13 +37,13 @@ const getCOINBalance = (address) => {
     });
 };
 
-const cryptoAssets = (cryptoIdBn) => {
+exports.cryptoAssets = (cryptoIdBn) => {
     return new Promise((resolve, reject) => {
         const coinvestContract = new web3.eth.Contract(Abi, INVESTMENT_CONTRACT_ADDRESS);
 
         coinvestContract.methods.cryptoAssets(cryptoIdBn).call((err, response) => {
             if (err) {
-                console.log('cryptoAssets: ' + err);
+                console.log('cryptoAssets: ', err);
                 reject(error);
             }
 
@@ -52,7 +52,7 @@ const cryptoAssets = (cryptoIdBn) => {
     });
 };
 
-const totalCryptos = (address) => {
+exports.totalCryptos = (address) => {
     return new Promise((resolve, reject) => {
         const coinvestContract = new web3.eth.Contract(
             Abi,
@@ -66,7 +66,7 @@ const totalCryptos = (address) => {
 
         coinvestContract.methods.totalCryptos().call((err, response) => {
             if (err) {
-                console.log('totalCryptos: ' + err);
+                console.log('totalCryptos: ', err);
                 reject(error);
             }
 
@@ -75,7 +75,7 @@ const totalCryptos = (address) => {
     });
 };
 
-const assetCoinValues = () => {
+exports.assetCoinValues = () => {
     return new Promise((resolve, reject) => {
         const coinvestContract = new web3.eth.Contract(Abi, INVESTMENT_CONTRACT_ADDRESS);
 
@@ -83,7 +83,7 @@ const assetCoinValues = () => {
         for (let i = 0; i < 10; i++) {
             coinvestContract.methods.calculateCoinValue(i, 1).call((err, result) => {
                 if (err) {
-                    console.log('assetCoinValues: ' + err);
+                    console.log('assetCoinValues: ', err);
                     values.push(0);
                 } else {
                     values.push(result);
@@ -92,5 +92,24 @@ const assetCoinValues = () => {
         }
 
         resolve(values);
+    });
+};
+
+exports.filter = (address) => {
+    return new Promise((resolve, reject) => {
+        web3.eth.filter({
+            address: address,
+            fromBlock: 396958,
+            toBlock: 'latest'
+        }).get((err, result) => {
+            console.log('result: ', result);
+
+            if (err) {
+                console.log('Web3Service filter: ', err);
+                reject(err);
+            }
+
+            resolve(result);
+        });
     });
 };

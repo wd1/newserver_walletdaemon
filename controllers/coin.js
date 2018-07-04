@@ -16,6 +16,28 @@ exports.cancelCoinSchedule = () => {
 };
 
 const getAssets = () => {
+    Coins.findOne({ symbol: 'COIN' }, (err, coin) => {
+        if (err) {
+            console.log('getAssets: findOne: ', err);
+            return;
+        }
+
+        if (!coin) {
+            coin = new Coins({
+                name: 'Coinvest COIN V2 Token',
+                symbol: 'COIN',
+                price: 1,
+                limit: 18
+            });
+        }
+
+        coin.save(err => {
+            if (err) {
+                console.log('getAssets: save: ', err);
+            }
+        });
+    });
+
     request('https://api.coinmarketcap.com/v2/listings', (err, response) => {
         if (err) {
             console.log('getAssets: coinmarketcap-listings: ', err);
@@ -62,8 +84,7 @@ const getAssets = () => {
                                                 percentageChange1h: dt.quotes.USD.percent_change_1h,
                                                 percentageChange24h: dt.quotes.USD.percent_change_24h,
                                                 percentageChange7d: dt.quotes.USD.percent_change_7d,
-                                                lastUpdated: dt.last_updated,
-                                                coinMarketCapId: dt.id
+                                                lastUpdated: dt.last_updated
                                             });
                                         } else {
                                             coin = new Coins({
@@ -96,6 +117,7 @@ const getAssets = () => {
                     });
                 }
 
+                getCryptoCompareId();
                 // ToDo: Add functionality for our COIN token
 
                 console.log('Coins updated successfully.');

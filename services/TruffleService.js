@@ -23,21 +23,12 @@ const InvestmentContract = contract({
     gas: 1000000
 });
 InvestmentContract.setProvider(web3.currentProvider);
-if (typeof InvestmentContract.currentProvider.sendAsync !== 'function') {
-    InvestmentContract.currentProvider.sendAsync = function () {
-        return InvestmentContract.currentProvider.send.apply(
-            InvestmentContract.currentProvider, arguments
-        );
-    };
-}
-
-// Generate UserDataContract
-const UserDataContract = contract({
-    abi: UserDataAbi,
-    gas: 1000000
+InvestmentContract.defaults({
+    from: DEMO_MASTER_ADDRESS,
+    gas: 1000000,
+    gasPrice: 40000000000
 });
-UserDataContract.setProvider(web3.currentProvider);
-if (typeof UserDataContract.currentProvider.sendAsync !== 'function') {
+if (typeof InvestmentContract.currentProvider.sendAsync !== 'function') {
     InvestmentContract.currentProvider.sendAsync = function () {
         return InvestmentContract.currentProvider.send.apply(
             InvestmentContract.currentProvider, arguments
@@ -51,6 +42,11 @@ const TokenContract = contract({
     gas: 1000000
 });
 TokenContract.setProvider(web3.currentProvider);
+TokenContract.defaults({
+    from: DEMO_MASTER_ADDRESS,
+    gas: 1000000,
+    gasPrice: 40000000000
+});
 if (typeof TokenContract.currentProvider.sendAsync !== 'function') {
     TokenContract.currentProvider.sendAsync = function () {
         return TokenContract.currentProvider.send.apply(
@@ -65,6 +61,11 @@ const FaucetContract = contract({
     gas: 1000000
 });
 FaucetContract.setProvider(web3.currentProvider);
+FaucetContract.defaults({
+    from: DEMO_MASTER_ADDRESS,
+    gas: 1000000,
+    gasPrice: 40000000000
+});
 if (typeof FaucetContract.currentProvider.sendAsync !== 'function') {
     FaucetContract.currentProvider.sendAsync = function () {
         return FaucetContract.currentProvider.send.apply(
@@ -73,13 +74,26 @@ if (typeof FaucetContract.currentProvider.sendAsync !== 'function') {
     };
 }
 
-const holdings = function (address) {
-    UserDataContract.defaults({
-        from: address,
-        gas: 1000000,
-        gasPrice: 40000000000
-    });
+// Generate FaucetContract
+const UserDataContract = contract({
+    abi: UserDataAbi,
+    gas: 1000000
+});
+UserDataContract.setProvider(web3.currentProvider);
+UserDataContract.defaults({
+    from: DEMO_MASTER_ADDRESS,
+    gas: 1000000,
+    gasPrice: 40000000000
+});
+if (typeof UserDataContract.currentProvider.sendAsync !== 'function') {
+    UserDataContract.currentProvider.sendAsync = function () {
+        return UserDataContract.currentProvider.send.apply(
+            UserDataContract.currentProvider, arguments
+        );
+    };
+}
 
+const holdings = function (address) {
     const UserDataContractInstance = UserDataContract.at(INVESTMENT_CONTRACT_ADDRESS);
 
     return new Promise((resolve, reject) => {
@@ -95,12 +109,6 @@ const holdings = function (address) {
 };
 
 const coinBalance = (address) => {
-    TokenContract.defaults({
-        from: address,
-        gas: 1000000,
-        gasPrice: 40000000000
-    });
-
     const TokenContractInstance = TokenContract.at(COINVEST_TOKEN_ADDRESS);
 
     return new Promise((resolve, reject) => {
