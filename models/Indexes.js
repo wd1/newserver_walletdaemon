@@ -3,7 +3,9 @@ const mongoose = require('mongoose');
 const indexesSchema = new mongoose.Schema({
     accountId: String,
     name: String,
-    status: String
+    amount: String,
+    txId: String,
+    timestamp: Number
 }, { timestamps: true });
 
 const Indexes = mongoose.model('Indexes', indexesSchema);

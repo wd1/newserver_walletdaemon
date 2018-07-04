@@ -6,7 +6,8 @@ const transactionsSchema = new mongoose.Schema({
     pair: String,
     side: String,
     txnHash: String,
-    quantity: Number,
+    quantity: { type: Number, default: 0.0 },
+    amount: { type: Number, default: 0.0 },
     type: String,
     smallestUnit: String,
     status: String

@@ -6,7 +6,8 @@ const assetsSchema = new mongoose.Schema({
     quantity: { type: Number, default: 0.0 },
     amount: { type: Number, default: 0.0 },
     orderType: String,
-    txHash: String
+    txId: [String],
+    timestamp: Number
 }, { timestamps: true });
 
 const Assets = mongoose.model('Assets', assetsSchema);
