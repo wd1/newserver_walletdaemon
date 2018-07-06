@@ -5,7 +5,8 @@ const indexesSchema = new mongoose.Schema({
     name: String,
     amount: String,
     txId: String,
-    timestamp: Number
+    timestamp: Number,
+    confirmed: { type: Boolean, default: false }
 }, { timestamps: true });
 
 const Indexes = mongoose.model('Indexes', indexesSchema);
