@@ -146,7 +146,7 @@ const getCryptoCompareId = () => {
             });
 
             if (array.length > 0) {
-                request('https://www.cryptocompare.com/api/data/coinlist', (err, response) => {
+                request('https://min-api.cryptocompare.com/data/all/coinlist', (err, response) => {
                     if (err) {
                         console.log('getCryptoCompareId: cryptocompare: ', err);
                         return;
