@@ -9,7 +9,7 @@ const TruffleService = require('../services/TruffleService');
 let updateAsset;
 
 exports.portfolioSchedule = () => {
-    // updateAsset = schedule.scheduleJob('*/1 * * * *', getVirtualAssets);
+    updateAsset = schedule.scheduleJob('*/1 * * * *', getVirtualAssets);
 };
 
 exports.cancelAssetSchedule = () => {
@@ -19,20 +19,25 @@ exports.cancelAssetSchedule = () => {
 };
 
 const getVirtualAssets = () => {
-    // Accounts.find((err, accounts) => {
-    //     if (err) {
-    //         console.log('getWallet: find: ', err);
-    //         return;
-    //     }
-    //
-    //     accounts.forEach(account => {
-    //         TruffleService.holdings(account.beneficiary)
-    //             .then(holdings => {
-    //                 const assetCounts = holdings.map(holding => (new BigNumber(holding)).toNumber());
-    //             })
-    //             .catch(err => {
-    //                 console.log('getAssets holdings: ', err);
-    //             });
-    //     });
-    // });
+    try {
+        Accounts.find((err, accounts) => {
+            if (err) {
+                console.log('getWallet: find: ', err);
+                return;
+            }
+
+            accounts.forEach(account => {
+                TruffleService.holdings(account.beneficiary)
+                    .then(holdings => {
+                        // const assetCounts = holdings.map(holding => (new BigNumber(holding)).toNumber());
+                        console.log(holdings);
+                    })
+                    .catch(err => {
+                        console.log('getAssets holdings: ', err);
+                    });
+            });
+        });
+    } catch (err) {
+        console.log('getVirtualAssets: catch: ', err);
+    }
 };

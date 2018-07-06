@@ -1,6 +1,3 @@
-const Web3 = require('web3');
-const web3 = new Web3(new Web3.providers.HttpProvider('https://api.myetherapi.com/rop'));
-
 const contract = require('truffle-contract');
 const BigNumber = require('bignumber.js');
 
@@ -16,6 +13,8 @@ const {
     UserDataAbi,
     cryptoIdToSymbol
 } = require('./Config');
+
+const { web3 } = require('./Web3Service');
 
 // Generate InvestmentContract
 const InvestmentContract = contract({
@@ -93,7 +92,7 @@ if (typeof UserDataContract.currentProvider.sendAsync !== 'function') {
     };
 }
 
-const holdings = function (address) {
+exports.holdings = function (address) {
     const UserDataContractInstance = UserDataContract.at(INVESTMENT_CONTRACT_ADDRESS);
 
     return new Promise((resolve, reject) => {
@@ -108,7 +107,7 @@ const holdings = function (address) {
     });
 };
 
-const coinBalance = (address) => {
+exports.coinBalance = (address) => {
     const TokenContractInstance = TokenContract.at(COINVEST_TOKEN_ADDRESS);
 
     return new Promise((resolve, reject) => {

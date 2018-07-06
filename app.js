@@ -69,6 +69,6 @@ const { portfolioSchedule } = require('./controllers/portfolio');
 
 coinSchedule();
 walletSchedule();
-// portfolioSchedule();
+portfolioSchedule();
 
 module.exports = app;

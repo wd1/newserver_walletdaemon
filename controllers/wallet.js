@@ -46,62 +46,66 @@ exports.cancelEtherTransactionSchedule = () => {
 };
 
 const getWallet = () => {
-    Accounts.find((err, accounts) => {
-        if (err) {
+    try {
+        Accounts.find((err, accounts) => {
             if (err) {
-                console.log('getWallet: find: ', err);
-                return;
-            }
-        }
-
-        const url = 'https://api-ropsten.etherscan.io/api?module=account&action=balance&tag=latest&apikey=R9M28NJ1V1K9VGVW6531HCV5UFX5G8NRVG&address=';
-        accounts.forEach(account => {
-            request(url + account.beneficiary, (err, response) => {
                 if (err) {
-                    console.log('getWallet: etherscan: ', err);
+                    console.log('getWallet: find: ', err);
                     return;
                 }
+            }
 
-                if (response.statusCode === 200) {
-                    const data = JSON.parse(response.body);
+            const url = 'https://api-ropsten.etherscan.io/api?module=account&action=balance&tag=latest&apikey=R9M28NJ1V1K9VGVW6531HCV5UFX5G8NRVG&address=';
+            accounts.forEach(account => {
+                request(url + account.beneficiary, (err, response) => {
+                    if (err) {
+                        console.log('getWallet: etherscan: ', err);
+                        return;
+                    }
 
-                    Coins.findOne({ symbol: 'ETH' }, (err, coin) => {
-                        if (err) {
-                            console.log('getWallet: Coins.findOne: ', err);
-                            return;
-                        }
+                    if (response.statusCode === 200) {
+                        const data = JSON.parse(response.body);
 
-                        if (coin) {
-                            Wallets.findOne({ accountId: account._id, coinId: coin._id }, (err, wallet) => {
-                                if (err) {
-                                    console.log('getWallet: Wallets.findOne: ', err);
-                                    return;
-                                }
+                        Coins.findOne({ symbol: 'ETH' }, (err, coin) => {
+                            if (err) {
+                                console.log('getWallet: Coins.findOne: ', err);
+                                return;
+                            }
 
-                                if (wallet) {
-                                    wallet.set({ quantity: data.result });
-                                } else {
-                                    wallet = new Wallets({
-                                        accountId: account._id,
-                                        coinId: coin._id,
-                                        quantity: data.result
-                                    });
-                                }
-
-                                wallet.save(err => {
+                            if (coin) {
+                                Wallets.findOne({ accountId: account._id, coinId: coin._id }, (err, wallet) => {
                                     if (err) {
-                                        console.log('getWallet: save: ', err);
+                                        console.log('getWallet: Wallets.findOne: ', err);
+                                        return;
                                     }
-                                });
-                            });
 
-                            console.log('Wallet updated successfully.');
-                        }
-                    });
-                }
+                                    if (wallet) {
+                                        wallet.set({ quantity: data.result });
+                                    } else {
+                                        wallet = new Wallets({
+                                            accountId: account._id,
+                                            coinId: coin._id,
+                                            quantity: data.result
+                                        });
+                                    }
+
+                                    wallet.save(err => {
+                                        if (err) {
+                                            console.log('getWallet: save: ', err);
+                                        }
+                                    });
+                                });
+
+                                console.log('Wallet updated successfully.');
+                            }
+                        });
+                    }
+                });
             });
         });
-    });
+    } catch (err) {
+        console.log('getWallet: catch: ', err);
+    }
 };
 
 // Get wallets using Ethplorer
@@ -188,109 +192,121 @@ const getWallet = () => {
 
 // Get transactions using web3.eth.filter
 const getTransactions = () => {
-    Accounts.find((err, accounts) => {
-        if (err) {
-            console.log('getTransactions: find: ', err);
-            return;
-        }
+    try {
+        Accounts.find((err, accounts) => {
+            if (err) {
+                console.log('getTransactions: find: ', err);
+                return;
+            }
 
-        accounts.forEach(account => {
-            Web3Service.filter(account.beneficiary, (err, result) => {
-                if (err) {
-                    console.log('getTransactions: filter: ', err);
-                    return;
-                }
+            accounts.forEach(account => {
+                Web3Service.filter(account.beneficiary, (err, result) => {
+                    if (err) {
+                        console.log('getTransactions: filter: ', err);
+                        return;
+                    }
 
-                console.log(result);
+                    console.log(result);
+                });
             });
         });
-    });
+    } catch (err) {
+        console.log('getTransactions: catch: ', err);
+    }
 };
 
 const getTokenTransactions = () => {
-    Coins.find((err, coins) => {
-        if (err) {
-            console.log('getTokenTransactions: Coins.find: ', err);
-            return;
-        }
+    try {
+        Coins.find((err, coins) => {
+            if (err) {
+                console.log('getTokenTransactions: Coins.find: ', err);
+                return;
+            }
 
-        if (coins && coins.length > 0) {
-            Accounts.find((err, accounts) => {
-                if (err) {
-                    console.log('getTokenTransactions: Accounts.find: ', err);
-                    return;
-                }
+            if (coins && coins.length > 0) {
+                Accounts.find((err, accounts) => {
+                    if (err) {
+                        console.log('getTokenTransactions: Accounts.find: ', err);
+                        return;
+                    }
 
-                accounts.forEach(account => {
-                    getTransactionRequest(account, 1, coins);
+                    accounts.forEach(account => {
+                        getTransactionRequest(account, 1, coins);
+                    });
                 });
-            });
-        }
-    });
+            }
+        });
+    } catch (err) {
+        console.log('getTokenTransactions: catch: ', err);
+    }
 };
 
 const getTransactionRequest = (account, page, coins) => {
-    const url = 'https://api-ropsten.etherscan.io/api?module=account&action=tokentx&startblock=0&endblock=latest&offset=10000&sort=desc&apikey=R9M28NJ1V1K9VGVW6531HCV5UFX5G8NRVG&address=';
-    request(url + account.beneficiary + '&page=' + page, async (err, response) => {
-        if (err) {
-            console.log('getTokenTransactions: etherscan: ', err);
-            getTransactionRequest(account, page, coins);
-            return;
-        }
+    try {
+        const url = 'https://api-ropsten.etherscan.io/api?module=account&action=tokentx&startblock=0&endblock=latest&offset=10000&sort=desc&apikey=R9M28NJ1V1K9VGVW6531HCV5UFX5G8NRVG&address=';
+        request(url + account.beneficiary + '&page=' + page, async (err, response) => {
+            if (err) {
+                console.log('getTokenTransactions: etherscan: ', err);
+                getTransactionRequest(account, page, coins);
+                return;
+            }
 
-        if (response.statusCode === 200) {
-            const data = JSON.parse(response.body);
-            let allSaved = true;
+            if (response.statusCode === 200) {
+                const data = JSON.parse(response.body);
+                let allSaved = true;
 
-            for (let i = 0; i < data.result.length; i++) {
-                const tx = data.result[i];
+                for (let i = 0; i < data.result.length; i++) {
+                    const tx = data.result[i];
 
-                let action = '';
-                if (tx.from === account.beneficiary) {
-                    action = 'send';
-                } else if (tx.to === account.beneficiary) {
-                    action = 'receive';
-                }
+                    let action = '';
+                    if (tx.from === account.beneficiary) {
+                        action = 'send';
+                    } else if (tx.to === account.beneficiary) {
+                        action = 'receive';
+                    }
 
-                let coinIndex = coins.findIndex(coin => coin.symbol === tx.tokenSymbol);
-                if (coinIndex > -1) {
-                    try {
-                        let tokenTransaction = await TokenTransactions.findOne({ accountId: account._id, txId: tx.hash }).exec();
-                        if (!tokenTransaction) {
-                            tokenTransaction = new TokenTransactions({
-                                accountId: account._id,
-                                coinId: coins[coinIndex]._id,
-                                amount: tx.value,
-                                timestamp: parseInt(tx.timeStamp),
-                                txId: tx.hash,
-                                from: tx.from,
-                                to: tx.to,
-                                action
-                            });
+                    let coinIndex = coins.findIndex(coin => coin.symbol === tx.tokenSymbol);
+                    if (coinIndex > -1) {
+                        try {
+                            let tokenTransaction = await TokenTransactions.findOne({ accountId: account._id, txId: tx.hash }).exec();
+                            if (!tokenTransaction) {
+                                tokenTransaction = new TokenTransactions({
+                                    accountId: account._id,
+                                    coinId: coins[coinIndex]._id,
+                                    amount: tx.value,
+                                    timestamp: parseInt(tx.timeStamp),
+                                    txId: tx.hash,
+                                    from: tx.from,
+                                    to: tx.to,
+                                    action
+                                });
 
-                            tokenTransaction.save(err => {
-                                if (err) {
-                                    console.log('getTokenTransactions: save: ', err);
-                                }
-                            });
+                                tokenTransaction.save(err => {
+                                    if (err) {
+                                        console.log('getTokenTransactions: save: ', err);
+                                    }
+                                });
 
-                            allSaved = false;
+                                allSaved = false;
+                            }
+                        } catch (err) {
+                            console.log('getTokenTransactions: find: ', err);
                         }
-                    } catch (err) {
-                        console.log('getTokenTransactions: find: ', err);
                     }
                 }
-            }
 
-            if (data.result.length > 0) {
-                getTransactionRequest(account, page + 1, coins);
-            }
+                if (data.result.length > 0) {
+                    getTransactionRequest(account, page + 1, coins);
+                }
 
-            console.log('TokenTransactions updated successfully.');
-        } else {
-            getTransactionRequest(account, page, coins);
-        }
-    });
+                console.log('TokenTransactions updated successfully.');
+            } else {
+                getTransactionRequest(account, page, coins);
+            }
+        });
+    } catch (err) {
+        console.log('getTransactionRequest: catch: ', err);
+    }
 };
 
 // Get transactions using Ethplorer
@@ -403,89 +419,97 @@ const getTransactionRequest = (account, page, coins) => {
 // };
 
 const getEtherTransactions = () => {
-    Coins.findOne({ symbol: 'ETH' }, (err, coin) => {
-        if (err) {
-            console.log('getEtherTransactions: Coins.findOne: ', err);
-            return;
-        }
+    try {
+        Coins.findOne({ symbol: 'ETH' }, (err, coin) => {
+            if (err) {
+                console.log('getEtherTransactions: Coins.findOne: ', err);
+                return;
+            }
 
-        if (coin) {
-            Accounts.find((err, accounts) => {
-                if (err) {
-                    console.log('getEtherTransactions: Accounts.find: ', err);
-                    return;
-                }
+            if (coin) {
+                Accounts.find((err, accounts) => {
+                    if (err) {
+                        console.log('getEtherTransactions: Accounts.find: ', err);
+                        return;
+                    }
 
-                accounts.forEach(account => {
-                    getEtherTransactionsRequest(account, 1, coin);
+                    accounts.forEach(account => {
+                        getEtherTransactionsRequest(account, 1, coin);
+                    });
                 });
-            });
-        }
-    });
+            }
+        });
+    } catch (err) {
+        console.log('getEtherTransactions: catch: ', err);
+    }
 };
 
 const getEtherTransactionsRequest = (account, page, coin) => {
-    const url = 'https://api-ropsten.etherscan.io/api?module=account&action=txlist&startblock=0&endblock=latest&offset=10000&sort=desc&apikey=R9M28NJ1V1K9VGVW6531HCV5UFX5G8NRVG&address=';
-    request(url + account.beneficiary + '&page=' + page, async (err, response) => {
-        if (err) {
-            console.log('getEtherTransactions: etherscan: ', err);
-            getEtherTransactionsRequest(account, page, coin);
-            return;
-        }
+    try {
+        const url = 'https://api-ropsten.etherscan.io/api?module=account&action=txlist&startblock=0&endblock=latest&offset=10000&sort=desc&apikey=R9M28NJ1V1K9VGVW6531HCV5UFX5G8NRVG&address=';
+        request(url + account.beneficiary + '&page=' + page, async (err, response) => {
+            if (err) {
+                console.log('getEtherTransactions: etherscan: ', err);
+                getEtherTransactionsRequest(account, page, coin);
+                return;
+            }
 
-        if (response.statusCode === 200) {
-            const data = JSON.parse(response.body);
-            let allSaved = true;
+            if (response.statusCode === 200) {
+                const data = JSON.parse(response.body);
+                let allSaved = true;
 
-            for (let i = 0; i < data.result.length; i++) {
-                const tx = data.result[i];
+                for (let i = 0; i < data.result.length; i++) {
+                    const tx = data.result[i];
 
-                if (tx.txreceipt_status !== '' && tx.value !== '0') {
-                    let action = '';
-                    if (tx.from === account.beneficiary) {
-                        action = 'send';
-                    } else if (tx.to === account.beneficiary) {
-                        action = 'receive';
-                    }
-
-                    try {
-                        let tokenTransaction = await TokenTransactions.findOne({ accountId: account._id, txId: tx.hash }).exec();
-                        if (!tokenTransaction) {
-                            tokenTransaction = new TokenTransactions({
-                                accountId: account._id,
-                                coinId: coin._id,
-                                amount: tx.value,
-                                timestamp: parseInt(tx.timeStamp),
-                                txId: tx.hash,
-                                from: tx.from,
-                                to: tx.to,
-                                action: action,
-                                status: tx.txreceipt_status === '1' ? 'Success' : 'Fail'
-                            });
-
-                            tokenTransaction.save(err => {
-                                if (err) {
-                                    console.log('getEtherTransactions: save: ', err);
-                                }
-                            });
-
-                            allSaved = false;
+                    if (tx.txreceipt_status !== '' && tx.value !== '0') {
+                        let action = '';
+                        if (tx.from === account.beneficiary) {
+                            action = 'send';
+                        } else if (tx.to === account.beneficiary) {
+                            action = 'receive';
                         }
-                    } catch (err) {
-                        console.log('getEtherTransactions: find: ', err);
+
+                        try {
+                            let tokenTransaction = await TokenTransactions.findOne({ accountId: account._id, txId: tx.hash }).exec();
+                            if (!tokenTransaction) {
+                                tokenTransaction = new TokenTransactions({
+                                    accountId: account._id,
+                                    coinId: coin._id,
+                                    amount: tx.value,
+                                    timestamp: parseInt(tx.timeStamp),
+                                    txId: tx.hash,
+                                    from: tx.from,
+                                    to: tx.to,
+                                    action: action,
+                                    status: tx.txreceipt_status === '1' ? 'Success' : 'Fail'
+                                });
+
+                                tokenTransaction.save(err => {
+                                    if (err) {
+                                        console.log('getEtherTransactions: save: ', err);
+                                    }
+                                });
+
+                                allSaved = false;
+                            }
+                        } catch (err) {
+                            console.log('getEtherTransactions: find: ', err);
+                        }
                     }
                 }
-            }
 
-            if (data.result.length !== 0) {
-                getEtherTransactionsRequest(account, page + 1, coin);
-            }
+                if (data.result.length !== 0) {
+                    getEtherTransactionsRequest(account, page + 1, coin);
+                }
 
-            console.log('Ether Transactions updated successfully.');
-        } else {
-            getEtherTransactionsRequest(account, page, coin);
-        }
-    });
+                console.log('Ether Transactions updated successfully.');
+            } else {
+                getEtherTransactionsRequest(account, page, coin);
+            }
+        });
+    } catch (err) {
+        console.log('getEtherTransactionsRequest: catch: ', err);
+    }
 };
 
 // Get transactions using Ethplorer

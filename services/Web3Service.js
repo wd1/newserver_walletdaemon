@@ -1,5 +1,24 @@
 const Web3 = require('web3');
-const web3 = new Web3(new Web3.providers.HttpProvider('http://13.59.130.153:8545'));
+const web3 = new Web3(new Web3.providers.HttpProvider('http://geth.coinve.st:8545'));
+
+const {
+    DEMO_MASTER_ADDRESS,
+    DEMO_MASTER_PASSPHRASE
+} = require('./Config');
+
+web3.eth.personal.unlockAccount(DEMO_MASTER_ADDRESS, DEMO_MASTER_PASSPHRASE, 0)
+    .then(response => {
+        if (response) {
+            console.log('Unlocked the master account');
+        } else {
+            console.log('Failed to unlock the master account');
+        }
+    })
+    .catch(err => {
+        console.log('Truffle unlockAccount: ', err);
+    });
+
+exports.web3 = web3;
 
 exports.getBalance = (address) => {
     return new Promise((resolve, reject) => {
