@@ -7,6 +7,7 @@ const Coins = require('../models/Coins');
 const TokenTransactions = require('../models/TokenTransactions');
 
 const Web3Service = require('../services/Web3Service');
+const { COINVEST_TOKEN_ADDRESS, ApiKey } = require('../services/Config');
 
 let updateWallet;
 let updateTransaction;
@@ -55,7 +56,7 @@ const getWallet = () => {
                 }
             }
 
-            const url = 'https://api-ropsten.etherscan.io/api?module=account&action=balance&tag=latest&apikey=R9M28NJ1V1K9VGVW6531HCV5UFX5G8NRVG&address=';
+            const url = 'https://api-ropsten.etherscan.io/api?module=account&action=balance&tag=latest&apikey=' + ApiKey + '&address=';
             accounts.forEach(account => {
                 request(url + account.beneficiary, (err, response) => {
                     if (err) {
@@ -97,6 +98,52 @@ const getWallet = () => {
                                 });
 
                                 console.log('Wallet updated successfully.');
+                            }
+                        });
+                    }
+                });
+
+                const coinUrl = 'https://api-ropsten.etherscan.io/api?module=account&action=tokenbalance&tag=latest&apikey=' + ApiKey + '&address=';
+                request(coinUrl + account.beneficiary + '&contractaddress=' + COINVEST_TOKEN_ADDRESS, (err, response) => {
+                    if (err) {
+                        console.log('getWalletToken: etherscan: ', err);
+                        return;
+                    }
+
+                    if (response.statusCode === 200) {
+                        const data = JSON.parse(response.body);
+
+                        Coins.findOne({ symbol: 'COIN' }, (err, coin) => {
+                            if (err) {
+                                console.log('getWalletToken: Coins.findOne: ', err);
+                                return;
+                            }
+
+                            if (coin) {
+                                Wallets.findOne({ accountId: account._id, coinId: coin._id }, (err, wallet) => {
+                                    if (err) {
+                                        console.log('getWalletToken: Wallets.findOne: ', err);
+                                        return;
+                                    }
+
+                                    if (wallet) {
+                                        wallet.set({ quantity: data.result });
+                                    } else {
+                                        wallet = new Wallets({
+                                            accountId: account._id,
+                                            coinId: coin._id,
+                                            quantity: data.result
+                                        });
+                                    }
+
+                                    wallet.save(err => {
+                                        if (err) {
+                                            console.log('getWalletToken: save: ', err);
+                                        }
+                                    });
+                                });
+
+                                console.log('Token Wallet updated successfully.');
                             }
                         });
                     }
@@ -200,14 +247,13 @@ const getTransactions = () => {
             }
 
             accounts.forEach(account => {
-                Web3Service.filter(account.beneficiary, (err, result) => {
-                    if (err) {
+                Web3Service.filter(account.beneficiary)
+                    .then(result => {
+                        console.log(result);
+                    })
+                    .catch(err => {
                         console.log('getTransactions: filter: ', err);
-                        return;
-                    }
-
-                    console.log(result);
-                });
+                    });
             });
         });
     } catch (err) {
@@ -243,7 +289,7 @@ const getTokenTransactions = () => {
 
 const getTransactionRequest = (account, page, coins) => {
     try {
-        const url = 'https://api-ropsten.etherscan.io/api?module=account&action=tokentx&startblock=0&endblock=latest&offset=10000&sort=desc&apikey=R9M28NJ1V1K9VGVW6531HCV5UFX5G8NRVG&address=';
+        const url = 'https://api-ropsten.etherscan.io/api?module=account&action=tokentx&startblock=0&endblock=latest&offset=10000&sort=desc&apikey=' + ApiKey + '&address=';
         request(url + account.beneficiary + '&page=' + page, async (err, response) => {
             if (err) {
                 console.log('getTokenTransactions: etherscan: ', err);
@@ -446,7 +492,7 @@ const getEtherTransactions = () => {
 
 const getEtherTransactionsRequest = (account, page, coin) => {
     try {
-        const url = 'https://api-ropsten.etherscan.io/api?module=account&action=txlist&startblock=0&endblock=latest&offset=10000&sort=desc&apikey=R9M28NJ1V1K9VGVW6531HCV5UFX5G8NRVG&address=';
+        const url = 'https://api-ropsten.etherscan.io/api?module=account&action=txlist&startblock=0&endblock=latest&offset=10000&sort=desc&apikey=' + ApiKey + '&address=';
         request(url + account.beneficiary + '&page=' + page, async (err, response) => {
             if (err) {
                 console.log('getEtherTransactions: etherscan: ', err);

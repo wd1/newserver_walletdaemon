@@ -1528,3 +1528,5 @@ exports.cryptoIdToSymbol = [
     { symbol: 'EOS', smallestUnitName: 'wei', limit: 18 },
     // { symbol: 'IBTC', smallestUnitName: 'gwei', limit: 8 }
 ];
+
+exports.ApiKey = 'R9M28NJ1V1K9VGVW6531HCV5UFX5G8NRVG';
