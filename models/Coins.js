@@ -15,7 +15,8 @@ const coinsSchema = new mongoose.Schema({
     limit: { type: Number, default: 0 },
     created: Number,
     lastUpdated: Number,
-    coinMarketCapId: Number
+    coinMarketCapId: Number,
+    image: String
 }, { timestamps: true });
 
 const Coins = mongoose.model('Coins', coinsSchema);

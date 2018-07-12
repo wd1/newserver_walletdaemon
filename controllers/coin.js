@@ -140,7 +140,7 @@ const getCryptoCompareId = () => {
 
             let array = [];
             coins.forEach(coin => {
-                if (!coin.cryptoCompareId) {
+                if (!coin.cryptoCompareId || !coin.image) {
                     array.push(coin);
                 }
             });
@@ -157,6 +157,8 @@ const getCryptoCompareId = () => {
                     array.forEach(coin => {
                         if (body['Data'][coin.symbol]) {
                             coin.cryptoCompareId = body['Data'][coin.symbol]['Id'];
+                            coin.image = body['Data'][coin.symbol]['ImageUrl'];
+
                             coin.save(err => {
                                 if (err) {
                                     console.log('getCryptoCompareId: save: ', err);
