@@ -131,27 +131,27 @@ const getAssets = () => {
 };
 
 const getCryptoCompareId = () => {
-    try {
-        Coins.find((err, coins) => {
-            if (err) {
-                console.log('getCryptoCompareId: find: ', err);
-                return;
+    Coins.find((err, coins) => {
+        if (err) {
+            console.log('getCryptoCompareId: find: ', err);
+            return;
+        }
+
+        let array = [];
+        coins.forEach(coin => {
+            if (!coin.cryptoCompareId || !coin.image) {
+                array.push(coin);
             }
+        });
 
-            let array = [];
-            coins.forEach(coin => {
-                if (!coin.cryptoCompareId || !coin.image) {
-                    array.push(coin);
+        if (array.length > 0) {
+            request('https://min-api.cryptocompare.com/data/all/coinlist', (err, response) => {
+                if (err) {
+                    console.log('getCryptoCompareId: cryptocompare: ', err);
+                    return;
                 }
-            });
 
-            if (array.length > 0) {
-                request('https://min-api.cryptocompare.com/data/all/coinlist', (err, response) => {
-                    if (err) {
-                        console.log('getCryptoCompareId: cryptocompare: ', err);
-                        return;
-                    }
-
+                try {
                     const body = JSON.parse(response.body);
 
                     array.forEach(coin => {
@@ -166,18 +166,18 @@ const getCryptoCompareId = () => {
                             });
                         }
                     });
+                } catch (err) {
+                    console.log('getCryptoCompareId: catch: ', err);
+                }
 
-                    console.log('Updated coins cryptoCompareId successfully.');
+                console.log('Updated coins cryptoCompareId successfully.');
 
-                    // getCreatedAt();
-                });
-            } else {
                 // getCreatedAt();
-            }
-        });
-    } catch (err) {
-        console.log('getCryptoCompareId: catch: ', err);
-    }
+            });
+        } else {
+            // getCreatedAt();
+        }
+    });
 };
 
 const getCreatedAt = () => {
