@@ -10,7 +10,6 @@ const Web3Service = require('../services/Web3Service');
 const { COINVEST_TOKEN_ADDRESS, ApiKey } = require('../services/Config');
 
 let updateWallet;
-let updateTransaction;
 let updateTokenTransaction;
 let updateEtherTransaction;
 
@@ -18,19 +17,11 @@ exports.walletSchedule = () => {
     updateWallet = schedule.scheduleJob('*/1 * * * *', getWallet);
     updateTokenTransaction = schedule.scheduleJob('*/1 * * * *', getTokenTransactions);
     updateEtherTransaction = schedule.scheduleJob('*/1 * * * *', getEtherTransactions);
-
-    // updateTransaction = schedule.scheduleJob('*/1 * * * *', getTransactions);
 };
 
 exports.cancelWalletSchedule = () => {
     if (updateWallet) {
         updateWallet.cancel();
-    }
-};
-
-exports.cancelTransactionSchedule = () => {
-    if (updateTransaction) {
-        updateTransaction.cancel();
     }
 };
 
@@ -236,30 +227,6 @@ const getWallet = () => {
 //         });
 //     });
 // };
-
-// Get transactions using web3.eth.filter
-const getTransactions = () => {
-    try {
-        Accounts.find((err, accounts) => {
-            if (err) {
-                console.log('getTransactions: find: ', err);
-                return;
-            }
-
-            accounts.forEach(account => {
-                Web3Service.filter(account.beneficiary)
-                    .then(result => {
-                        console.log(result);
-                    })
-                    .catch(err => {
-                        console.log('getTransactions: filter: ', err);
-                    });
-            });
-        });
-    } catch (err) {
-        console.log('getTransactions: catch: ', err);
-    }
-};
 
 const getTokenTransactions = () => {
     try {
@@ -648,5 +615,3 @@ const getEtherTransactionsRequest = (account, page, coin) => {
 //         }
 //     });
 // };
-
-const waitFor = (ms) => new Promise(r => setTimeout(r, ms));

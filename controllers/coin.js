@@ -2,16 +2,24 @@ const request = require('request');
 const schedule = require('node-schedule');
 
 const Coins = require('../models/Coins');
+const { cryptoIdToSymbol } = require('../services/Config');
 
-let updateAsset;
+let updateAsset, updateCoinPrices;
 
 exports.coinSchedule = () => {
     updateAsset = schedule.scheduleJob('*/1 * * * *', getAssets);
+    updateCoinPrices = schedule.scheduleJob('*/1 * * * *', getPricesFromCryptoCompare);
 };
 
-exports.cancelCoinSchedule = () => {
+exports.cancelAssetSchedule = () => {
     if (updateAsset) {
         updateAsset.cancel();
+    }
+};
+
+exports.cancelPriceSchedule = () => {
+    if (updateCoinPrices) {
+        updateCoinPrices.cancel();
     }
 };
 
@@ -205,7 +213,7 @@ const getCreatedAt = () => {
                             }
                         });
 
-                        console.log('Updated coins created successfully.');
+                        console.log('Updated coins createdAt successfully.');
                     });
                 }
             });
@@ -213,4 +221,46 @@ const getCreatedAt = () => {
     } catch (err) {
         console.log('getCreatedAt: catch: ', err);
     }
+};
+
+const getPricesFromCryptoCompare = async () => {
+    let coins = [];
+    let symbols = '';
+
+    try {
+        for (let i = 0; i < cryptoIdToSymbol.length; i++) {
+            const coin = await Coins.findOne({ symbol: cryptoIdToSymbol[i].symbol }).exec();
+
+            if (coin) {
+                coins.push(coin);
+                symbols += cryptoIdToSymbol[i].symbol + ',';
+            }
+        }
+    } catch (err) {
+        console.log('getPricesFromCryptoCompare: catch: ', err);
+        return;
+    }
+
+    request('https://min-api.cryptocompare.com/data/pricemulti?tsyms=USD,EUR&fsyms=' + symbols, (err, response) => {
+        if (err) {
+            console.log('getPricesFromCryptoCompare: ', err);
+            return;
+        }
+
+        try {
+            const body = JSON.parse(response.body);
+            coins.forEach(coin => {
+                coin.price = body[coin.symbol]['USD'];
+                coin.save(err => {
+                    if (err) {
+                        console.log('getPricesFromCryptoCompare: save: ', err);
+                    }
+                });
+            });
+
+            console.log('Updated coin prices successfully.');
+        } catch (err) {
+            console.log('getPricesFromCryptoCompare: catch: ', err);
+        }
+    });
 };

@@ -4,7 +4,7 @@ const indexesSchema = new mongoose.Schema({
     accountId: String,
     name: String,
     amount: String,
-    txId: String,
+    txId: [String],
     timestamp: Number,
     confirmed: { type: Boolean, default: false }
 }, { timestamps: true });

@@ -10,8 +10,7 @@ const {
     Abi,
     FaucetAbi,
     CoinvestTokenAbi,
-    UserDataAbi,
-    cryptoIdToSymbol
+    UserDataAbi
 } = require('./Config');
 
 const { web3 } = require('./Web3Service');

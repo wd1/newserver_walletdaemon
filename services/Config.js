@@ -1,7 +1,7 @@
 exports.FAUCET_ADDRESS = '0x1a2c5f42f7ada1b44ddbcd9e192bf3460ce6d97b';
-exports.INVESTMENT_CONTRACT_ADDRESS = '0xc580702a8a09ae05ebd58f2e448d3ff41a9d2e73';
+exports.INVESTMENT_CONTRACT_ADDRESS = '0x3f561af2d26b55d3c825d4bddb291ddd1d6c042c';
 exports.COINVEST_TOKEN_ADDRESS = '0x31A24A6EFc66B919a6a6C36fe04e3FaD8D948db6';
-exports.USER_DATA_ADDRESS = '0x6214b23f2756dc18173cdee691a506b455981c80';
+exports.USER_DATA_ADDRESS = '0xc7a209a196ab5e85672b3658296c256dd1b2cce8';
 
 exports.FAUCET_DRIP_AMOUNT = 10000;
 exports.DEMO_MASTER_ADDRESS = '0x1dece1fe19ddac7ae715b78baacf1597554a8d41';
@@ -9,22 +9,43 @@ exports.DEMO_MASTER_PASSPHRASE = 'a62b87e316c8e21910363fa23f0549e3';
 
 exports.Abi = [
     {
-        "constant": true,
+        "constant": false,
         "inputs": [
             {
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "name": "admins",
-        "outputs": [
+                "name": "myid",
+                "type": "bytes32"
+            },
             {
-                "name": "",
-                "type": "bool"
+                "name": "result",
+                "type": "string"
             }
         ],
+        "name": "__callback",
+        "outputs": [],
         "payable": false,
-        "stateMutability": "view",
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "myid",
+                "type": "bytes32"
+            },
+            {
+                "name": "result",
+                "type": "string"
+            },
+            {
+                "name": "proof",
+                "type": "bytes"
+            }
+        ],
+        "name": "__callback",
+        "outputs": [],
+        "payable": false,
+        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
@@ -41,10 +62,6 @@ exports.Abi = [
             {
                 "name": "_amounts",
                 "type": "uint256[]"
-            },
-            {
-                "name": "_indexName",
-                "type": "string"
             }
         ],
         "name": "buy",
@@ -59,46 +76,115 @@ exports.Abi = [
         "type": "function"
     },
     {
-        "constant": true,
-        "inputs": [],
-        "name": "bank",
-        "outputs": [
+        "constant": false,
+        "inputs": [
             {
-                "name": "",
+                "name": "_newAdmin",
                 "type": "address"
+            },
+            {
+                "name": "_approved",
+                "type": "bool"
             }
         ],
+        "name": "changeAdmin",
+        "outputs": [],
         "payable": false,
-        "stateMutability": "view",
+        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
-        "constant": true,
-        "inputs": [],
-        "name": "oracle",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "_newGasLimit",
+                "type": "uint256"
+            },
+            {
+                "name": "_newGasPrice",
+                "type": "uint256"
+            }
+        ],
+        "name": "changeGas",
         "outputs": [
             {
-                "name": "",
-                "type": "address"
+                "name": "success",
+                "type": "bool"
             }
         ],
         "payable": false,
-        "stateMutability": "view",
+        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
-        "constant": true,
-        "inputs": [],
-        "name": "owner",
+        "constant": false,
+        "inputs": [
+            {
+                "name": "_beneficiary",
+                "type": "address"
+            },
+            {
+                "name": "_cryptos",
+                "type": "uint256[]"
+            },
+            {
+                "name": "_amounts",
+                "type": "uint256[]"
+            },
+            {
+                "name": "_buy",
+                "type": "bool"
+            }
+        ],
+        "name": "getPrices",
         "outputs": [
             {
-                "name": "",
-                "type": "address"
+                "name": "success",
+                "type": "bool"
             }
         ],
         "payable": false,
-        "stateMutability": "view",
+        "stateMutability": "nonpayable",
         "type": "function"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "name": "description",
+                "type": "string"
+            }
+        ],
+        "name": "newOraclizeQuery",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "name": "buyer",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "name": "cryptoIds",
+                "type": "uint256[]"
+            },
+            {
+                "indexed": false,
+                "name": "amounts",
+                "type": "uint256[]"
+            },
+            {
+                "indexed": false,
+                "name": "prices",
+                "type": "uint256[17]"
+            }
+        ],
+        "name": "Buy",
+        "type": "event"
     },
     {
         "constant": false,
@@ -140,10 +226,6 @@ exports.Abi = [
             {
                 "name": "_amounts",
                 "type": "uint256[]"
-            },
-            {
-                "name": "_indexName",
-                "type": "string"
             }
         ],
         "name": "sell",
@@ -156,149 +238,6 @@ exports.Abi = [
         "payable": false,
         "stateMutability": "nonpayable",
         "type": "function"
-    },
-    {
-        "constant": true,
-        "inputs": [],
-        "name": "userData",
-        "outputs": [
-            {
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "constant": false,
-        "inputs": [
-            {
-                "name": "_newAdmin",
-                "type": "address"
-            },
-            {
-                "name": "_approved",
-                "type": "bool"
-            }
-        ],
-        "name": "changeAdmin",
-        "outputs": [],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "constant": true,
-        "inputs": [],
-        "name": "privilegedAddress",
-        "outputs": [
-            {
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "constant": false,
-        "inputs": [
-            {
-                "name": "newOwner",
-                "type": "address"
-            }
-        ],
-        "name": "transferOwnership",
-        "outputs": [],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "constant": false,
-        "inputs": [
-            {
-                "name": "newPrivileged",
-                "type": "address"
-            }
-        ],
-        "name": "transferPrivilege",
-        "outputs": [],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "constant": true,
-        "inputs": [],
-        "name": "token",
-        "outputs": [
-            {
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "name": "_token",
-                "type": "address"
-            },
-            {
-                "name": "_bank",
-                "type": "address"
-            },
-            {
-                "name": "_userData",
-                "type": "address"
-            },
-            {
-                "name": "_oracle",
-                "type": "address"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "constructor"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "name": "buyer",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "name": "cryptoIds",
-                "type": "uint256[]"
-            },
-            {
-                "indexed": false,
-                "name": "amounts",
-                "type": "uint256[]"
-            },
-            {
-                "indexed": false,
-                "name": "prices",
-                "type": "uint256[11]"
-            },
-            {
-                "indexed": false,
-                "name": "indexName",
-                "type": "string"
-            }
-        ],
-        "name": "Buy",
-        "type": "event"
     },
     {
         "anonymous": false,
@@ -321,32 +260,10 @@ exports.Abi = [
             {
                 "indexed": false,
                 "name": "prices",
-                "type": "uint256[11]"
-            },
-            {
-                "indexed": false,
-                "name": "indexName",
-                "type": "string"
+                "type": "uint256[17]"
             }
         ],
         "name": "Sell",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "name": "previousPrivilege",
-                "type": "address"
-            },
-            {
-                "indexed": true,
-                "name": "newPrivilege",
-                "type": "address"
-            }
-        ],
-        "name": "PrivilegeTransferred",
         "type": "event"
     },
     {
@@ -365,6 +282,198 @@ exports.Abi = [
         ],
         "name": "OwnershipTransferred",
         "type": "event"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "transferOwnership",
+        "outputs": [],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "payable": true,
+        "stateMutability": "payable",
+        "type": "fallback"
+    },
+    {
+        "inputs": [
+            {
+                "name": "_token",
+                "type": "address"
+            },
+            {
+                "name": "_bank",
+                "type": "address"
+            },
+            {
+                "name": "_userData",
+                "type": "address"
+            }
+        ],
+        "payable": true,
+        "stateMutability": "payable",
+        "type": "constructor"
+    },
+    {
+        "constant": true,
+        "inputs": [
+            {
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "name": "admins",
+        "outputs": [
+            {
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "bank",
+        "outputs": [
+            {
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [
+            {
+                "name": "myid",
+                "type": "bytes32"
+            },
+            {
+                "name": "_cryptoValues",
+                "type": "uint256[17]"
+            }
+        ],
+        "name": "calculateValue",
+        "outputs": [
+            {
+                "name": "value",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [
+            {
+                "name": "_cryptos",
+                "type": "uint256[]"
+            }
+        ],
+        "name": "craftUrl",
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "customGasLimit",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [
+            {
+                "name": "myid",
+                "type": "bytes32"
+            },
+            {
+                "name": "_result",
+                "type": "string"
+            }
+        ],
+        "name": "decodePrices",
+        "outputs": [
+            {
+                "name": "prices",
+                "type": "uint256[17]"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "owner",
+        "outputs": [
+            {
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "token",
+        "outputs": [
+            {
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "userData",
+        "outputs": [
+            {
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
     }
 ];
 
@@ -1483,7 +1592,7 @@ exports.UserDataAbi = [
         "outputs": [
             {
                 "name": "holdings",
-                "type": "uint256[10]"
+                "type": "uint256[17]"
             }
         ],
         "payable": false,
@@ -1516,17 +1625,15 @@ exports.UserDataAbi = [
 ];
 
 exports.cryptoIdToSymbol = [
-    { symbol: 'COIN', smallestUnitName: 'wei', limit: 18 },
-    { symbol: 'BTC', smallestUnitName: 'gwei', limit: 8 },
+    // { symbol: 'COIN', smallestUnitName: 'wei', limit: 18 },
+    { symbol: 'BTC', smallestUnitName: 'gwei', limit: 18 },
     { symbol: 'ETH', smallestUnitName: 'wei', limit: 18 },
-    { symbol: 'XRP', smallestUnitName: 'szabo', limit: 6 },
-    { symbol: 'LTC', smallestUnitName: 'gwei', limit: 8 },
-    { symbol: 'DASH', smallestUnitName: 'gwei', limit: 8 },
-    { symbol: 'BCH', smallestUnitName: 'mwei', limit: 8 },
-    { symbol: 'XMR', smallestUnitName: 'mwei', limit: 12 },
-    { symbol: 'XEM', smallestUnitName: 'szabo', limit: 6 },
+    { symbol: 'XRP', smallestUnitName: 'szabo', limit: 18 },
+    { symbol: 'LTC', smallestUnitName: 'gwei', limit: 18 },
+    { symbol: 'DASH', smallestUnitName: 'gwei', limit: 18 },
+    { symbol: 'BCH', smallestUnitName: 'mwei', limit: 18 },
+    { symbol: 'XMR', smallestUnitName: 'mwei', limit: 18 },
+    { symbol: 'XEM', smallestUnitName: 'szabo', limit: 18 },
     { symbol: 'EOS', smallestUnitName: 'wei', limit: 18 },
     // { symbol: 'IBTC', smallestUnitName: 'gwei', limit: 8 }
 ];
-
-exports.ApiKey = 'R9M28NJ1V1K9VGVW6531HCV5UFX5G8NRVG';

@@ -9,7 +9,7 @@ const TruffleService = require('../services/TruffleService');
 let updateAsset;
 
 exports.portfolioSchedule = () => {
-    // updateAsset = schedule.scheduleJob('*/1 * * * *', getVirtualAssets);
+    updateAsset = schedule.scheduleJob('*/1 * * * *', getVirtualAssets);
 };
 
 exports.cancelAssetSchedule = () => {
