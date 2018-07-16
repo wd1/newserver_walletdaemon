@@ -65,10 +65,12 @@ app.listen(app.get('port'), () => {
 
 const { coinSchedule } = require('./controllers/coin');
 const { walletSchedule } = require('./controllers/wallet');
+const { tradeSchedule } = require('./controllers/trade');
 // const { portfolioSchedule } = require('./controllers/portfolio');
 
 coinSchedule();
 walletSchedule();
+tradeSchedule();
 // portfolioSchedule();
 
 module.exports = app;

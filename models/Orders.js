@@ -6,6 +6,7 @@ const ordersSchema = new mongoose.Schema({
     indexId: String,
     quantity: { type: Number, default: 0.0 },
     amount: { type: Number, default: 0.0 },
+    timing: String,
     status: String,
     type: String,
     action: String,

@@ -24,35 +24,35 @@ exports.cancelPriceSchedule = () => {
 };
 
 const getAssets = () => {
-    try {
-        Coins.findOne({ symbol: 'COIN' }, (err, coin) => {
-            if (err) {
-                console.log('getAssets: findOne: ', err);
-                return;
-            }
+    Coins.findOne({ symbol: 'COIN' }, (err, coin) => {
+        if (err) {
+            console.log('getAssets: findOne: ', err);
+            return;
+        }
 
-            if (!coin) {
-                coin = new Coins({
-                    name: 'Coinvest COIN V2 Token',
-                    symbol: 'COIN',
-                    price: 1,
-                    limit: 18
-                });
-            }
-
-            coin.save(err => {
-                if (err) {
-                    console.log('getAssets: save: ', err);
-                }
+        if (!coin) {
+            coin = new Coins({
+                name: 'Coinvest COIN V2 Token',
+                symbol: 'COIN',
+                price: 1,
+                limit: 18
             });
-        });
+        }
 
-        request('https://api.coinmarketcap.com/v2/listings', (err, response) => {
+        coin.save(err => {
             if (err) {
-                console.log('getAssets: coinmarketcap-listings: ', err);
-                return;
+                console.log('getAssets: save: ', err);
             }
+        });
+    });
 
+    request('https://api.coinmarketcap.com/v2/listings', (err, response) => {
+        if (err) {
+            console.log('getAssets: coinmarketcap-listings: ', err);
+            return;
+        }
+
+        try {
             if (response.statusCode === 200) {
                 const body = JSON.parse(response.body);
 
@@ -71,57 +71,61 @@ const getAssets = () => {
                                 return;
                             }
 
-                            if (response.statusCode === 200) {
-                                const res = JSON.parse(response.body);
+                            try {
+                                if (response.statusCode === 200) {
+                                    const res = JSON.parse(response.body);
 
-                                if (res.data) {
-                                    res.data.forEach(dt => {
-                                        Coins.findOne({ symbol: dt.symbol }, (err, coin) => {
-                                            if (err) {
-                                                console.log('getAssets: findOne: ', err);
-                                                return;
-                                            }
-
-                                            if (coin) {
-                                                coin.set({
-                                                    totalSupply: dt.total_supply,
-                                                    circulatingSupply: dt.circulating_supply,
-                                                    maxSupply: dt.max_supply,
-                                                    price: dt.quotes.USD.price,
-                                                    marketCap: dt.quotes.USD.market_cap,
-                                                    volume24h: dt.quotes.USD.volume_24h,
-                                                    percentageChange1h: dt.quotes.USD.percent_change_1h,
-                                                    percentageChange24h: dt.quotes.USD.percent_change_24h,
-                                                    percentageChange7d: dt.quotes.USD.percent_change_7d,
-                                                    lastUpdated: dt.last_updated
-                                                });
-                                            } else {
-                                                coin = new Coins({
-                                                    name: dt.name,
-                                                    symbol: dt.symbol,
-                                                    totalSupply: dt.total_supply,
-                                                    circulatingSupply: dt.circulating_supply,
-                                                    maxSupply: dt.max_supply,
-                                                    price: dt.quotes.USD.price,
-                                                    marketCap: dt.quotes.USD.market_cap,
-                                                    volume24h: dt.quotes.USD.volume_24h,
-                                                    percentageChange1h: dt.quotes.USD.percent_change_1h,
-                                                    percentageChange24h: dt.quotes.USD.percent_change_24h,
-                                                    percentageChange7d: dt.quotes.USD.percent_change_7d,
-                                                    limit: 18,
-                                                    lastUpdated: dt.last_updated,
-                                                    coinMarketCapId: dt.id
-                                                });
-                                            }
-
-                                            coin.save(err => {
+                                    if (res.data) {
+                                        res.data.forEach(dt => {
+                                            Coins.findOne({ symbol: dt.symbol }, (err, coin) => {
                                                 if (err) {
-                                                    console.log('getAssets: save: ', err);
+                                                    console.log('getAssets: findOne: ', err);
+                                                    return;
                                                 }
+
+                                                if (coin) {
+                                                    coin.set({
+                                                        totalSupply: dt.total_supply,
+                                                        circulatingSupply: dt.circulating_supply,
+                                                        maxSupply: dt.max_supply,
+                                                        price: dt.quotes.USD.price,
+                                                        marketCap: dt.quotes.USD.market_cap,
+                                                        volume24h: dt.quotes.USD.volume_24h,
+                                                        percentageChange1h: dt.quotes.USD.percent_change_1h,
+                                                        percentageChange24h: dt.quotes.USD.percent_change_24h,
+                                                        percentageChange7d: dt.quotes.USD.percent_change_7d,
+                                                        lastUpdated: dt.last_updated
+                                                    });
+                                                } else {
+                                                    coin = new Coins({
+                                                        name: dt.name,
+                                                        symbol: dt.symbol,
+                                                        totalSupply: dt.total_supply,
+                                                        circulatingSupply: dt.circulating_supply,
+                                                        maxSupply: dt.max_supply,
+                                                        price: dt.quotes.USD.price,
+                                                        marketCap: dt.quotes.USD.market_cap,
+                                                        volume24h: dt.quotes.USD.volume_24h,
+                                                        percentageChange1h: dt.quotes.USD.percent_change_1h,
+                                                        percentageChange24h: dt.quotes.USD.percent_change_24h,
+                                                        percentageChange7d: dt.quotes.USD.percent_change_7d,
+                                                        limit: 18,
+                                                        lastUpdated: dt.last_updated,
+                                                        coinMarketCapId: dt.id
+                                                    });
+                                                }
+
+                                                coin.save(err => {
+                                                    if (err) {
+                                                        console.log('getAssets: save: ', err);
+                                                    }
+                                                });
                                             });
                                         });
-                                    });
+                                    }
                                 }
+                            } catch (err) {
+                                console.log('getAssets: ticker: ', err);
                             }
                         });
                     }
@@ -132,10 +136,10 @@ const getAssets = () => {
                     console.log('Coins updated successfully.');
                 }
             }
-        });
-    } catch (err) {
-        console.log('getAssets: catch: ', err);
-    }
+        } catch (err) {
+            console.log('getAssets: listing: ', err);
+        }
+    });
 };
 
 const getCryptoCompareId = () => {
@@ -175,7 +179,7 @@ const getCryptoCompareId = () => {
                         }
                     });
                 } catch (err) {
-                    console.log('getCryptoCompareId: catch: ', err);
+                    console.log('getCryptoCompareId: coinlist: ', err);
                 }
 
                 console.log('Updated coins cryptoCompareId successfully.');
@@ -260,7 +264,7 @@ const getPricesFromCryptoCompare = async () => {
 
             console.log('Updated coin prices successfully.');
         } catch (err) {
-            console.log('getPricesFromCryptoCompare: catch: ', err);
+            console.log('getPricesFromCryptoCompare: pricemulti: ', err);
         }
     });
 };

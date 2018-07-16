@@ -20,6 +20,39 @@ web3.eth.personal.unlockAccount(DEMO_MASTER_ADDRESS, DEMO_MASTER_PASSPHRASE, 0)
 
 exports.web3 = web3;
 
+exports.getNonce = (address) => {
+    return web3.eth.getTransactionCount(address);
+};
+
+exports.sendSignedTransaction = (signedTransactionData) => {
+    return new Promise((resolve, reject) => {
+        web3.eth.sendSignedTransaction(signedTransactionData)
+            .on('transactionHash', hash => {
+                resolve(hash);
+            })
+            .on('error', err => {
+                console.log('sendSignedTransaction: ', err);
+                reject(err);
+            })
+    });
+};
+
+exports.encodeFunctionSignature = (functionName) => {
+    return web3.eth.abi.encodeFunctionSignature(functionName);
+};
+
+exports.encodeFunctionCall = (jsonInterface, parameters) => {
+    return web3.eth.abi.encodeFunctionCall(jsonInterface, parameters);
+};
+
+exports.sign = (dataToSign, address, privateKey) => {
+    return web3.eth.accounts.sign(dataToSign, privateKey);
+};
+
+exports.fromWei = (amount) => {
+    return web3.fromWei(amount, 'wei');
+};
+
 exports.getBalance = (address) => {
     return new Promise((resolve, reject) => {
         web3.eth.getBalance(address, (err, weiBalance) => {

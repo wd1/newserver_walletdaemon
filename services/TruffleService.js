@@ -9,8 +9,7 @@ const {
     DEMO_MASTER_PASSPHRASE,
     Abi,
     FaucetAbi,
-    CoinvestTokenAbi,
-    UserDataAbi
+    CoinvestTokenAbi
 } = require('./Config');
 
 const { web3 } = require('./Web3Service');
@@ -72,24 +71,65 @@ if (typeof FaucetContract.currentProvider.sendAsync !== 'function') {
     };
 }
 
-// Generate FaucetContract
-const UserDataContract = contract({
-    abi: UserDataAbi,
-    gas: 1000000
-});
-UserDataContract.setProvider(web3.currentProvider);
-UserDataContract.defaults({
-    from: DEMO_MASTER_ADDRESS,
-    gas: 1000000,
-    gasPrice: 40000000000
-});
-if (typeof UserDataContract.currentProvider.sendAsync !== 'function') {
-    UserDataContract.currentProvider.sendAsync = function () {
-        return UserDataContract.currentProvider.send.apply(
-            UserDataContract.currentProvider, arguments
-        );
-    };
-}
+exports.getNonce = (address) => {
+    const TokenContractInstance = TokenContract.at(COINVEST_TOKEN_ADDRESS);
+
+    return new Promise((resolve, reject) => {
+        TokenContractInstance.getNonce(address)
+            .then(nonce => {
+                resolve(nonce);
+            })
+            .catch(err => {
+                console.log('Truffle getNonce: ', err);
+                reject(err);
+            });
+    });
+};
+
+exports.getPreSignedHash = (fn, value, extraData, gasPrice, nonce) => {
+    const TokenContractInstance = TokenContract.at(COINVEST_TOKEN_ADDRESS);
+
+    return new Promise((resolve, reject) => {
+        TokenContractInstance.getPreSignedHash(fn, INVESTMENT_CONTRACT_ADDRESS, value, extraData, gasPrice, nonce)
+            .then(txHash => {
+                resolve(txHash);
+            })
+            .catch(err => {
+                console.log('Truffle getPreSignedHash: ', err);
+                reject(err);
+            });
+    });
+};
+
+exports.approveAndCallPreSigned = (fn, value, extraData, gasPrice, nonce) => {
+    const TokenContractInstance = TokenContract.at(COINVEST_TOKEN_ADDRESS);
+
+    return new Promise((resolve, reject) => {
+        TokenContractInstance.approveAndCallPreSigned(fn, INVESTMENT_CONTRACT_ADDRESS, value, extraData, gasPrice, nonce)
+            .then(txHash => {
+                resolve(txHash);
+            })
+            .catch(err => {
+                console.log('Truffle approveAndCallPreSigned: ', err);
+                reject(err);
+            });
+    });
+};
+
+exports.recoverPreSigned = (sig, fn, value, extraData, gasPrice, nonce) => {
+    const TokenContractInstance = TokenContract.at(COINVEST_TOKEN_ADDRESS);
+
+    return new Promise((resolve, reject) => {
+        TokenContractInstance.recoverPreSigned(sig, fn, INVESTMENT_CONTRACT_ADDRESS, value, extraData, gasPrice, nonce)
+            .then(address => {
+                resolve(address);
+            })
+            .catch(err => {
+                console.log('Truffle recoverPreSigned: ', err);
+                reject(err);
+            });
+    });
+};
 
 exports.holdings = function (address) {
     const UserDataContractInstance = UserDataContract.at(INVESTMENT_CONTRACT_ADDRESS);
