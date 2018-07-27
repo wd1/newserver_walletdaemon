@@ -1,5 +1,5 @@
 const Web3 = require('web3');
-const web3 = new Web3(new Web3.providers.HttpProvider('http://geth.coinve.st:8545'));
+const web3 = new Web3(new Web3.providers.HttpProvider(process.env.GETH));
 
 const {
     DEMO_MASTER_ADDRESS,
