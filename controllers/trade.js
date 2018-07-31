@@ -526,7 +526,7 @@ const sellIndex = (account, order, pending) => {
                         return;
                     }
 
-                    const amountInWei = (new BigNumber(amount)).times(((new BigNumber(10)).exponentiatedBy(18))).toString();
+                    const amountInWei = (new BigNumber(amount + 5)).times(((new BigNumber(10)).exponentiatedBy(18))).toString();
                     const approveAndCallSig = Web3Service.encodeFunctionSignature({
                         "inputs": [
                             {
