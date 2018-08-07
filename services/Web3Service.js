@@ -49,8 +49,12 @@ exports.sign = (dataToSign, address, privateKey) => {
     return web3.eth.accounts.sign(dataToSign, privateKey);
 };
 
-exports.fromWei = (amount) => {
-    return web3.fromWei(amount, 'wei');
+exports.fromWei = (amount, unit = 'ether') => {
+    return web3.utils.fromWei(amount + '', unit);
+};
+
+exports.toWei = (amount, unit = 'ether') => {
+    return web3.utils.toWei(amount + '', unit);
 };
 
 exports.getBalance = (address) => {
