@@ -132,8 +132,6 @@ const getAssets = () => {
 
                     getCryptoCompareId();
                     // ToDo: Add functionality for our COIN token
-
-                    console.log('Coins updated successfully.');
                 }
             }
         } catch (err) {
@@ -182,8 +180,6 @@ const getCryptoCompareId = () => {
                     console.log('getCryptoCompareId: coinlist: ', err);
                 }
 
-                console.log('Updated coins cryptoCompareId successfully.');
-
                 // getCreatedAt();
             });
         } else {
@@ -216,8 +212,6 @@ const getCreatedAt = () => {
                                 console.log('getCryptoCompareId: save: ', err);
                             }
                         });
-
-                        console.log('Updated coins createdAt successfully.');
                     });
                 }
             });
@@ -261,8 +255,6 @@ const getPricesFromCryptoCompare = async () => {
                     }
                 });
             });
-
-            console.log('Updated coin prices successfully.');
         } catch (err) {
             console.log('getPricesFromCryptoCompare: pricemulti: ', err);
         }

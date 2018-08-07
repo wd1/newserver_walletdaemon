@@ -86,8 +86,6 @@ const getWallet = () => {
                                         }
                                     });
                                 });
-
-                                console.log('Wallet updated successfully.');
                             }
                         });
                     }
@@ -135,8 +133,6 @@ const getWallet = () => {
                                         }
                                     });
                                 });
-
-                                console.log('Token Wallet updated successfully.');
                             }
                         });
                     }
@@ -184,47 +180,45 @@ const getTransactionRequest = (account, page, coins) => {
                 const data = JSON.parse(response.body);
                 let allSaved = true;
 
-                for (let i = 0; i < data.result.length; i++) {
-                    const tx = data.result[i];
+                if (data.result && data.result.length > 0) {
+                    for (let i = 0; i < data.result.length; i++) {
+                        const tx = data.result[i];
 
-                    let action = '';
-                    if (tx.from === account.beneficiary) {
-                        action = 'send';
-                    } else if (tx.to === account.beneficiary) {
-                        action = 'receive';
-                    }
+                        let action = '';
+                        if (tx.from === account.beneficiary) {
+                            action = 'send';
+                        } else if (tx.to === account.beneficiary) {
+                            action = 'receive';
+                        }
 
-                    let coinIndex = coins.findIndex(coin => coin.symbol === tx.tokenSymbol);
-                    if (coinIndex > -1) {
-                        let tokenTransaction = await TokenTransactions.findOne({ accountId: account._id, txId: tx.hash }).exec();
-                        if (!tokenTransaction) {
-                            tokenTransaction = new TokenTransactions({
-                                accountId: account._id,
-                                coinId: coins[coinIndex]._id,
-                                amount: tx.value,
-                                timestamp: parseInt(tx.timeStamp),
-                                txId: tx.hash,
-                                from: tx.from,
-                                to: tx.to,
-                                action
-                            });
+                        let coinIndex = coins.findIndex(coin => coin.symbol === tx.tokenSymbol);
+                        if (coinIndex > -1) {
+                            let tokenTransaction = await TokenTransactions.findOne({ accountId: account._id, txId: tx.hash }).exec();
+                            if (!tokenTransaction) {
+                                tokenTransaction = new TokenTransactions({
+                                    accountId: account._id,
+                                    coinId: coins[coinIndex]._id,
+                                    amount: tx.value,
+                                    timestamp: parseInt(tx.timeStamp),
+                                    txId: tx.hash,
+                                    from: tx.from,
+                                    to: tx.to,
+                                    action
+                                });
 
-                            tokenTransaction.save(err => {
-                                if (err) {
-                                    console.log('getTokenTransactions: save: ', err);
-                                }
-                            });
+                                tokenTransaction.save(err => {
+                                    if (err) {
+                                        console.log('getTokenTransactions: save: ', err);
+                                    }
+                                });
 
-                            allSaved = false;
+                                allSaved = false;
+                            }
                         }
                     }
-                }
 
-                if (data.result.length > 0) {
                     getTransactionRequest(account, page + 1, coins);
                 }
-
-                console.log('TokenTransactions updated successfully.');
             } else {
                 getTransactionRequest(account, page, coins);
             }
@@ -270,51 +264,49 @@ const getEtherTransactionsRequest = (account, page, coin) => {
                 const data = JSON.parse(response.body);
                 let allSaved = true;
 
-                for (let i = 0; i < data.result.length; i++) {
-                    const tx = data.result[i];
+                if (data.result && data.result.length > 0) {
+                    for (let i = 0; i < data.result.length; i++) {
+                        const tx = data.result[i];
 
-                    if (tx.txreceipt_status !== '' && tx.value !== '0') {
-                        let action = '';
-                        if (tx.from === account.beneficiary) {
-                            action = 'send';
-                        } else if (tx.to === account.beneficiary) {
-                            action = 'receive';
-                        }
-
-                        try {
-                            let tokenTransaction = await TokenTransactions.findOne({ accountId: account._id, txId: tx.hash }).exec();
-                            if (!tokenTransaction) {
-                                tokenTransaction = new TokenTransactions({
-                                    accountId: account._id,
-                                    coinId: coin._id,
-                                    amount: tx.value,
-                                    timestamp: parseInt(tx.timeStamp),
-                                    txId: tx.hash,
-                                    from: tx.from,
-                                    to: tx.to,
-                                    action: action,
-                                    status: tx.txreceipt_status === '1' ? 'Success' : 'Fail'
-                                });
-
-                                tokenTransaction.save(err => {
-                                    if (err) {
-                                        console.log('getEtherTransactions: save: ', err);
-                                    }
-                                });
-
-                                allSaved = false;
+                        if (tx.txreceipt_status !== '' && tx.value !== '0') {
+                            let action = '';
+                            if (tx.from === account.beneficiary) {
+                                action = 'send';
+                            } else if (tx.to === account.beneficiary) {
+                                action = 'receive';
                             }
-                        } catch (err) {
-                            console.log('getEtherTransactions: find: ', err);
+
+                            try {
+                                let tokenTransaction = await TokenTransactions.findOne({ accountId: account._id, txId: tx.hash }).exec();
+                                if (!tokenTransaction) {
+                                    tokenTransaction = new TokenTransactions({
+                                        accountId: account._id,
+                                        coinId: coin._id,
+                                        amount: tx.value,
+                                        timestamp: parseInt(tx.timeStamp),
+                                        txId: tx.hash,
+                                        from: tx.from,
+                                        to: tx.to,
+                                        action: action,
+                                        status: tx.txreceipt_status === '1' ? 'Success' : 'Fail'
+                                    });
+
+                                    tokenTransaction.save(err => {
+                                        if (err) {
+                                            console.log('getEtherTransactions: save: ', err);
+                                        }
+                                    });
+
+                                    allSaved = false;
+                                }
+                            } catch (err) {
+                                console.log('getEtherTransactions: find: ', err);
+                            }
                         }
                     }
-                }
 
-                if (data.result.length !== 0) {
                     getEtherTransactionsRequest(account, page + 1, coin);
                 }
-
-                console.log('Ether Transactions updated successfully.');
             } else {
                 getEtherTransactionsRequest(account, page, coin);
             }
