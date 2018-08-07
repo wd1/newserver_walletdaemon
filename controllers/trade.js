@@ -222,146 +222,155 @@ const purchaseAsset = (account, order, pending) => {
 };
 
 const purchaseIndex = (account, order, pending) => {
-    Coins.findOne({ symbol: 'COIN' }, (err, co) => {
+    Indexes.findOne({ accountId: account._id, _id: order.indexId }, (err, index) => {
         if (err) {
-            console.log('purchaseIndex: Coins.findOne: ', err);
+            console.log('purchaseIndex: findOne: ', err);
             return;
         }
 
-        if (!co) {
-            console.log('*** COIN does not exist in database. ***');
-            return;
-        }
+        if (index) {
+            Coins.findOne({ symbol: 'COIN' }, (err, co) => {
+                if (err) {
+                    console.log('purchaseIndex: Coins.findOne: ', err);
+                    return;
+                }
 
-        // Get account wallet of COIN token
-        Wallets.findOne({ accountId: account._id, coinId: co._id }, async (err, wallet) => {
-            if (err) {
-                console.log('purchaseIndex: Wallets.findOne: ', err);
-                return;
-            }
+                if (!co) {
+                    console.log('*** COIN does not exist in database. ***');
+                    return;
+                }
 
-            if (!wallet) return;
+                // Get account wallet of COIN token
+                Wallets.findOne({ accountId: account._id, coinId: co._id }, async (err, wallet) => {
+                    if (err) {
+                        console.log('purchaseIndex: Wallets.findOne: ', err);
+                        return;
+                    }
 
-            if ((new BigNumber(pending.amountInWei)).isGreaterThan(new BigNumber(wallet.quantity))) return;
+                    if (!wallet) return;
 
-            TruffleService.getNonce(account.beneficiary)
-                .then(nonceBig => {
-                    const nonce = (new BigNumber(nonceBig)).toNumber();
+                    if ((new BigNumber(pending.amountInWei)).isGreaterThan(new BigNumber(wallet.quantity))) return;
 
-                    const approveAndCallSig = Web3Service.encodeFunctionSignature({
-                        "inputs": [
-                            {
-                                "name": "_spender",
-                                "type": "address"
-                            },
-                            {
-                                "name": "_amount",
-                                "type": "uint256"
-                            },
-                            {
-                                "name": "_data",
-                                "type": "bytes"
-                            }
-                        ],
-                        "name": "approveAndCall",
-                        "type": "function"
-                    });
-                    const extraData = Web3Service.encodeFunctionCall({
-                        "inputs": [
-                            {
-                                "name": "_beneficiary",
-                                "type": "address"
-                            },
-                            {
-                                "name": "_cryptoIds",
-                                "type": "uint256[]"
-                            },
-                            {
-                                "name": "_amounts",
-                                "type": "uint256[]"
-                            }
-                        ],
-                        "name": "buy",
-                        "type": "function"
-                    }, [account.beneficiary, pending.cryptoIds, pending.quantitiesInWei]);
+                    TruffleService.getNonce(account.beneficiary)
+                        .then(nonceBig => {
+                            const nonce = (new BigNumber(nonceBig)).toNumber();
 
-                    TruffleService.getPreSignedHash(approveAndCallSig, pending.amountInWei, extraData, 40000000000, nonce)
-                        .then(txHash => {
-                            const signed = Web3Service.sign(txHash, account.beneficiary, pending.input);
-                            const tempSign = signed.signature.substr(0, signed.signature.length - 2) + (signed.v === '0x1b' ? '00' : '01');
+                            const approveAndCallSig = Web3Service.encodeFunctionSignature({
+                                "inputs": [
+                                    {
+                                        "name": "_spender",
+                                        "type": "address"
+                                    },
+                                    {
+                                        "name": "_amount",
+                                        "type": "uint256"
+                                    },
+                                    {
+                                        "name": "_data",
+                                        "type": "bytes"
+                                    }
+                                ],
+                                "name": "approveAndCall",
+                                "type": "function"
+                            });
+                            const extraData = Web3Service.encodeFunctionCall({
+                                "inputs": [
+                                    {
+                                        "name": "_beneficiary",
+                                        "type": "address"
+                                    },
+                                    {
+                                        "name": "_cryptoIds",
+                                        "type": "uint256[]"
+                                    },
+                                    {
+                                        "name": "_amounts",
+                                        "type": "uint256[]"
+                                    }
+                                ],
+                                "name": "buy",
+                                "type": "function"
+                            }, [account.beneficiary, pending.cryptoIds, pending.quantitiesInWei]);
 
-                            TruffleService.approveAndCallPreSigned(tempSign, pending.amountInWei, extraData, 40000000000, nonce)
-                                .then(tx => {
-                                    const receipt = tx.receipt;
+                            TruffleService.getPreSignedHash(approveAndCallSig, pending.amountInWei, extraData, 40000000000, nonce)
+                                .then(txHash => {
+                                    const signed = Web3Service.sign(txHash, account.beneficiary, pending.input);
+                                    const tempSign = signed.signature.substr(0, signed.signature.length - 2) + (signed.v === '0x1b' ? '00' : '01');
 
-                                    if (receipt && receipt.transactionHash) {
-                                        order.status = 'Filled';
-                                        order.txId = receipt.transactionHash;
-                                        order.save(err => {
-                                            if (err) {
-                                                console.log('purchaseIndex: order.save: ', err);
-                                            }
-                                        });
+                                    TruffleService.approveAndCallPreSigned(tempSign, pending.amountInWei, extraData, 40000000000, nonce)
+                                        .then(tx => {
+                                            const receipt = tx.receipt;
 
-                                        index.txId = [receipt.transactionHash];
-                                        index.confirmed = true;
-                                        index.save(err => {
-                                            if (err) {
-                                                console.log('purchaseIndex: index.save: ', err);
-                                                return;
-                                            }
-
-                                            pending.assets.forEach((asset, idx) => {
-                                                const indexContains = new IndexContains({
-                                                    indexId: index._id,
-                                                    coinId: pending.coins[idx].id,
-                                                    percentage: asset.percentage,
-                                                    quantity: asset.quantity,
-                                                    amount: asset.quantity * pending.coins[idx].price
-                                                });
-
-                                                indexContains.save(err => {
+                                            if (receipt && receipt.transactionHash) {
+                                                order.status = 'Filled';
+                                                order.txId = receipt.transactionHash;
+                                                order.save(err => {
                                                     if (err) {
-                                                        console.log('purchaseIndex: indexContains.save: ', err);
+                                                        console.log('purchaseIndex: order.save: ', err);
                                                     }
                                                 });
-                                            });
-                                        });
 
-                                        const transaction = new Transactions({
-                                            orderId: order._id,
-                                            blockHash: receipt.blockHash,
-                                            blockNumber: receipt.blockNumber,
-                                            contractAddress: receipt.contractAddress,
-                                            cumulativeGasUsed: receipt.cumulativeGasUsed,
-                                            gasUsed: receipt.gasUsed,
-                                            from: receipt.from,
-                                            to: receipt.to,
-                                            status: receipt.status,
-                                            transactionHash: receipt.transactionHash,
-                                            transactionIndex: receipt.transactionIndex
-                                        });
-                                        transaction.save(err => {
-                                            if (err) {
-                                                console.log('purchaseIndex: transaction.save: ', err);
+                                                index.txId = [receipt.transactionHash];
+                                                index.confirmed = true;
+                                                index.save(err => {
+                                                    if (err) {
+                                                        console.log('purchaseIndex: index.save: ', err);
+                                                        return;
+                                                    }
+
+                                                    pending.assets.forEach((asset, idx) => {
+                                                        const indexContains = new IndexContains({
+                                                            indexId: index._id,
+                                                            coinId: pending.coins[idx].id,
+                                                            percentage: asset.percentage,
+                                                            quantity: asset.quantity,
+                                                            amount: asset.quantity * pending.coins[idx].price
+                                                        });
+
+                                                        indexContains.save(err => {
+                                                            if (err) {
+                                                                console.log('purchaseIndex: indexContains.save: ', err);
+                                                            }
+                                                        });
+                                                    });
+                                                });
+
+                                                const transaction = new Transactions({
+                                                    orderId: order._id,
+                                                    blockHash: receipt.blockHash,
+                                                    blockNumber: receipt.blockNumber,
+                                                    contractAddress: receipt.contractAddress,
+                                                    cumulativeGasUsed: receipt.cumulativeGasUsed,
+                                                    gasUsed: receipt.gasUsed,
+                                                    from: receipt.from,
+                                                    to: receipt.to,
+                                                    status: receipt.status,
+                                                    transactionHash: receipt.transactionHash,
+                                                    transactionIndex: receipt.transactionIndex
+                                                });
+                                                transaction.save(err => {
+                                                    if (err) {
+                                                        console.log('purchaseIndex: transaction.save: ', err);
+                                                    }
+                                                });
+
+                                                removePending(pending._id);
                                             }
+                                        })
+                                        .catch(err => {
+                                            throw(err);
                                         });
-
-                                        removePending(pending._id);
-                                    }
                                 })
                                 .catch(err => {
                                     throw(err);
                                 });
                         })
                         .catch(err => {
-                            throw(err);
+                            console.log('purchaseIndex: getNonce: ', err);
                         });
-                })
-                .catch(err => {
-                    console.log('purchaseIndex: getNonce: ', err);
                 });
-        });
+            });
+        }
     });
 };
 
@@ -488,7 +497,7 @@ const sellAsset = (account, order, pending) => {
 };
 
 const sellIndex = (account, order, pending) => {
-    Indexes.findOne({ accountId: account._id, _id: pending.indexId }, (err, index) => {
+    Indexes.findOne({ accountId: account._id, _id: order.indexId }, (err, index) => {
         if (err) {
             console.log('sellIndex: findOne: ', err);
             return;
