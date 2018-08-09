@@ -7,6 +7,8 @@ exports.FAUCET_DRIP_AMOUNT = 10000;
 exports.DEMO_MASTER_ADDRESS = '0x1dece1fe19ddac7ae715b78baacf1597554a8d41';
 exports.DEMO_MASTER_PASSPHRASE = 'a62b87e316c8e21910363fa23f0549e3';
 
+exports.ApiKey = 'R9M28NJ1V1K9VGVW6531HCV5UFX5G8NRVG';
+
 exports.Abi = [
     {
         "constant": false,
@@ -1625,7 +1627,7 @@ exports.UserDataAbi = [
 ];
 
 exports.cryptoIdToSymbol = [
-    // { symbol: 'COIN', smallestUnitName: 'wei', limit: 18 },
+    { symbol: 'COIN', smallestUnitName: 'wei', limit: 18 },
     { symbol: 'BTC', smallestUnitName: 'gwei', limit: 18 },
     { symbol: 'ETH', smallestUnitName: 'wei', limit: 18 },
     { symbol: 'XRP', smallestUnitName: 'szabo', limit: 18 },

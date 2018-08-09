@@ -24,27 +24,27 @@ exports.cancelPriceSchedule = () => {
 };
 
 const getAssets = () => {
-    Coins.findOne({ symbol: 'COIN' }, (err, coin) => {
-        if (err) {
-            console.log('getAssets: findOne: ', err);
-            return;
-        }
-
-        if (!coin) {
-            coin = new Coins({
-                name: 'Coinvest COIN V2 Token',
-                symbol: 'COIN',
-                price: 1,
-                limit: 18
-            });
-        }
-
-        coin.save(err => {
-            if (err) {
-                console.log('getAssets: save: ', err);
-            }
-        });
-    });
+    // Coins.findOne({ symbol: 'COIN' }, (err, coin) => {
+    //     if (err) {
+    //         console.log('getAssets: findOne: ', err);
+    //         return;
+    //     }
+    //
+    //     if (!coin) {
+    //         coin = new Coins({
+    //             name: 'Coinvest COIN V2 Token',
+    //             symbol: 'COIN',
+    //             price: 1,
+    //             limit: 18
+    //         });
+    //     }
+    //
+    //     coin.save(err => {
+    //         if (err) {
+    //             console.log('getAssets: save: ', err);
+    //         }
+    //     });
+    // });
 
     request('https://api.coinmarketcap.com/v2/listings', (err, response) => {
         if (err) {
@@ -228,7 +228,6 @@ const getPricesFromCryptoCompare = async () => {
     try {
         for (let i = 0; i < cryptoIdToSymbol.length; i++) {
             const coin = await Coins.findOne({ symbol: cryptoIdToSymbol[i].symbol }).exec();
-
             if (coin) {
                 coins.push(coin);
                 symbols += cryptoIdToSymbol[i].symbol + ',';
