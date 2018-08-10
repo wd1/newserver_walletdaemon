@@ -52,7 +52,7 @@ const runOrder = () => {
                         return;
                     }
 
-                    if (!wallet || wallet.quantity * co.price < 4.99) return;
+                    if (!wallet || wallet.quantity * co.price < 5) return;
 
                     Orders.find({ accountId: account._id, status: 'Open' }, (err, orders) => {
                         if (err) {
