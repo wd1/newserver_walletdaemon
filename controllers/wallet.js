@@ -13,9 +13,9 @@ let updateTokenTransaction;
 let updateEtherTransaction;
 
 exports.walletSchedule = () => {
-    updateWallet = schedule.scheduleJob('*/30 * * * * *', getWallet);
-    updateTokenTransaction = schedule.scheduleJob('*/30 * * * * *', getTokenTransactions);
-    updateEtherTransaction = schedule.scheduleJob('*/30 * * * * *', getEtherTransactions);
+    updateWallet = schedule.scheduleJob('45 * * * * *', getWallet);
+    updateTokenTransaction = schedule.scheduleJob('45 * * * * *', getTokenTransactions);
+    updateEtherTransaction = schedule.scheduleJob('45 * * * * *', getEtherTransactions);
 };
 
 exports.cancelWalletSchedule = () => {

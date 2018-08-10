@@ -85,6 +85,7 @@ const getAssets = () => {
 
                                                 if (coin) {
                                                     coin.set({
+                                                        name: dt.name,
                                                         totalSupply: dt.total_supply,
                                                         circulatingSupply: dt.circulating_supply,
                                                         maxSupply: dt.max_supply,
@@ -96,30 +97,65 @@ const getAssets = () => {
                                                         percentageChange7d: dt.quotes.USD.percent_change_7d,
                                                         lastUpdated: dt.last_updated
                                                     });
+
+                                                    coin.save(err => {
+                                                        if (err) {
+                                                            console.log('getAssets: save: ', err);
+                                                        }
+                                                    });
                                                 } else {
-                                                    coin = new Coins({
-                                                        name: dt.name,
-                                                        symbol: dt.symbol,
-                                                        totalSupply: dt.total_supply,
-                                                        circulatingSupply: dt.circulating_supply,
-                                                        maxSupply: dt.max_supply,
-                                                        price: dt.quotes.USD.price,
-                                                        marketCap: dt.quotes.USD.market_cap,
-                                                        volume24h: dt.quotes.USD.volume_24h,
-                                                        percentageChange1h: dt.quotes.USD.percent_change_1h,
-                                                        percentageChange24h: dt.quotes.USD.percent_change_24h,
-                                                        percentageChange7d: dt.quotes.USD.percent_change_7d,
-                                                        limit: 18,
-                                                        lastUpdated: dt.last_updated,
-                                                        coinMarketCapId: dt.id
+                                                    Coins.findOne({ name: dt.name }, (err, co) => {
+                                                        if (err) {
+                                                            console.log('getAssets: Coins.findOne: ', err);
+                                                            return;
+                                                        }
+
+                                                        if (co) {
+                                                            co.set({
+                                                                symbol: dt.symbol,
+                                                                totalSupply: dt.total_supply,
+                                                                circulatingSupply: dt.circulating_supply,
+                                                                maxSupply: dt.max_supply,
+                                                                price: dt.quotes.USD.price,
+                                                                marketCap: dt.quotes.USD.market_cap,
+                                                                volume24h: dt.quotes.USD.volume_24h,
+                                                                percentageChange1h: dt.quotes.USD.percent_change_1h,
+                                                                percentageChange24h: dt.quotes.USD.percent_change_24h,
+                                                                percentageChange7d: dt.quotes.USD.percent_change_7d,
+                                                                lastUpdated: dt.last_updated
+                                                            });
+
+                                                            co.save(err => {
+                                                                if (err) {
+                                                                    console.log('getAssets: co.save: ', err);
+                                                                }
+                                                            });
+                                                        } else {
+                                                            coin = new Coins({
+                                                                name: dt.name,
+                                                                symbol: dt.symbol,
+                                                                totalSupply: dt.total_supply,
+                                                                circulatingSupply: dt.circulating_supply,
+                                                                maxSupply: dt.max_supply,
+                                                                price: dt.quotes.USD.price,
+                                                                marketCap: dt.quotes.USD.market_cap,
+                                                                volume24h: dt.quotes.USD.volume_24h,
+                                                                percentageChange1h: dt.quotes.USD.percent_change_1h,
+                                                                percentageChange24h: dt.quotes.USD.percent_change_24h,
+                                                                percentageChange7d: dt.quotes.USD.percent_change_7d,
+                                                                limit: 18,
+                                                                lastUpdated: dt.last_updated,
+                                                                coinMarketCapId: dt.id
+                                                            });
+
+                                                            coin.save(err => {
+                                                                if (err) {
+                                                                    console.log('getAssets: coin.save: ', err);
+                                                                }
+                                                            });
+                                                        }
                                                     });
                                                 }
-
-                                                coin.save(err => {
-                                                    if (err) {
-                                                        console.log('getAssets: save: ', err);
-                                                    }
-                                                });
                                             });
                                         });
                                     }
