@@ -16,6 +16,7 @@ const coinsSchema = new mongoose.Schema({
     created: Number,
     lastUpdated: Number,
     coinMarketCapId: Number,
+    cryptoCompareId: Number,
     image: String
 }, { timestamps: true });
 
