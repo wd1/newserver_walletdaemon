@@ -237,7 +237,7 @@ const getCreatedAt = () => {
 
 const getPricesFromCryptoCompare = () => {
     const coinSymbols = cryptoIdToSymbol.map(crypto => crypto.symbol);
-    Coins.find({ _id: coinSymbols }, (err, coins) => {
+    Coins.find({ symbol: coinSymbols }, (err, coins) => {
         if (err) {
             console.log('getPricesFromCryptoCompare Coins.find: ', err);
             return;
