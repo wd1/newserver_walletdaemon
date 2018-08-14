@@ -265,7 +265,7 @@ const purchaseIndex = (account, order, pending, coins, coIndex, wallet) => {
 
                 cryptoIds.push(cryptoId + 1);
 
-                const quantity = (coins[coIndex].price * parseFloat(pending.amount) * pending.assets[i].percent / 100 / coins[coinIndex].price).toFixed(2);
+                const quantity = (coins[coIndex].price * parseFloat(pending.amount) * pending.assets[i].percent / 100 / coins[coinIndex].price);
                 quantities.push(quantity);
                 quantitiesInWei.push((new BigNumber(quantity)).times(((new BigNumber(10)).exponentiatedBy(18))).toNumber());
 
