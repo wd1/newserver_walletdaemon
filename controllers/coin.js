@@ -24,28 +24,6 @@ exports.cancelPriceSchedule = () => {
 };
 
 const getAssets = () => {
-    // Coins.findOne({ symbol: 'COIN' }, (err, coin) => {
-    //     if (err) {
-    //         console.log('getAssets: findOne: ', err);
-    //         return;
-    //     }
-    //
-    //     if (!coin) {
-    //         coin = new Coins({
-    //             name: 'Coinvest COIN V2 Token',
-    //             symbol: 'COIN',
-    //             price: 1,
-    //             limit: 18
-    //         });
-    //     }
-    //
-    //     coin.save(err => {
-    //         if (err) {
-    //             console.log('getAssets: save: ', err);
-    //         }
-    //     });
-    // });
-
     request('https://api.coinmarketcap.com/v2/listings', (err, response) => {
         if (err) {
             console.log('getAssets: coinmarketcap-listings: ', err);
@@ -257,41 +235,38 @@ const getCreatedAt = () => {
     }
 };
 
-const getPricesFromCryptoCompare = async () => {
-    let coins = [];
-    let symbols = '';
-
-    try {
-        for (let i = 0; i < cryptoIdToSymbol.length; i++) {
-            const coin = await Coins.findOne({ symbol: cryptoIdToSymbol[i].symbol }).exec();
-            if (coin) {
-                coins.push(coin);
-                symbols += cryptoIdToSymbol[i].symbol + ',';
-            }
-        }
-    } catch (err) {
-        console.log('getPricesFromCryptoCompare: catch: ', err);
-        return;
-    }
-
-    request('https://min-api.cryptocompare.com/data/pricemulti?tsyms=USD,EUR&fsyms=' + symbols, (err, response) => {
+const getPricesFromCryptoCompare = () => {
+    const coinSymbols = cryptoIdToSymbol.map(crypto => crypto.symbol);
+    Coins.find({ _id: coinSymbols }, (err, coins) => {
         if (err) {
-            console.log('getPricesFromCryptoCompare: ', err);
+            console.log('getPricesFromCryptoCompare Coins.find: ', err);
             return;
         }
 
-        try {
-            const body = JSON.parse(response.body);
-            coins.forEach(coin => {
-                coin.price = body[coin.symbol]['USD'];
-                coin.save(err => {
-                    if (err) {
-                        console.log('getPricesFromCryptoCompare: save: ', err);
-                    }
-                });
+        if (coins && coins.length > 0) {
+            const symbols = coins.map(coin => coin.symbol).join(',');
+
+            request('https://min-api.cryptocompare.com/data/pricemulti?tsyms=USD,EUR&fsyms=' + symbols, (err, response) => {
+                if (err) {
+                    console.log('getPricesFromCryptoCompare: ', err);
+                    return;
+                }
+
+                try {
+                    const body = JSON.parse(response.body);
+
+                    coins.forEach(coin => {
+                        coin.price = body[coin.symbol]['USD'];
+                        coin.save(err => {
+                            if (err) {
+                                console.log('getPricesFromCryptoCompare: save: ', err);
+                            }
+                        });
+                    });
+                } catch (err) {
+                    console.log('getPricesFromCryptoCompare: pricemulti: ', err);
+                }
             });
-        } catch (err) {
-            console.log('getPricesFromCryptoCompare: pricemulti: ', err);
         }
     });
 };

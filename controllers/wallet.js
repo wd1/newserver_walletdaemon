@@ -37,7 +37,7 @@ exports.cancelEtherTransactionSchedule = () => {
 };
 
 const getWallet = () => {
-    Accounts.find().lean().exec((err, accounts) => {
+    Accounts.find({}, 'beneficiary', { lean: true }, (err, accounts) => {
         if (err) {
             console.log('getWallet: find: ', err);
             return;
@@ -57,7 +57,7 @@ const getWallet = () => {
                     if (response.statusCode === 200) {
                         const data = JSON.parse(response.body);
 
-                        Coins.findOne({ symbol: 'ETH' }).lean().exec((err, coin) => {
+                        Coins.findOne({ symbol: 'ETH' }, '', { lean: true }, (err, coin) => {
                             if (err) {
                                 console.log('getWallet: Coins.findOne: ', err);
                                 return;
@@ -104,7 +104,7 @@ const getWallet = () => {
                     if (response.statusCode === 200) {
                         const data = JSON.parse(response.body);
 
-                        Coins.findOne({ symbol: 'COIN' }).lean().exec((err, coin) => {
+                        Coins.findOne({ symbol: 'COIN' }, '', { lean: true }, (err, coin) => {
                             if (err) {
                                 console.log('getWalletToken: Coins.findOne: ', err);
                                 return;
@@ -145,14 +145,14 @@ const getWallet = () => {
 };
 
 const getTokenTransactions = () => {
-    Coins.find().lean().exec((err, coins) => {
+    Coins.find({}, 'symbol', { lean: true }, (err, coins) => {
         if (err) {
             console.log('getTokenTransactions: Coins.find: ', err);
             return;
         }
 
         if (coins && coins.length > 0) {
-            Accounts.find().lean().exec((err, accounts) => {
+            Accounts.find({}, 'beneficiary', { lean: true }, (err, accounts) => {
                 if (err) {
                     console.log('getTokenTransactions: Accounts.find: ', err);
                     return;
@@ -229,14 +229,14 @@ const getTransactionRequest = (account, page, coins) => {
 };
 
 const getEtherTransactions = () => {
-    Coins.findOne({ symbol: 'ETH' }).lean().exec((err, coin) => {
+    Coins.findOne({ symbol: 'ETH' }, 'symbol', { lean: true }, (err, coin) => {
         if (err) {
             console.log('getEtherTransactions: Coins.findOne: ', err);
             return;
         }
 
         if (coin) {
-            Accounts.find().lean().exec((err, accounts) => {
+            Accounts.find({}, 'beneficiary', { lean: true }, (err, accounts) => {
                 if (err) {
                     console.log('getEtherTransactions: Accounts.find: ', err);
                     return;
