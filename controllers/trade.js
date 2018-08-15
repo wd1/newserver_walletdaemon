@@ -124,6 +124,8 @@ const purchaseAsset = (account, order, pending, coins, coIndex, wallet) => {
     const cryptoId = cryptoIdToSymbol.findIndex(crypto => crypto.symbol === coins[coinIndex].symbol);
     if (cryptoId === -1) return;
 
+    if (order.price < coins[coinIndex].price) return;
+
     const amount = coins[coinIndex].price * order.quantity;
     const amountInWei = Web3Service.toWei((amount + 4.99) / coins[coIndex].price);
 
@@ -407,6 +409,8 @@ const sellAsset = (account, order, pending, coins, coIndex) => {
 
     const cryptoId = cryptoIdToSymbol.findIndex(crypto => crypto.symbol === coins[coinIndex].symbol);
     if (cryptoId === -1) return;
+
+    if (order.price < coins[coinIndex].price) return;
 
     Assets.findOne({ _id: pending.assetId, accountId: account._id }, (err, asset) => {
         if (err) {
