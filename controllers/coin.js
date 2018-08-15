@@ -4,16 +4,23 @@ const schedule = require('node-schedule');
 const Coins = require('../models/Coins');
 const { cryptoIdToSymbol } = require('../services/Config');
 
-let updateAsset, updateCoinPrices;
+let updateAsset, updateCryptoCompareId, updateCoinPrices;
 
 exports.coinSchedule = () => {
     updateAsset = schedule.scheduleJob('*/1 * * * *', getAssets);
+    updateCryptoCompareId = schedule.scheduleJob('*/1 * * * *', getCryptoCompareId);
     updateCoinPrices = schedule.scheduleJob('*/1 * * * *', getPricesFromCryptoCompare);
 };
 
 exports.cancelAssetSchedule = () => {
     if (updateAsset) {
         updateAsset.cancel();
+    }
+};
+
+exports.cancelCryptoCompareSchedule = () => {
+    if (updateCryptoCompareId) {
+        updateCryptoCompareId.cancel();
     }
 };
 
@@ -143,9 +150,6 @@ const getAssets = () => {
                             }
                         });
                     }
-
-                    getCryptoCompareId();
-                    // ToDo: Add functionality for our COIN token
                 }
             }
         } catch (err) {
