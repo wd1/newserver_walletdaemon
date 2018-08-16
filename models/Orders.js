@@ -4,6 +4,7 @@ const ordersSchema = new mongoose.Schema({
     accountId: String,
     coinId: String,
     indexId: String,
+    price: { type: Number, default: 0.0 },
     quantity: { type: Number, default: 0.0 },
     amount: { type: Number, default: 0.0 },
     timing: String,
