@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const ordersSchema = new mongoose.Schema({
     accountId: String,
+    assetId: String,
     coinId: String,
     indexId: String,
     price: { type: Number, default: 0.0 },
@@ -11,6 +12,7 @@ const ordersSchema = new mongoose.Schema({
     status: String,
     type: String,
     action: String,
+    receipt: {},
     txId: String,
     timestamp: Number
 }, { timestamps: true });

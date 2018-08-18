@@ -61,11 +61,10 @@ exports.getBalance = (address) => {
     return new Promise((resolve, reject) => {
         web3.eth.getBalance(address, (err, weiBalance) => {
             if (err) {
-                console.log('getBalance: ', err);
                 reject(err);
             }
 
-            resolve({ wei: weiBalance, eth: web3.utils.fromWei(weiBalance) });
+            resolve(weiBalance);
         });
     });
 };

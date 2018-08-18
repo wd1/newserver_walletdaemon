@@ -159,7 +159,6 @@ exports.coinBalance = (address) => {
                 }
             })
             .catch(err => {
-                console.log('Truffle coinBalance: ', err);
                 reject(err);
             });
     });
