@@ -12,7 +12,15 @@ const ordersSchema = new mongoose.Schema({
     status: String,
     type: String,
     action: String,
-    receipt: {},
+    receipt: {
+        contractAddress: String,
+        cumulativeGasUsed: { type: Number, default: 0.0 },
+        gasUsed: { type: Number, default: 0.0 },
+        from: String,
+        to: String,
+        status: String,
+        transactionHash: String,
+    },
     txId: String,
     timestamp: Number
 }, { timestamps: true });

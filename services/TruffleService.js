@@ -163,3 +163,16 @@ exports.coinBalance = (address) => {
             });
     });
 };
+
+exports.eventsWatch = (fromBlock) => {
+    const InvestmentContractInstance = InvestmentContract.at(INVESTMENT_CONTRACT_ADDRESS);
+    const events = InvestmentContractInstance.allEvents({ fromBlock: fromBlock, toBlock: 'latest' });
+
+    return new Promise((resolve, reject) => {
+        events.get((err, response) => {
+            if (err) reject(err);
+
+            resolve(response);
+        });
+    });
+};
