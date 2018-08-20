@@ -318,7 +318,7 @@ const getTransactionRequest = (account, page, coins) => {
 
                         let coinIndex = coins.findIndex(coin => coin.symbol === tx.tokenSymbol);
                         if (coinIndex > -1) {
-                            let tokenTransaction = await TokenTransactions.findOne({ accountId: account._id, txId: tx.hash }).exec();
+                            let tokenTransaction = await TokenTransactions.findOne({ accountId: account._id, coinId: coins[coinIndex]._id, amount: tx.value, txId: tx.hash }).exec();
                             if (!tokenTransaction) {
                                 tokenTransaction = new TokenTransactions({
                                     accountId: account._id,
@@ -402,7 +402,7 @@ const getEtherTransactionsRequest = (account, page, coin) => {
                             }
 
                             try {
-                                let tokenTransaction = await TokenTransactions.findOne({ accountId: account._id, txId: tx.hash }).exec();
+                                let tokenTransaction = await TokenTransactions.findOne({ accountId: account._id, coinId: coin._id, amount: tx.value, txId: tx.hash }).exec();
                                 if (!tokenTransaction) {
                                     tokenTransaction = new TokenTransactions({
                                         accountId: account._id,
