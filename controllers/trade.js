@@ -19,12 +19,6 @@ const TruffleService = require('../services/TruffleService');
 let updateOrder, eventsMg;
 let processing = false;
 
-async function aForEach(array, callback) {
-    for (let index = 0; index < array.length; index++) {
-      await callback(array[index], index, array)
-    }
-  }
-
 exports.tradeSchedule = () => {
     updateOrder = schedule.scheduleJob('*/2 * * * *', runOrder);
     eventsMg = schedule.scheduleJob('*/30 * * * * *', eventsManager);
@@ -41,6 +35,12 @@ exports.cancelEventsSchedule = () => {
         eventsMg.cancel();
     }
 };
+
+async function asyncForEach(array, callback) {
+    for (let index = 0; index < array.length; index++) {
+      await callback(array[index], index, array)
+    }
+  }
 
 const runOrder = () => {
     Coins.find({}, 'symbol price', { lean: true }, (err, coins) => {
@@ -243,7 +243,7 @@ const purchaseIndex = (account, order, pending, coins, coIndex, wallet) => {
             if (coinIndex > -1) {
                 coinList.push(coins[coinIndex]);
 
-                cryptoIds.push(cryptoId + 1);
+                cryptoIds.push(cryptoId);
 
                 const quantity = (coins[coIndex].price * parseFloat(pending.amount) * pending.assets[i].percent / 100 / coins[coinIndex].price);
                 quantities.push(quantity);
@@ -478,7 +478,7 @@ const sellIndex = (account, order, pending, coins, coIndex) => {
                             const cryptoId = cryptoIdToSymbol.findIndex(crypto => crypto.symbol === coins[coinIndex].symbol);
                             if (cryptoId === -1) return;
 
-                            cryptoIds.push(cryptoId + 1);
+                            cryptoIds.push(cryptoId);
                             quantities.push(indexContains[i].quantity);
                             quantitiesInWei.push((new BigNumber(indexContains[i].quantity)).times(((new BigNumber(10)).exponentiatedBy(18))).toNumber());
                             amount += coins[coinIndex].price * indexContains[i].quantity;
@@ -570,7 +570,7 @@ const removePending = (orderId) => {
 
 let fromBlock = 0;
 let totalEvents = [];
-eventsManager = () => {
+const eventsManager = () => {
     if(processing) {
         console.log("Still processing...")
         return;
@@ -586,10 +586,11 @@ eventsManager = () => {
                 .then(events => {
                     let prevLength = totalEvents.length;
                     totalEvents = totalEvents.concat(events);
-                    
+
                     const process = async () => {
+                        console.log("Starting", new Date());
                         processing = true;
-                        await asForEach(events, async (e, idx) => {
+                        await asyncForEach(events, async (e, idx) => {
                             if (e.event && e.event === 'newOraclizeQuery') return;
 
                             if (e.data) {
@@ -803,11 +804,10 @@ eventsManager = () => {
                                 }
                             }
                         });
+                        console.log("Finished", new Date());
                         processing = false;
                     };
                     process();
-
-                    
                 })
                 .catch(err => {
                     console.log('eventsManager: ', err);
