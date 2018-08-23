@@ -704,7 +704,7 @@ const eventsManager = () => {
                                                                                     });
                                                                                 } else {
                                                                                     Assets.findOne({ _id: order.assetId, accountId: order.accountId }, (err, asset) => {
-                                                                                        if (asset.quantity === quantity) {
+                                                                                        if (asset.quantity === order.quantity) {
                                                                                             // Delete asset in case of selling whole amount of asset
                                                                                             Assets.deleteOne({ _id: asset._id }, err => {
                                                                                                 if (err) {
