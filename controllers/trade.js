@@ -112,13 +112,6 @@ const runOrder = () => {
                                                 sellIndex(account, order, pending, coins, coIndex);
                                                 break;
                                         }
-                                    } else {
-                                        order.status = 'Failed';
-                                        order.save(err => {
-                                            if (err) {
-                                                console.log('runOrder: order.save: ', err);
-                                            }
-                                        });
                                     }
                                 });
                             });
