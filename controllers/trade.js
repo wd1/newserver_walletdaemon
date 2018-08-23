@@ -622,12 +622,8 @@ const eventsManager = () => {
                             if (e.event && e.event === 'newOraclizeQuery') return;
 
                             if (e.data && e.transactionHash) {
-                                Orders.findOne({ txId: e.transactionHash }, { lean: true }, async (err, o) => {
-                                    if (err) {
-                                        console.log('eventsManager Orders.findOne: ', err);
-                                        return;
-                                    }
-
+                                try {
+                                    const o = await Orders.findOne({ txId: e.transactionHash }, { lean: true }).exec();
                                     if (!o) {
                                         const address = '0x' + e.topics[1].substring(26);
                                         const account = await Accounts.findOne({ beneficiary: address }, 'beneficiary', { lean: true }).exec();
@@ -853,7 +849,9 @@ const eventsManager = () => {
                                             }
                                         }
                                     }
-                                });
+                                } catch (err) {
+                                    console.log('eventsManager: ', err);
+                                }
                             }
                         });
                         console.log("Finished", new Date());
