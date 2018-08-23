@@ -623,14 +623,10 @@ const eventsManager = () => {
 
                             if (e.data && e.transactionHash) {
                                 try {
-                                    console.log('First: ', new Date());
                                     const o = await Orders.findOne({ txId: e.transactionHash }, { lean: true }).exec();
-                                    console.log('First finish: ', new Date());
                                     if (!o) {
                                         const address = '0x' + e.topics[1].substring(26);
-                                        console.log('Second: ', new Date());
                                         const account = await Accounts.findOne({ beneficiary: address }, 'beneficiary', { lean: true }).exec();
-                                        console.log('Second finish: ', new Date());
 
                                         if (account) {
                                             let type = 'asset';
@@ -661,13 +657,11 @@ const eventsManager = () => {
                                                 let i = prevLength + idx;
                                                 while (i > 0) {
                                                     if (totalEvents[i].event && totalEvents[i].event === 'newOraclizeQuery') {
-                                                        console.log('Third: ', new Date());
                                                         const order = await Orders.findOne({
                                                             accountId: account._id,
                                                             'receipt.transactionHash': totalEvents[i].transactionHash,
                                                             status: 'Open'
                                                         }).exec();
-                                                        console.log('Third finish: ', new Date());
 
                                                         if (order) {
                                                             if ((type === 'asset' && order.coinId) || (type === 'index' && order.indexId)) {
