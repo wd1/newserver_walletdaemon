@@ -20,6 +20,8 @@ const ordersSchema = new mongoose.Schema({
         to: String,
         status: String,
         transactionHash: String,
+        blockHash: String,
+        blockNumber: { type: Number, default: 0 }
     },
     txId: String,
     timestamp: Number

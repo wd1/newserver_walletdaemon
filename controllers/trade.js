@@ -594,274 +594,249 @@ async function asyncForEach(array, callback) {
     }
 }
 
-let fromBlock = 0;
-let totalEvents = [];
-const eventsManager = () => {
+const eventsManager = async () => {
     if (processing) {
         console.log("Still processing...");
         return;
     }
 
-    Coins.find({}, null, { lean: true }, (err, coins) => {
-        if (err) {
-            console.log('eventsManager Coins.find: ', err);
-            return;
-        }
-
+    try {
+        const coins = await Coins.find({}, null, { lean: true }).exec();
         if (coins && coins.length > 0) {
-            TruffleService.eventsWatch(fromBlock)
-                .then(events => {
-                    let prevLength = totalEvents.length;
-                    totalEvents = totalEvents.concat(events);
-
-                    const process = async () => {
+            const orders = await Orders.find({ status: 'Open', 'receipt.transactionHash': { $ne: null } }).exec();
+            if (orders && orders.length > 0) {
+                TruffleService.eventsWatch(order.receipt.blockNumber)
+                    .then(async events => {
                         console.log("Starting", new Date());
                         processing = true;
 
-                        await asyncForEach(events, async (e, idx) => {
-                            if (e.event && e.event === 'newOraclizeQuery') return;
+                        await asyncForEach(orders, async order => {
+                            const queryId = events.findIndex(e => (e.event && e.event === 'newOraclizeQuery' && e.transactionHash === order.receipt.transactionHash));
+                            if (queryId > -1) {
+                                for (let i = queryId + 1; i < events.length; i++) {
+                                    const e = events[i];
+                                    if (e.data && e.transactionHash) {
+                                        const o = await Orders.findOne({ txId: e.transactionHash }, { lean: true }).exec();
+                                        if (!o) {
+                                            const address = '0x' + e.topics[1].substring(26);
 
-                            if (e.data && e.transactionHash) {
-                                try {
-                                    const o = await Orders.findOne({ txId: e.transactionHash }, { lean: true }).exec();
-                                    if (!o) {
-                                        const address = '0x' + e.topics[1].substring(26);
-                                        const account = await Accounts.findOne({ beneficiary: address }, 'beneficiary', { lean: true }).exec();
+                                            const account = await Accounts.findOne({ beneficiary: address }, 'beneficiary', { lean: true }).exec();
+                                            if (account && account._id == order.accountId) {
+                                                let type = 'asset';
+                                                let cryptoIds = [];
+                                                let quantities = [];
+                                                let prices = [];
 
-                                        if (account) {
-                                            let type = 'asset';
-                                            let cryptoIds = [];
-                                            let quantities = [];
-                                            let prices = [];
+                                                const params = e.data.substring(2).match(/.{1,64}/g);
+                                                if (params.length > 3) {
+                                                    const cryptoCount = parseInt(hexToDec(params[3]));
+                                                    if (cryptoCount > 1) {
+                                                        type = 'index';
+                                                    }
+                                                    for (let i = 4; i < 4 + cryptoCount; i++) {
+                                                        cryptoIds.push(parseInt(hexToDec(params[i])));
+                                                    }
 
-                                            const params = e.data.substring(2).match(/.{1,64}/g);
-                                            if (params.length > 3) {
-                                                const cryptoCount = parseInt(hexToDec(params[3]));
-                                                if (cryptoCount > 1) {
-                                                    type = 'index';
+                                                    const quantityCount = parseInt(hexToDec(params[4 + cryptoCount]));
+                                                    for (let i = 5 + cryptoCount; i < 5 + cryptoCount + quantityCount; i++) {
+                                                        quantities.push(Web3Service.fromWei(hexToDec(params[i])));
+                                                    }
+
+                                                    const priceCount = parseInt(hexToDec(params[5 + cryptoCount + quantityCount]));
+                                                    for (let i = 6 + cryptoCount + quantityCount; i < 6 + cryptoCount + quantityCount + priceCount; i++) {
+                                                        prices.push(Web3Service.fromWei(hexToDec(params[i])));
+                                                    }
                                                 }
-                                                for (let i = 4; i < 4 + cryptoCount; i++) {
-                                                    cryptoIds.push(parseInt(hexToDec(params[i])));
-                                                }
 
-                                                const quantityCount = parseInt(hexToDec(params[4 + cryptoCount]));
-                                                for (let i = 5 + cryptoCount; i < 5 + cryptoCount + quantityCount; i++) {
-                                                    quantities.push(Web3Service.fromWei(hexToDec(params[i])));
-                                                }
+                                                if ((type === 'asset' && order.coinId) || (type === 'index' && order.indexId)) {
+                                                    if (order.coinId) {
+                                                        const coinIdx = coins.findIndex(coin => coin.symbol === cryptoIdToSymbol[cryptoIds[0]].symbol);
+                                                        if (coinIdx > -1) {
+                                                            if (coins[coinIdx]._id == order.coinId && parseFloat(order.quantity).toFixed(8) === parseFloat(quantities[0]).toFixed(8)) {
+                                                                order.txId = e.transactionHash;
+                                                                order.status = 'Filled';
+                                                                order.save(err => {
+                                                                    if (err) {
+                                                                        console.log('eventsManager: order.save: ', err);
+                                                                    }
+                                                                });
 
-                                                const priceCount = parseInt(hexToDec(params[5 + cryptoCount + quantityCount]));
-                                                for (let i = 6 + cryptoCount + quantityCount; i < 6 + cryptoCount + quantityCount + priceCount; i++) {
-                                                    prices.push(Web3Service.fromWei(hexToDec(params[i])));
-                                                }
+                                                                if (order.action === 'Buy') {
+                                                                    // Create asset
+                                                                    const asset = new Assets({
+                                                                        accountId: order.accountId,
+                                                                        coinId: order.coinId,
+                                                                        quantity: order.quantity,
+                                                                        amount: order.amount,
+                                                                        orderType: order.type,
+                                                                        txId: [e.transactionHash],
+                                                                        timestamp: Math.round((new Date()).getTime() / 1000)
+                                                                    });
+                                                                    asset.save(err => {
+                                                                        if (err) {
+                                                                            console.log('eventsManager: asset.save: ', err);
+                                                                        }
+                                                                    });
+                                                                } else {
+                                                                    Assets.findOne({ _id: order.assetId, accountId: order.accountId }, (err, asset) => {
+                                                                        if (asset.quantity === order.quantity) {
+                                                                            // Delete asset in case of selling whole amount of asset
+                                                                            Assets.deleteOne({ _id: asset._id }, err => {
+                                                                                if (err) {
+                                                                                    console.log('eventsManager: Assets.deleteOne: ', err);
+                                                                                }
+                                                                            });
+                                                                        } else {
+                                                                            // Update asset amount and quantity
+                                                                            asset.quantity -= order.quantity;
+                                                                            asset.amount -= order.amount;
+                                                                            asset.txId.push(e.transactionHash);
+                                                                            asset.orderType = order.type;
+                                                                            asset.save(err => {
+                                                                                if (err) {
+                                                                                    console.log('eventsManager: asset.save: ', err);
+                                                                                }
+                                                                            });
+                                                                        }
+                                                                    });
+                                                                }
 
-                                                let i = prevLength + idx;
-                                                while (i > 0) {
-                                                    if (totalEvents[i].event && totalEvents[i].event === 'newOraclizeQuery') {
-                                                        const order = await Orders.findOne({
+                                                                // Create transaction
+                                                                const transaction = new Transactions({
+                                                                    orderId: order._id,
+                                                                    blockHash: e.blockHash,
+                                                                    blockNumber: e.blockNumber,
+                                                                    contractAddress: order.receipt.contractAddress,
+                                                                    cumulativeGasUsed: order.receipt.cumulativeGasUsed,
+                                                                    gasUsed: order.receipt.gasUsed,
+                                                                    from: order.receipt.from,
+                                                                    to: order.receipt.to,
+                                                                    status: order.receipt.status,
+                                                                    transactionHash: e.transactionHash,
+                                                                    transactionIndex: e.transactionIndex
+                                                                });
+                                                                transaction.save(err => {
+                                                                    if (err) {
+                                                                        console.log('eventsManager: transaction.save: ', err);
+                                                                    }
+                                                                });
+
+                                                                removePending(order._id);
+
+                                                                // console.log('Type: ', type);
+                                                                // console.log('Action: ', order.action);
+                                                                // console.log('Count: ', cryptoCount);
+                                                                // console.log('Ids: ', cryptoIds.join(','));
+                                                                // console.log('Quantities: ', quantities.join(','));
+                                                                // console.log('Prices: ', prices.join(','));
+                                                                // console.log('\n');
+
+                                                                break;
+                                                            }
+                                                        }
+                                                    } else {
+                                                        const index = await Indexes.findOne({
+                                                            _id: order.indexId,
                                                             accountId: account._id,
-                                                            'receipt.transactionHash': totalEvents[i].transactionHash,
-                                                            status: 'Open'
+                                                            confirmed: (order.action !== 'Buy')
                                                         }).exec();
 
-                                                        if (order) {
-                                                            if ((type === 'asset' && order.coinId) || (type === 'index' && order.indexId)) {
-                                                                if (order.coinId) {
-                                                                    const coinIdx = coins.findIndex(coin => coin.symbol === cryptoIdToSymbol[cryptoIds[0]].symbol);
+                                                        if (index) {
+                                                            const indexContains = await IndexContains.find({ indexId: index._id }, null, { lean: true }).exec();
+                                                            if (indexContains && indexContains.length === cryptoCount) {
+                                                                let match = true;
+                                                                for (let j = 0; j < cryptoIds.length; j++) {
+                                                                    const coinIdx = coins.findIndex(coin => coin.symbol === cryptoIdToSymbol[cryptoIds[j]].symbol);
                                                                     if (coinIdx > -1) {
-                                                                        if (coins[coinIdx]._id == order.coinId && parseFloat(order.quantity).toFixed(8) === parseFloat(quantities[0]).toFixed(8)) {
-                                                                            order.txId = e.transactionHash;
-                                                                            order.status = 'Filled';
-                                                                            order.save(err => {
-                                                                                if (err) {
-                                                                                    console.log('eventsManager: order.save: ', err);
-                                                                                }
-                                                                            });
-
-                                                                            if (order.action === 'Buy') {
-                                                                                // Create asset
-                                                                                const asset = new Assets({
-                                                                                    accountId: order.accountId,
-                                                                                    coinId: order.coinId,
-                                                                                    quantity: order.quantity,
-                                                                                    amount: order.amount,
-                                                                                    orderType: order.type,
-                                                                                    txId: [e.transactionHash],
-                                                                                    timestamp: Math.round((new Date()).getTime() / 1000)
-                                                                                });
-                                                                                asset.save(err => {
-                                                                                    if (err) {
-                                                                                        console.log('eventsManager: asset.save: ', err);
-                                                                                    }
-                                                                                });
-                                                                            } else {
-                                                                                Assets.findOne({ _id: order.assetId, accountId: order.accountId }, (err, asset) => {
-                                                                                    if (asset.quantity === order.quantity) {
-                                                                                        // Delete asset in case of selling whole amount of asset
-                                                                                        Assets.deleteOne({ _id: asset._id }, err => {
-                                                                                            if (err) {
-                                                                                                console.log('eventsManager: Assets.deleteOne: ', err);
-                                                                                            }
-                                                                                        });
-                                                                                    } else {
-                                                                                        // Update asset amount and quantity
-                                                                                        asset.quantity -= order.quantity;
-                                                                                        asset.amount -= order.amount;
-                                                                                        asset.txId.push(e.transactionHash);
-                                                                                        asset.orderType = order.type;
-                                                                                        asset.save(err => {
-                                                                                            if (err) {
-                                                                                                console.log('eventsManager: asset.save: ', err);
-                                                                                            }
-                                                                                        });
-                                                                                    }
-                                                                                });
-                                                                            }
-
-                                                                            // Create transaction
-                                                                            const transaction = new Transactions({
-                                                                                orderId: order._id,
-                                                                                blockHash: e.blockHash,
-                                                                                blockNumber: e.blockNumber,
-                                                                                contractAddress: order.receipt.contractAddress,
-                                                                                cumulativeGasUsed: order.receipt.cumulativeGasUsed,
-                                                                                gasUsed: order.receipt.gasUsed,
-                                                                                from: order.receipt.from,
-                                                                                to: order.receipt.to,
-                                                                                status: order.receipt.status,
-                                                                                transactionHash: e.transactionHash,
-                                                                                transactionIndex: e.transactionIndex
-                                                                            });
-                                                                            transaction.save(err => {
-                                                                                if (err) {
-                                                                                    console.log('eventsManager: transaction.save: ', err);
-                                                                                }
-                                                                            });
-
-                                                                            removePending(order._id);
-
-                                                                            // console.log('Type: ', type);
-                                                                            // console.log('Action: ', order.action);
-                                                                            // console.log('Count: ', cryptoCount);
-                                                                            // console.log('Ids: ', cryptoIds.join(','));
-                                                                            // console.log('Quantities: ', quantities.join(','));
-                                                                            // console.log('Prices: ', prices.join(','));
-                                                                            // console.log('\n');
-
-                                                                            fromBlock = e.blockNumber;
-
+                                                                        const indexContainIdx = indexContains.findIndex(ic => ic.coinId == coins[coinIdx]._id && parseFloat(ic.quantity).toFixed(8) === parseFloat(quantities[j]).toFixed(8));
+                                                                        if (indexContainIdx === -1) {
+                                                                            match = false;
                                                                             break;
                                                                         }
                                                                     }
-                                                                } else {
-                                                                    const index = await Indexes.findOne({
-                                                                        _id: order.indexId,
-                                                                        accountId: account._id,
-                                                                        confirmed: false
-                                                                    }).exec();
+                                                                }
 
-                                                                    if (index) {
-                                                                        const indexContains = await IndexContains.find({ indexId: index._id }, null, { lean: true }).exec();
-                                                                        if (indexContains && indexContains.length === cryptoCount) {
-                                                                            let match = true;
-                                                                            for (let j = 0; j < cryptoIds.length; j++) {
-                                                                                const coinIdx = coins.findIndex(coin => coin.symbol === cryptoIdToSymbol[cryptoIds[j]].symbol);
-                                                                                if (coinIdx > -1) {
-                                                                                    const indexContainIdx = indexContains.findIndex(ic => ic.coinId == coins[coinIdx]._id && parseFloat(ic.quantity).toFixed(8) === parseFloat(quantities[j]).toFixed(8));
-                                                                                    if (indexContainIdx === -1) {
-                                                                                        match = false;
-                                                                                        break;
-                                                                                    }
-                                                                                }
-                                                                            }
-
-                                                                            if (match) {
-                                                                                // Update order
-                                                                                order.txId = e.transactionHash;
-                                                                                order.status = 'Filled';
-                                                                                order.save(err => {
-                                                                                    if (err) {
-                                                                                        console.log('eventsManager: order.save: ', err);
-                                                                                    }
-                                                                                });
-
-                                                                                // Update index
-                                                                                if (order.action === 'Buy') {
-                                                                                    index.txId = [e.transactionHash];
-                                                                                    index.confirmed = true;
-                                                                                    index.save(err => {
-                                                                                        if (err) {
-                                                                                            console.log('eventsManager: index.save: ', err);
-                                                                                        }
-                                                                                    });
-                                                                                } else {
-                                                                                    index.txId.push(e.transactionHash);
-                                                                                    index.confirmed = false;
-                                                                                    index.save(err => {
-                                                                                        if (err) {
-                                                                                            console.log('eventsManager: index.save: ', err);
-                                                                                        }
-                                                                                    });
-                                                                                }
-
-                                                                                // Create transaction
-                                                                                const transaction = new Transactions({
-                                                                                    orderId: order._id,
-                                                                                    blockHash: e.blockHash,
-                                                                                    blockNumber: e.blockNumber,
-                                                                                    contractAddress: order.receipt.contractAddress,
-                                                                                    cumulativeGasUsed: order.receipt.cumulativeGasUsed,
-                                                                                    gasUsed: order.receipt.gasUsed,
-                                                                                    from: order.receipt.from,
-                                                                                    to: order.receipt.to,
-                                                                                    status: order.receipt.status,
-                                                                                    transactionHash: e.transactionHash,
-                                                                                    transactionIndex: e.transactionIndex
-                                                                                });
-                                                                                transaction.save(err => {
-                                                                                    if (err) {
-                                                                                        console.log('eventsManager: transaction.save: ', err);
-                                                                                    }
-                                                                                });
-
-                                                                                removePending(order._id);
-
-                                                                                // console.log('Type: ', type);
-                                                                                // console.log('Action: ', order.action);
-                                                                                // console.log('Count: ', cryptoCount);
-                                                                                // console.log('Ids: ', cryptoIds.join(','));
-                                                                                // console.log('Quantities: ', quantities.join(','));
-                                                                                // console.log('Prices: ', prices.join(','));
-                                                                                // console.log('\n');
-
-                                                                                fromBlock = e.blockNumber;
-
-                                                                                break;
-                                                                            }
+                                                                if (match) {
+                                                                    // Update order
+                                                                    order.txId = e.transactionHash;
+                                                                    order.status = 'Filled';
+                                                                    order.save(err => {
+                                                                        if (err) {
+                                                                            console.log('eventsManager: order.save: ', err);
                                                                         }
+                                                                    });
+
+                                                                    // Update index
+                                                                    if (order.action === 'Buy') {
+                                                                        index.txId = [e.transactionHash];
+                                                                        index.confirmed = true;
+                                                                        index.save(err => {
+                                                                            if (err) {
+                                                                                console.log('eventsManager: index.save: ', err);
+                                                                            }
+                                                                        });
+                                                                    } else {
+                                                                        index.txId.push(e.transactionHash);
+                                                                        index.confirmed = false;
+                                                                        index.save(err => {
+                                                                            if (err) {
+                                                                                console.log('eventsManager: index.save: ', err);
+                                                                            }
+                                                                        });
                                                                     }
+
+                                                                    // Create transaction
+                                                                    const transaction = new Transactions({
+                                                                        orderId: order._id,
+                                                                        blockHash: e.blockHash,
+                                                                        blockNumber: e.blockNumber,
+                                                                        contractAddress: order.receipt.contractAddress,
+                                                                        cumulativeGasUsed: order.receipt.cumulativeGasUsed,
+                                                                        gasUsed: order.receipt.gasUsed,
+                                                                        from: order.receipt.from,
+                                                                        to: order.receipt.to,
+                                                                        status: order.receipt.status,
+                                                                        transactionHash: e.transactionHash,
+                                                                        transactionIndex: e.transactionIndex
+                                                                    });
+                                                                    transaction.save(err => {
+                                                                        if (err) {
+                                                                            console.log('eventsManager: transaction.save: ', err);
+                                                                        }
+                                                                    });
+
+                                                                    removePending(order._id);
+
+                                                                    // console.log('Type: ', type);
+                                                                    // console.log('Action: ', order.action);
+                                                                    // console.log('Count: ', cryptoCount);
+                                                                    // console.log('Ids: ', cryptoIds.join(','));
+                                                                    // console.log('Quantities: ', quantities.join(','));
+                                                                    // console.log('Prices: ', prices.join(','));
+                                                                    // console.log('\n');
+
+                                                                    break;
                                                                 }
                                                             }
                                                         }
                                                     }
-
-                                                    i--;
                                                 }
                                             }
                                         }
                                     }
-                                } catch (err) {
-                                    console.log('eventsManager: ', err);
                                 }
                             }
                         });
+
                         console.log("Finished", new Date());
                         processing = false;
-                    };
-                    process();
-                })
-                .catch(err => {
-                    console.log('eventsManager: ', err);
-                });
+                    })
+                    .catch(err => {
+                        console.log('eventsManager eventsWatch: ', err);
+                    });
+            }
         }
-    });
+    } catch (err) {
+        console.log('eventsManager: ', err);
+    }
 };
