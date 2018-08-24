@@ -77,7 +77,7 @@ const runOrder = () => {
 
                         if (orders && orders.length > 0) {
                             orders.forEach(order => {
-                                if (order.timing && order.timing === 'day') {
+                                if (order.type === 'limit' && order.timing === 'day') {
                                     const current = Math.round((new Date()).getTime() / 1000);
                                     if (current - order.timestamp > 86400) {
                                         order.status = 'Cancelled';
