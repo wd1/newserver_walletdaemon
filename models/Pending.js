@@ -5,7 +5,7 @@ const pendingSchema = new mongoose.Schema({
     type: String,
     input: String,
     cryptoIds: [Number],
-    quantitiesInWei: [Number],
+    quantitiesInWei: [String],
     amountInWei: String,
     assets: [],
     coins: [],

@@ -139,7 +139,7 @@ const purchaseAsset = (account, order, pending, coins, coIndex, wallet) => {
     let amountInWei = Web3Service.toWei((amount + 4.99) / coins[coIndex].price);
 
     // Get quantity in Wei
-    const quantityInWei = (new BigNumber(order.quantity)).times(((new BigNumber(10)).exponentiatedBy(18))).toNumber();
+    const quantityInWei = Web3Service.toWei(order.quantity);
 
     if ((new BigNumber(amountInWei)).isGreaterThan(new BigNumber(wallet.quantity))) return;
 
@@ -257,7 +257,7 @@ const purchaseIndex = (account, order, pending, coins, coIndex, wallet) => {
 
                 const quantity = (coins[coIndex].price * parseFloat(pending.amount) * pending.assets[i].percent / 100 / coins[coinIndex].price);
                 quantities.push(quantity);
-                quantitiesInWei.push((new BigNumber(quantity)).times(((new BigNumber(10)).exponentiatedBy(18))).toNumber());
+                quantitiesInWei.push(Web3Service.toWei(quantity));
 
                 amounts.push(coins[coinIndex].price * quantity);
                 realAmount += coins[coinIndex].price * quantity;
@@ -400,7 +400,7 @@ const sellAsset = (account, order, pending, coins, coIndex) => {
 
         const amount = coins[coinIndex].price * order.quantity;
         const amountInWei = Web3Service.toWei((amount + 4.99) / coins[coIndex].price);
-        const quantityInWei = (new BigNumber(order.quantity)).times(((new BigNumber(10)).exponentiatedBy(18))).toNumber();
+        const quantityInWei = Web3Service.toWei(order.quantity);
 
         // Get nonce
         const nonce = new Date().getTime();
@@ -497,7 +497,7 @@ const sellIndex = (account, order, pending, coins, coIndex) => {
 
                     cryptoIds.push(cryptoId);
                     quantities.push(indexContains[i].quantity);
-                    quantitiesInWei.push((new BigNumber(indexContains[i].quantity)).times(((new BigNumber(10)).exponentiatedBy(18))).toNumber());
+                    quantitiesInWei.push(Web3Service.toWei(indexContains[i].quantity));
                     amount += coins[coinIndex].price * indexContains[i].quantity;
                 }
             }
