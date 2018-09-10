@@ -4,9 +4,10 @@ exports.bignumberToString = (a) => {
         if (a.c[prop]) {
             let str = String(a.c[prop]);
             if (prop !== '0' && str.length < 14) {
-                let zeroArray = new Array(14 - str.length);
-                zeroArray.fill(0);
-                str = zeroArray.toString().replace(/,/g, '') + str;
+                const length = 14 - str.length;
+                for (let i = 0; i < length; i++) {
+                    str = '0' + str;
+                }
             }
 
             res = res + str;
@@ -15,6 +16,11 @@ exports.bignumberToString = (a) => {
 
     if (res.length > a.e + 1) {
         res = res.substr(0, a.e + 1) + '.' + res.substr(a.e + 1);
+    } else {
+        const length = a.e + 1 - res.length;
+        for (let i = 0; i < length; i++) {
+            res = res + '0';
+        }
     }
 
     if (a.s === -1) {
