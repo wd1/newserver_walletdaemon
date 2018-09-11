@@ -1,5 +1,6 @@
 const contract = require('truffle-contract');
-const BigNumber = require('bignumber.js');
+
+const { bignumberToString } = require('./bignumber2string');
 
 const {
     FAUCET_ADDRESS,
@@ -152,11 +153,7 @@ exports.coinBalance = (address) => {
     return new Promise((resolve, reject) => {
         TokenContractInstance.balanceOf(address)
             .then(result => {
-                if (result.c.length > 1) {
-                    resolve(result.c['0'] + '' + result.c['1']);
-                } else {
-                    resolve(result.c['0'] + '00000000000000');
-                }
+                resolve(bignumberToString(result));
             })
             .catch(err => {
                 reject(err);
