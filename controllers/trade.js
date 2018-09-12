@@ -607,7 +607,7 @@ const eventsManager = async () => {
 
                 TruffleService.eventsWatch(fromBlock)
                     .then(async events => {
-                        console.log("Starting", new Date());
+                        // console.log("Starting", new Date());
                         processing = true;
 
                         await asyncForEach(orders, async order => {
@@ -838,7 +838,7 @@ const eventsManager = async () => {
                             }
                         });
 
-                        console.log("Finished", new Date());
+                        // console.log("Finished", new Date());
                         processing = false;
                     })
                     .catch(err => {
