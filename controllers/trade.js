@@ -10,6 +10,7 @@ const Orders = require('../models/Orders');
 const Transactions = require('../models/Transactions');
 const Pending = require('../models/Pending');
 const IndexContains = require('../models/IndexContains');
+const Blocks = require('../models/Blocks');
 
 const { cryptoIdToSymbol } = require('../services/Config');
 const { hexToDec } = require('../services/hex2dec');
@@ -592,14 +593,20 @@ async function asyncForEach(array, callback) {
     }
 }
 
-let prevBlock = 0;
 const eventsManager = async () => {
     if (processing) {
-        console.log("Still processing...");
+        console.log('Still processing...');
         return;
     }
 
     try {
+        let prevBlock = 0;
+        const prev = await Blocks.findOne({}, 'number', { lean: true }).exec();
+        if (prev) {
+            prevBlock = prev.number;
+        }
+        console.log('prevBlock: ', prevBlock);
+
         const coins = await Coins.find({}, null, { lean: true }).exec();
         if (coins && coins.length > 0) {
             const orders = await Orders.find({ status: 'Open', 'receipt.transactionHash': { $ne: null } }).exec();
@@ -609,13 +616,16 @@ const eventsManager = async () => {
                     fromBlock = Math.min(fromBlock, or.receipt.blockNumber);
                 });
                 fromBlock = Math.max(prevBlock, fromBlock);
+                console.log('fromBlock: ', fromBlock);
 
                 TruffleService.eventsWatch(fromBlock)
                     .then(async events => {
-                        // console.log("Starting", new Date());
+                        console.log('Starting==================================');
                         processing = true;
 
                         await asyncForEach(orders, async order => {
+                            console.log('Start order: ', order._id);
+
                             const now = Math.round((new Date()).getTime() / 1000);
                             if (now - order.receipt.timestamp > 3600) {
                                 order.status = 'Failed';
@@ -841,10 +851,19 @@ const eventsManager = async () => {
                                     prevBlock = Math.max(prevBlock, e.blockNumber);
                                 }
                             }
+
+                            console.log('End order: ', order._id);
                         });
 
-                        // console.log("Finished", new Date());
+                        console.log('Finished==================================');
                         processing = false;
+
+                        const next = new Blocks({
+                            number: prevBlock
+                        });
+                        next.save(err => {
+                            console.log('Saving prevBlock: ', err);
+                        });
                     })
                     .catch(err => {
                         console.log('eventsManager eventsWatch: ', err);
