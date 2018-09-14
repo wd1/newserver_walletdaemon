@@ -210,9 +210,6 @@ const purchaseAsset = (account, order, pending, coins, coIndex, wallet) => {
                     .then(tx => {
                         if (tx.receipt && tx.receipt.transactionHash) {
                             // Update order
-                            if (order.type === 'limit') {
-                                order.price = coins[coinIndex].price;
-                            }
                             order.amount = amount;
                             order.receipt = tx.receipt;
                             order.save(err => {
@@ -457,9 +454,6 @@ const sellAsset = (account, order, pending, coins, coIndex) => {
                     .then(tx => {
                         if (tx.receipt && tx.receipt.transactionHash) {
                             // Update order
-                            if (order.type === 'limit') {
-                                order.price = coins[coinIndex].price;
-                            }
                             order.amount = amount;
                             order.receipt = tx.receipt;
                             order.save(err => {
