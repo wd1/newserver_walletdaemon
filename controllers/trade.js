@@ -605,7 +605,7 @@ const eventsManager = async () => {
         if (prev) {
             prevBlock = prev.number;
         }
-        console.log('prevBlock: ', prevBlock);
+        console.log('\nprevBlock: ', prevBlock);
 
         const coins = await Coins.find({}, null, { lean: true }).exec();
         if (coins && coins.length > 0) {
@@ -620,13 +620,13 @@ const eventsManager = async () => {
 
                 TruffleService.eventsWatch(fromBlock)
                     .then(async events => {
-                        console.log('Starting==================================');
+                        console.log('Starting ==================================');
                         processing = true;
 
                         await asyncForEach(orders, async order => {
-                            try {
-                                console.log('Start order: ', order._id);
+                            console.log('Start order: ', order._id);
 
+                            try {
                                 const now = Math.round((new Date()).getTime() / 1000);
                                 if (now - order.receipt.timestamp > 3600) {
                                     order.status = 'Failed';
@@ -852,22 +852,24 @@ const eventsManager = async () => {
                                         prevBlock = Math.max(prevBlock, e.blockNumber);
                                     }
                                 }
-
-                                console.log('End order: ', order._id);
                             } catch (err) {
                                 console.log('eventsManager asyncForEach: ', err);
                             }
-                        });
 
-                        console.log('Finished==================================');
-                        processing = false;
+                            console.log('End order: ', order._id);
+                        });
 
                         const next = new Blocks({
                             number: prevBlock
                         });
                         next.save(err => {
-                            console.log('Saving prevBlock: ', err);
+                            if (err) {
+                                console.log('Saving prevBlock: ', err);
+                            }
                         });
+
+                        processing = false;
+                        console.log('Finished ==================================');
                     })
                     .catch(err => {
                         console.log('eventsManager eventsWatch: ', err);
