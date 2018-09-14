@@ -135,8 +135,8 @@ const purchaseAsset = (account, order, pending, coins, coIndex, wallet) => {
 
     if (order.type === 'limit' && order.price < coins[coinIndex].price) return;
 
-    let amount = coins[coinIndex].price * order.quantity;
-    let amountInWei = Web3Service.toWei((amount + 4.99) / coins[coIndex].price);
+    const amount = coins[coinIndex].price * order.quantity;
+    const amountInWei = Web3Service.toWei((amount + 4.99) / coins[coIndex].price);
 
     // Get quantity in Wei
     const quantityInWei = Web3Service.toWei(order.quantity);
@@ -157,11 +157,12 @@ const purchaseAsset = (account, order, pending, coins, coIndex, wallet) => {
             return;
         }
 
+        let sendAmount = amount;
         orders.forEach(o => {
-            amount += o.amount + 4.99;
+            sendAmount += o.amount + 4.99;
         });
 
-        amountInWei = Web3Service.toWei((amount + 4.99) / coins[coIndex].price);
+        const sendAmountInWei = Web3Service.toWei((sendAmount + 4.99) / coins[coIndex].price);
 
         const approveAndCallSig = Web3Service.encodeFunctionSignature({
             "inputs": [
@@ -200,12 +201,12 @@ const purchaseAsset = (account, order, pending, coins, coIndex, wallet) => {
             "type": "function"
         }, [account.beneficiary, [cryptoId], [quantityInWei]]);
 
-        TruffleService.getPreSignedHash(approveAndCallSig, amountInWei, extraData, 40000000000, nonce)
+        TruffleService.getPreSignedHash(approveAndCallSig, sendAmountInWei, extraData, 40000000000, nonce)
             .then(txHash => {
                 const signed = Web3Service.sign(txHash, account.beneficiary, pending.input);
                 const tempSign = signed.signature.substr(0, signed.signature.length - 2) + (signed.v === '0x1b' ? '00' : '01');
 
-                TruffleService.approveAndCallPreSigned(tempSign, amountInWei, extraData, 40000000000, nonce)
+                TruffleService.approveAndCallPreSigned(tempSign, sendAmountInWei, extraData, 40000000000, nonce)
                     .then(tx => {
                         if (tx.receipt && tx.receipt.transactionHash) {
                             // Update order
@@ -285,11 +286,12 @@ const purchaseIndex = (account, order, pending, coins, coIndex, wallet) => {
                 return;
             }
 
+            let sendAmount = realAmount;
             orders.forEach(o => {
-                realAmount += o.amount + 4.99;
+                sendAmount += o.amount + 4.99;
             });
 
-            amountInWei = Web3Service.toWei((realAmount + 4.99) / coins[coIndex].price);
+            const sendAmountInWei = Web3Service.toWei((sendAmount + 4.99) / coins[coIndex].price);
 
             const approveAndCallSig = Web3Service.encodeFunctionSignature({
                 "inputs": [
@@ -328,12 +330,12 @@ const purchaseIndex = (account, order, pending, coins, coIndex, wallet) => {
                 "type": "function"
             }, [account.beneficiary, cryptoIds, quantitiesInWei]);
 
-            TruffleService.getPreSignedHash(approveAndCallSig, amountInWei, extraData, 40000000000, nonce)
+            TruffleService.getPreSignedHash(approveAndCallSig, sendAmountInWei, extraData, 40000000000, nonce)
                 .then(txHash => {
                     const signed = Web3Service.sign(txHash, account.beneficiary, pending.input);
                     const tempSign = signed.signature.substr(0, signed.signature.length - 2) + (signed.v === '0x1b' ? '00' : '01');
 
-                    TruffleService.approveAndCallPreSigned(tempSign, amountInWei, extraData, 40000000000, nonce)
+                    TruffleService.approveAndCallPreSigned(tempSign, sendAmountInWei, extraData, 40000000000, nonce)
                         .then(tx => {
                             if (tx.receipt && tx.receipt.transactionHash) {
                                 // Update order
