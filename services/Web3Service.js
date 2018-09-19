@@ -1,6 +1,9 @@
 const Web3 = require('web3');
 const web3 = new Web3(new Web3.providers.HttpProvider(process.env.GETH));
 
+const BigNumber = require('bignumber.js');
+const { bignumberToString } = require('./bignumber2string');
+
 const {
     DEMO_MASTER_ADDRESS,
     DEMO_MASTER_PASSPHRASE
@@ -54,7 +57,8 @@ exports.fromWei = (amount, unit = 'ether') => {
 };
 
 exports.toWei = (amount, unit = 'ether') => {
-    return web3.utils.toWei(amount + '', unit);
+    // return web3.utils.toWei(amount + '', unit);
+    return bignumberToString(new BigNumber(amount.toFixed(18)).times(new BigNumber(10).exponentiatedBy(18)));
 };
 
 exports.getBalance = (address) => {
