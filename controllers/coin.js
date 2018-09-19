@@ -4,7 +4,9 @@ const schedule = require('node-schedule');
 const Coins = require('../models/Coins');
 const { cryptoIdToSymbol } = require('../services/Config');
 
-let updateAsset, updateCryptoCompareId, updateCoinPrices;
+let updateAsset;
+let updateCryptoCompareId;
+let updateCoinPrices;
 
 exports.coinSchedule = () => {
     updateAsset = schedule.scheduleJob('*/1 * * * *', getAssets);
@@ -47,7 +49,7 @@ const getAssets = () => {
                     for (let i = 0; i <= limit; i++) {
                         let url = 'https://api.coinmarketcap.com/v2/ticker/?structure=array';
                         if (i !== 0) {
-                            url += '&start=' + (i * 100 + 1);
+                            url += `&start=${i * 100 + 1}`;
                         }
 
                         request(url, (err, response) => {
@@ -165,7 +167,7 @@ const getCryptoCompareId = () => {
             return;
         }
 
-        let array = [];
+        const array = [];
         coins.forEach(coin => {
             if (!coin.cryptoCompareId || !coin.image) {
                 array.push(coin);
@@ -183,9 +185,9 @@ const getCryptoCompareId = () => {
                     const body = JSON.parse(response.body);
 
                     array.forEach(coin => {
-                        if (body['Data'][coin.symbol]) {
-                            coin.cryptoCompareId = body['Data'][coin.symbol]['Id'];
-                            coin.image = body['Data'][coin.symbol]['ImageUrl'];
+                        if (body.Data[coin.symbol]) {
+                            coin.cryptoCompareId = body.Data[coin.symbol].Id;
+                            coin.image = body.Data[coin.symbol].ImageUrl;
 
                             coin.save(err => {
                                 if (err) {
@@ -216,7 +218,7 @@ const getCreatedAt = () => {
 
             coins.forEach(coin => {
                 if (coin.cryptoCompareId && !coin.created) {
-                    request('https://www.cryptocompare.com/api/data/coinsnapshotfullbyid?id=' + coin.cryptoCompareId, (err, response) => {
+                    request(`https://www.cryptocompare.com/api/data/coinsnapshotfullbyid?id=${coin.cryptoCompareId}`, (err, response) => {
                         if (err) {
                             console.log('getCryptoCompareId: cryptocompare: ', err);
                             return;
@@ -224,7 +226,7 @@ const getCreatedAt = () => {
 
                         const body = JSON.parse(response.body);
 
-                        coin.created = body['Data']['General']['StartDate'];
+                        coin.created = body.Data.General.StartDate;
                         coin.save(err => {
                             if (err) {
                                 console.log('getCryptoCompareId: save: ', err);
@@ -250,7 +252,7 @@ const getPricesFromCryptoCompare = () => {
         if (coins && coins.length > 0) {
             const symbols = coins.map(coin => coin.symbol).join(',');
 
-            request('https://min-api.cryptocompare.com/data/pricemulti?tsyms=USD,EUR&fsyms=' + symbols, (err, response) => {
+            request(`https://min-api.cryptocompare.com/data/pricemulti?tsyms=USD,EUR&fsyms=${symbols}`, (err, response) => {
                 if (err) {
                     console.log('getPricesFromCryptoCompare: ', err);
                     return;
@@ -260,7 +262,7 @@ const getPricesFromCryptoCompare = () => {
                     const body = JSON.parse(response.body);
 
                     coins.forEach(coin => {
-                        coin.price = body[coin.symbol]['USD'];
+                        coin.price = body[coin.symbol].USD;
                         coin.save(err => {
                             if (err) {
                                 console.log('getPricesFromCryptoCompare: save: ', err);

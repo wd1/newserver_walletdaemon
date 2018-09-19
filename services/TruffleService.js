@@ -28,9 +28,7 @@ InvestmentContract.defaults({
 });
 if (typeof InvestmentContract.currentProvider.sendAsync !== 'function') {
     InvestmentContract.currentProvider.sendAsync = function () {
-        return InvestmentContract.currentProvider.send.apply(
-            InvestmentContract.currentProvider, arguments
-        );
+        return InvestmentContract.currentProvider.send.apply(InvestmentContract.currentProvider, arguments);
     };
 }
 
@@ -47,9 +45,7 @@ TokenContract.defaults({
 });
 if (typeof TokenContract.currentProvider.sendAsync !== 'function') {
     TokenContract.currentProvider.sendAsync = function () {
-        return TokenContract.currentProvider.send.apply(
-            TokenContract.currentProvider, arguments
-        );
+        return TokenContract.currentProvider.send.apply(TokenContract.currentProvider, arguments);
     };
 }
 
@@ -66,13 +62,11 @@ FaucetContract.defaults({
 });
 if (typeof FaucetContract.currentProvider.sendAsync !== 'function') {
     FaucetContract.currentProvider.sendAsync = function () {
-        return FaucetContract.currentProvider.send.apply(
-            FaucetContract.currentProvider, arguments
-        );
+        return FaucetContract.currentProvider.send.apply(FaucetContract.currentProvider, arguments);
     };
 }
 
-exports.getNonce = (address) => {
+exports.getNonce = address => {
     const TokenContractInstance = TokenContract.at(COINVEST_TOKEN_ADDRESS);
 
     return new Promise((resolve, reject) => {
@@ -147,7 +141,7 @@ exports.holdings = function (address) {
     });
 };
 
-exports.coinBalance = (address) => {
+exports.coinBalance = address => {
     const TokenContractInstance = TokenContract.at(COINVEST_TOKEN_ADDRESS);
 
     return new Promise((resolve, reject) => {
@@ -161,9 +155,9 @@ exports.coinBalance = (address) => {
     });
 };
 
-exports.eventsWatch = (fromBlock) => {
+exports.eventsWatch = fromBlock => {
     const InvestmentContractInstance = InvestmentContract.at(INVESTMENT_CONTRACT_ADDRESS);
-    const events = InvestmentContractInstance.allEvents({ fromBlock: fromBlock, toBlock: 'latest' });
+    const events = InvestmentContractInstance.allEvents({ fromBlock, toBlock: 'latest' });
 
     return new Promise((resolve, reject) => {
         events.get((err, response) => {

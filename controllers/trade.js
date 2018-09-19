@@ -17,7 +17,8 @@ const { hexToDec } = require('../services/hex2dec');
 const Web3Service = require('../services/Web3Service');
 const TruffleService = require('../services/TruffleService');
 
-let updateOrder, eventsMg;
+let updateOrder;
+let eventsMg;
 let processing = false;
 
 exports.tradeSchedule = () => {
@@ -100,18 +101,19 @@ const runOrder = () => {
 
                                     if (pending) {
                                         switch (pending.type) {
-                                            case 'purchaseAsset':
-                                                purchaseAsset(account, order, pending, coins, coIndex, wallet);
-                                                break;
-                                            case 'purchaseIndex':
-                                                purchaseIndex(account, order, pending, coins, coIndex, wallet);
-                                                break;
-                                            case 'sellAsset':
-                                                sellAsset(account, order, pending, coins, coIndex);
-                                                break;
-                                            case 'sellIndex':
-                                                sellIndex(account, order, pending, coins, coIndex);
-                                                break;
+                                        case 'purchaseAsset':
+                                            purchaseAsset(account, order, pending, coins, coIndex, wallet);
+                                            break;
+                                        case 'purchaseIndex':
+                                            purchaseIndex(account, order, pending, coins, coIndex, wallet);
+                                            break;
+                                        case 'sellAsset':
+                                            sellAsset(account, order, pending, coins, coIndex);
+                                            break;
+                                        case 'sellIndex':
+                                            sellIndex(account, order, pending, coins, coIndex);
+                                            break;
+                                        default: break;
                                         }
                                     }
                                 });
@@ -166,40 +168,40 @@ const purchaseAsset = (account, order, pending, coins, coIndex, wallet) => {
         const sendAmountInWei = Web3Service.toWei((sendAmount + 4.99) / coins[coIndex].price);
 
         const approveAndCallSig = Web3Service.encodeFunctionSignature({
-            "inputs": [
+            inputs: [
                 {
-                    "name": "_spender",
-                    "type": "address"
+                    name: '_spender',
+                    type: 'address'
                 },
                 {
-                    "name": "_amount",
-                    "type": "uint256"
+                    name: '_amount',
+                    type: 'uint256'
                 },
                 {
-                    "name": "_data",
-                    "type": "bytes"
+                    name: '_data',
+                    type: 'bytes'
                 }
             ],
-            "name": "approveAndCall",
-            "type": "function"
+            name: 'approveAndCall',
+            type: 'function'
         });
         const extraData = Web3Service.encodeFunctionCall({
-            "inputs": [
+            inputs: [
                 {
-                    "name": "_beneficiary",
-                    "type": "address"
+                    name: '_beneficiary',
+                    type: 'address'
                 },
                 {
-                    "name": "_cryptoIds",
-                    "type": "uint256[]"
+                    name: '_cryptoIds',
+                    type: 'uint256[]'
                 },
                 {
-                    "name": "_amounts",
-                    "type": "uint256[]"
+                    name: '_amounts',
+                    type: 'uint256[]'
                 }
             ],
-            "name": "buy",
-            "type": "function"
+            name: 'buy',
+            type: 'function'
         }, [account.beneficiary, [cryptoId], [quantityInWei]]);
 
         TruffleService.getPreSignedHash(approveAndCallSig, sendAmountInWei, extraData, 40000000000, nonce)
@@ -223,7 +225,7 @@ const purchaseAsset = (account, order, pending, coins, coIndex, wallet) => {
                         }
                     })
                     .catch(err => {
-                        throw(err);
+                        throw (err);
                     });
             })
             .catch(err => {
@@ -241,11 +243,11 @@ const purchaseIndex = (account, order, pending, coins, coIndex, wallet) => {
 
         if (!index) return;
 
-        let cryptoIds = [];
-        let quantities = [];
-        let quantitiesInWei = [];
-        let coinList = [];
-        let amounts = [];
+        const cryptoIds = [];
+        const quantities = [];
+        const quantitiesInWei = [];
+        const coinList = [];
+        const amounts = [];
         let realAmount = 0;
 
         for (let i = 0; i < pending.assets.length; i++) {
@@ -267,7 +269,7 @@ const purchaseIndex = (account, order, pending, coins, coIndex, wallet) => {
             }
         }
 
-        let amountInWei = Web3Service.toWei((realAmount + 4.99) / coins[coIndex].price);
+        const amountInWei = Web3Service.toWei((realAmount + 4.99) / coins[coIndex].price);
         if ((new BigNumber(amountInWei)).isGreaterThan(new BigNumber(wallet.quantity))) return;
 
         // Get nonce
@@ -292,40 +294,40 @@ const purchaseIndex = (account, order, pending, coins, coIndex, wallet) => {
             const sendAmountInWei = Web3Service.toWei((sendAmount + 4.99) / coins[coIndex].price);
 
             const approveAndCallSig = Web3Service.encodeFunctionSignature({
-                "inputs": [
+                inputs: [
                     {
-                        "name": "_spender",
-                        "type": "address"
+                        name: '_spender',
+                        type: 'address'
                     },
                     {
-                        "name": "_amount",
-                        "type": "uint256"
+                        name: '_amount',
+                        type: 'uint256'
                     },
                     {
-                        "name": "_data",
-                        "type": "bytes"
+                        name: '_data',
+                        type: 'bytes'
                     }
                 ],
-                "name": "approveAndCall",
-                "type": "function"
+                name: 'approveAndCall',
+                type: 'function'
             });
             const extraData = Web3Service.encodeFunctionCall({
-                "inputs": [
+                inputs: [
                     {
-                        "name": "_beneficiary",
-                        "type": "address"
+                        name: '_beneficiary',
+                        type: 'address'
                     },
                     {
-                        "name": "_cryptoIds",
-                        "type": "uint256[]"
+                        name: '_cryptoIds',
+                        type: 'uint256[]'
                     },
                     {
-                        "name": "_amounts",
-                        "type": "uint256[]"
+                        name: '_amounts',
+                        type: 'uint256[]'
                     }
                 ],
-                "name": "buy",
-                "type": "function"
+                name: 'buy',
+                type: 'function'
             }, [account.beneficiary, cryptoIds, quantitiesInWei]);
 
             TruffleService.getPreSignedHash(approveAndCallSig, sendAmountInWei, extraData, 40000000000, nonce)
@@ -372,7 +374,7 @@ const purchaseIndex = (account, order, pending, coins, coIndex, wallet) => {
                             }
                         })
                         .catch(err => {
-                            throw(err);
+                            throw (err);
                         });
                 })
                 .catch(err => {
@@ -410,40 +412,40 @@ const sellAsset = (account, order, pending, coins, coIndex) => {
         const nonce = new Date().getTime();
 
         const approveAndCallSig = Web3Service.encodeFunctionSignature({
-            "inputs": [
+            inputs: [
                 {
-                    "name": "_spender",
-                    "type": "address"
+                    name: '_spender',
+                    type: 'address'
                 },
                 {
-                    "name": "_amount",
-                    "type": "uint256"
+                    name: '_amount',
+                    type: 'uint256'
                 },
                 {
-                    "name": "_data",
-                    "type": "bytes"
+                    name: '_data',
+                    type: 'bytes'
                 }
             ],
-            "name": "approveAndCall",
-            "type": "function"
+            name: 'approveAndCall',
+            type: 'function'
         });
         const extraData = Web3Service.encodeFunctionCall({
-            "inputs": [
+            inputs: [
                 {
-                    "name": "_beneficiary",
-                    "type": "address"
+                    name: '_beneficiary',
+                    type: 'address'
                 },
                 {
-                    "name": "_cryptoIds",
-                    "type": "uint256[]"
+                    name: '_cryptoIds',
+                    type: 'uint256[]'
                 },
                 {
-                    "name": "_amounts",
-                    "type": "uint256[]"
+                    name: '_amounts',
+                    type: 'uint256[]'
                 }
             ],
-            "name": "sell",
-            "type": "function"
+            name: 'sell',
+            type: 'function'
         }, [account.beneficiary, [cryptoId], [quantityInWei]]);
 
         TruffleService.getPreSignedHash(approveAndCallSig, amountInWei, extraData, 40000000000, nonce)
@@ -467,7 +469,7 @@ const sellAsset = (account, order, pending, coins, coIndex) => {
                         }
                     })
                     .catch(err => {
-                        throw(err);
+                        throw (err);
                     });
             })
             .catch(err => {
@@ -488,9 +490,9 @@ const sellIndex = (account, order, pending, coins, coIndex) => {
         // Get nonce
         const nonce = new Date().getTime();
 
-        let cryptoIds = [];
-        let quantities = [];
-        let quantitiesInWei = [];
+        const cryptoIds = [];
+        const quantities = [];
+        const quantitiesInWei = [];
         let amount = 0;
         try {
             const indexContains = await IndexContains.find({ indexId: index._id }, null, { lean: true }).exec();
@@ -513,40 +515,40 @@ const sellIndex = (account, order, pending, coins, coIndex) => {
 
         const amountInWei = Web3Service.toWei((amount + 4.99) / coins[coIndex].price);
         const approveAndCallSig = Web3Service.encodeFunctionSignature({
-            "inputs": [
+            inputs: [
                 {
-                    "name": "_spender",
-                    "type": "address"
+                    name: '_spender',
+                    type: 'address'
                 },
                 {
-                    "name": "_amount",
-                    "type": "uint256"
+                    name: '_amount',
+                    type: 'uint256'
                 },
                 {
-                    "name": "_data",
-                    "type": "bytes"
+                    name: '_data',
+                    type: 'bytes'
                 }
             ],
-            "name": "approveAndCall",
-            "type": "function"
+            name: 'approveAndCall',
+            type: 'function'
         });
         const extraData = Web3Service.encodeFunctionCall({
-            "inputs": [
+            inputs: [
                 {
-                    "name": "_beneficiary",
-                    "type": "address"
+                    name: '_beneficiary',
+                    type: 'address'
                 },
                 {
-                    "name": "_cryptoIds",
-                    "type": "uint256[]"
+                    name: '_cryptoIds',
+                    type: 'uint256[]'
                 },
                 {
-                    "name": "_amounts",
-                    "type": "uint256[]"
+                    name: '_amounts',
+                    type: 'uint256[]'
                 }
             ],
-            "name": "sell",
-            "type": "function"
+            name: 'sell',
+            type: 'function'
         }, [account.beneficiary, cryptoIds, quantitiesInWei]);
 
         TruffleService.getPreSignedHash(approveAndCallSig, amountInWei, extraData, 40000000000, nonce)
@@ -570,7 +572,7 @@ const sellIndex = (account, order, pending, coins, coIndex) => {
                         }
                     })
                     .catch(err => {
-                        throw(err);
+                        throw (err);
                     });
             })
             .catch(err => {
@@ -579,8 +581,8 @@ const sellIndex = (account, order, pending, coins, coIndex) => {
     });
 };
 
-const removePending = (orderId) => {
-    Pending.deleteOne({ orderId: orderId }, err => {
+const removePending = orderId => {
+    Pending.deleteOne({ orderId }, err => {
         if (err) {
             console.log('removePending: ', err);
         }
@@ -643,31 +645,31 @@ const eventsManager = async () => {
                                     if (e.data && e.transactionHash) {
                                         const o = await Orders.findOne({ txId: e.transactionHash }, { lean: true }).exec();
                                         if (!o) {
-                                            const address = '0x' + e.topics[1].substring(26);
+                                            const address = `0x${e.topics[1].substring(26)}`;
 
                                             const account = await Accounts.findOne({ beneficiary: address }, 'beneficiary', { lean: true }).exec();
                                             if (account && account._id == order.accountId) {
                                                 let type = 'asset';
-                                                let cryptoIds = [];
-                                                let quantities = [];
-                                                let prices = [];
+                                                const cryptoIds = [];
+                                                const quantities = [];
+                                                const prices = [];
 
                                                 const params = e.data.substring(2).match(/.{1,64}/g);
                                                 if (params.length > 3) {
-                                                    const cryptoCount = parseInt(hexToDec(params[3]));
+                                                    const cryptoCount = parseInt(hexToDec(params[3]), 10);
                                                     if (cryptoCount > 1) {
                                                         type = 'index';
                                                     }
                                                     for (let i = 4; i < 4 + cryptoCount; i++) {
-                                                        cryptoIds.push(parseInt(hexToDec(params[i])));
+                                                        cryptoIds.push(parseInt(hexToDec(params[i]), 10));
                                                     }
 
-                                                    const quantityCount = parseInt(hexToDec(params[4 + cryptoCount]));
+                                                    const quantityCount = parseInt(hexToDec(params[4 + cryptoCount]), 10);
                                                     for (let i = 5 + cryptoCount; i < 5 + cryptoCount + quantityCount; i++) {
                                                         quantities.push(Web3Service.fromWei(hexToDec(params[i])));
                                                     }
 
-                                                    const priceCount = parseInt(hexToDec(params[5 + cryptoCount + quantityCount]));
+                                                    const priceCount = parseInt(hexToDec(params[5 + cryptoCount + quantityCount]), 10);
                                                     for (let i = 6 + cryptoCount + quantityCount; i < 6 + cryptoCount + quantityCount + priceCount; i++) {
                                                         prices.push(Web3Service.fromWei(hexToDec(params[i])));
                                                     }
@@ -772,7 +774,10 @@ const eventsManager = async () => {
                                                                     for (let j = 0; j < cryptoIds.length; j++) {
                                                                         const coinIdx = coins.findIndex(coin => coin.symbol === cryptoIdToSymbol[cryptoIds[j]].symbol);
                                                                         if (coinIdx > -1) {
-                                                                            const indexContainIdx = indexContains.findIndex(ic => ic.coinId == coins[coinIdx]._id && parseFloat(ic.quantity).toFixed(8) === parseFloat(quantities[j]).toFixed(8));
+                                                                            const indexContainIdx = indexContains.findIndex(ic => {
+                                                                                return ic.coinId == coins[coinIdx]._id &&
+                                                                                    parseFloat(ic.quantity).toFixed(8) === parseFloat(quantities[j]).toFixed(8);
+                                                                            });
                                                                             if (indexContainIdx === -1) {
                                                                                 match = false;
                                                                                 break;
