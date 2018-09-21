@@ -607,7 +607,8 @@ const eventsManager = async () => {
         if (prev) {
             prevBlock = prev.number;
         }
-        console.log('\nprevBlock: ', prevBlock);
+        console.log('');
+        console.log('prevBlock: ', prevBlock);
 
         const coins = await Coins.find({}, null, { lean: true }).exec();
         if (coins && coins.length > 0) {
@@ -680,7 +681,7 @@ const eventsManager = async () => {
                                                         }
 
                                                         if (type === 'asset' && order.coinId) {
-                                                            const coinIdx = coins.findIndex(coin => coin.symbol === cryptoIdToSymbol[cryptoIds[0] + 1].symbol);
+                                                            const coinIdx = coins.findIndex(coin => coin.symbol === cryptoIdToSymbol[cryptoIds[0]].symbol);
                                                             if (coinIdx > -1) {
                                                                 if (coins[coinIdx]._id == order.coinId && parseFloat(order.quantity).toFixed(8) === parseFloat(quantities[0]).toFixed(8)) {
                                                                     order.txId = e.transactionHash;
