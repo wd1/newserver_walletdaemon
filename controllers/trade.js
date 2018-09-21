@@ -603,7 +603,7 @@ const eventsManager = async () => {
 
     try {
         let prevBlock = 0;
-        const prev = await Blocks.findOne({}, 'number', { lean: true }).exec();
+        const prev = await Blocks.findOne({}).exec();
         if (prev) {
             prevBlock = prev.number;
         }
@@ -625,6 +625,11 @@ const eventsManager = async () => {
                         console.log('Starting ==================================');
                         processing = true;
 
+                        const ords = await Orders.find({ txId: { $ne: null } }, 'txId', { lean: true }).exec();
+                        const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
+                        const indexes = await Indexes.find({}).exec();
+                        const idxContains = await IndexContains.find({}, null, { lean: true }).exec();
+
                         await asyncForEach(orders, async order => {
                             console.log('Start order: ', order._id);
 
@@ -643,40 +648,38 @@ const eventsManager = async () => {
                                 for (let i = 0; i < events.length; i++) {
                                     const e = events[i];
                                     if (e.data && e.transactionHash) {
-                                        const o = await Orders.findOne({ txId: e.transactionHash }, { lean: true }).exec();
-                                        if (!o) {
-                                            const address = `0x${e.topics[1].substring(26)}`;
+                                        if (ords && ords.length > 0) {
+                                            const oIdx = ords.findIndex(ord => ord.txId === e.transactionHash);
+                                            if (oIdx === -1) {
+                                                const accountIdx = accounts.findIndex(account => account.beneficiary === `0x${e.topics[1].substring(26)}`);
+                                                if (accountIdx > -1 && accounts[accountIdx]._id == order.accountId) {
+                                                    let type = 'asset';
+                                                    const cryptoIds = [];
+                                                    const quantities = [];
+                                                    const prices = [];
 
-                                            const account = await Accounts.findOne({ beneficiary: address }, 'beneficiary', { lean: true }).exec();
-                                            if (account && account._id == order.accountId) {
-                                                let type = 'asset';
-                                                const cryptoIds = [];
-                                                const quantities = [];
-                                                const prices = [];
+                                                    const params = e.data.substring(2).match(/.{1,64}/g);
+                                                    if (params.length > 3) {
+                                                        const cryptoCount = parseInt(hexToDec(params[3]), 10);
+                                                        if (cryptoCount > 1) {
+                                                            type = 'index';
+                                                        }
+                                                        for (let i = 4; i < 4 + cryptoCount; i++) {
+                                                            cryptoIds.push(parseInt(hexToDec(params[i]), 10));
+                                                        }
 
-                                                const params = e.data.substring(2).match(/.{1,64}/g);
-                                                if (params.length > 3) {
-                                                    const cryptoCount = parseInt(hexToDec(params[3]), 10);
-                                                    if (cryptoCount > 1) {
-                                                        type = 'index';
-                                                    }
-                                                    for (let i = 4; i < 4 + cryptoCount; i++) {
-                                                        cryptoIds.push(parseInt(hexToDec(params[i]), 10));
-                                                    }
+                                                        const quantityCount = parseInt(hexToDec(params[4 + cryptoCount]), 10);
+                                                        for (let i = 5 + cryptoCount; i < 5 + cryptoCount + quantityCount; i++) {
+                                                            quantities.push(Web3Service.fromWei(hexToDec(params[i])));
+                                                        }
 
-                                                    const quantityCount = parseInt(hexToDec(params[4 + cryptoCount]), 10);
-                                                    for (let i = 5 + cryptoCount; i < 5 + cryptoCount + quantityCount; i++) {
-                                                        quantities.push(Web3Service.fromWei(hexToDec(params[i])));
-                                                    }
+                                                        const priceCount = parseInt(hexToDec(params[5 + cryptoCount + quantityCount]), 10);
+                                                        for (let i = 6 + cryptoCount + quantityCount; i < 6 + cryptoCount + quantityCount + priceCount; i++) {
+                                                            prices.push(Web3Service.fromWei(hexToDec(params[i])));
+                                                        }
 
-                                                    const priceCount = parseInt(hexToDec(params[5 + cryptoCount + quantityCount]), 10);
-                                                    for (let i = 6 + cryptoCount + quantityCount; i < 6 + cryptoCount + quantityCount + priceCount; i++) {
-                                                        prices.push(Web3Service.fromWei(hexToDec(params[i])));
-                                                    }
-
-                                                    if ((type === 'asset' && order.coinId) || (type === 'index' && order.indexId)) {
-                                                        if (order.coinId) {
-                                                            const coinIdx = coins.findIndex(coin => coin.symbol === cryptoIdToSymbol[cryptoIds[0]].symbol);
+                                                        if (type === 'asset' && order.coinId) {
+                                                            const coinIdx = coins.findIndex(coin => coin.symbol === cryptoIdToSymbol[cryptoIds[0] + 1].symbol);
                                                             if (coinIdx > -1) {
                                                                 if (coins[coinIdx]._id == order.coinId && parseFloat(order.quantity).toFixed(8) === parseFloat(quantities[0]).toFixed(8)) {
                                                                     order.txId = e.transactionHash;
@@ -760,91 +763,92 @@ const eventsManager = async () => {
                                                                     break;
                                                                 }
                                                             }
-                                                        } else {
-                                                            const index = await Indexes.findOne({
-                                                                _id: order.indexId,
-                                                                accountId: account._id,
-                                                                confirmed: (order.action !== 'Buy')
-                                                            }).exec();
+                                                        }
 
-                                                            if (index) {
-                                                                const indexContains = await IndexContains.find({ indexId: index._id }, null, { lean: true }).exec();
-                                                                if (indexContains && indexContains.length === cryptoCount) {
-                                                                    let match = true;
-                                                                    for (let j = 0; j < cryptoIds.length; j++) {
-                                                                        const coinIdx = coins.findIndex(coin => coin.symbol === cryptoIdToSymbol[cryptoIds[j]].symbol);
-                                                                        if (coinIdx > -1) {
-                                                                            const indexContainIdx = indexContains.findIndex(ic => {
-                                                                                return ic.coinId == coins[coinIdx]._id &&
-                                                                                    parseFloat(ic.quantity).toFixed(8) === parseFloat(quantities[j]).toFixed(8);
-                                                                            });
-                                                                            if (indexContainIdx === -1) {
-                                                                                match = false;
-                                                                                break;
+                                                        if (type === 'index' && order.indexId) {
+                                                            if (indexes && indexes.length > 0) {
+                                                                const indexId = indexes.findIndex(idx => (idx._id == order.indexId
+                                                                    && idx.accountId === order.accountId && idx.confirmed === (order.action !== 'Buy')));
+
+                                                                if (indexId > -1) {
+                                                                    const index = indexes[indexId];
+
+                                                                    const indexContains = idxContains.filter(idxC => idxC.indexId == index._id);
+                                                                    if (indexContains && indexContains.length === cryptoCount) {
+                                                                        let match = true;
+                                                                        for (let j = 0; j < cryptoIds.length; j++) {
+                                                                            const coinIdx = coins.findIndex(coin => coin.symbol === cryptoIdToSymbol[cryptoIds[j]].symbol);
+                                                                            if (coinIdx > -1) {
+                                                                                const indexContainIdx = indexContains.findIndex(ic => ic.coinId == coins[coinIdx]._id &&
+                                                                                    parseFloat(ic.quantity).toFixed(8) === parseFloat(quantities[j]).toFixed(8));
+                                                                                if (indexContainIdx === -1) {
+                                                                                    match = false;
+                                                                                    break;
+                                                                                }
                                                                             }
                                                                         }
-                                                                    }
 
-                                                                    if (match) {
-                                                                        // Update order
-                                                                        order.txId = e.transactionHash;
-                                                                        order.status = 'Filled';
-                                                                        order.save(err => {
-                                                                            if (err) {
-                                                                                console.log('eventsManager: order.save: ', err);
+                                                                        if (match) {
+                                                                            // Update order
+                                                                            order.txId = e.transactionHash;
+                                                                            order.status = 'Filled';
+                                                                            order.save(err => {
+                                                                                if (err) {
+                                                                                    console.log('eventsManager: order.save: ', err);
+                                                                                }
+                                                                            });
+
+                                                                            // Update index
+                                                                            if (order.action === 'Buy') {
+                                                                                index.txId = [e.transactionHash];
+                                                                                index.confirmed = true;
+                                                                                index.save(err => {
+                                                                                    if (err) {
+                                                                                        console.log('eventsManager: index.save: ', err);
+                                                                                    }
+                                                                                });
+                                                                            } else {
+                                                                                index.txId.push(e.transactionHash);
+                                                                                index.confirmed = false;
+                                                                                index.save(err => {
+                                                                                    if (err) {
+                                                                                        console.log('eventsManager: index.save: ', err);
+                                                                                    }
+                                                                                });
                                                                             }
-                                                                        });
 
-                                                                        // Update index
-                                                                        if (order.action === 'Buy') {
-                                                                            index.txId = [e.transactionHash];
-                                                                            index.confirmed = true;
-                                                                            index.save(err => {
+                                                                            // Create transaction
+                                                                            const transaction = new Transactions({
+                                                                                orderId: order._id,
+                                                                                blockHash: e.blockHash,
+                                                                                blockNumber: e.blockNumber,
+                                                                                contractAddress: order.receipt.contractAddress,
+                                                                                cumulativeGasUsed: order.receipt.cumulativeGasUsed,
+                                                                                gasUsed: order.receipt.gasUsed,
+                                                                                from: order.receipt.from,
+                                                                                to: order.receipt.to,
+                                                                                status: order.receipt.status,
+                                                                                transactionHash: e.transactionHash,
+                                                                                transactionIndex: e.transactionIndex
+                                                                            });
+                                                                            transaction.save(err => {
                                                                                 if (err) {
-                                                                                    console.log('eventsManager: index.save: ', err);
+                                                                                    console.log('eventsManager: transaction.save: ', err);
                                                                                 }
                                                                             });
-                                                                        } else {
-                                                                            index.txId.push(e.transactionHash);
-                                                                            index.confirmed = false;
-                                                                            index.save(err => {
-                                                                                if (err) {
-                                                                                    console.log('eventsManager: index.save: ', err);
-                                                                                }
-                                                                            });
+
+                                                                            removePending(order._id);
+
+                                                                            // console.log('Type: ', type);
+                                                                            // console.log('Action: ', order.action);
+                                                                            // console.log('Count: ', cryptoCount);
+                                                                            // console.log('Ids: ', cryptoIds.join(','));
+                                                                            // console.log('Quantities: ', quantities.join(','));
+                                                                            // console.log('Prices: ', prices.join(','));
+                                                                            // console.log('\n');
+
+                                                                            break;
                                                                         }
-
-                                                                        // Create transaction
-                                                                        const transaction = new Transactions({
-                                                                            orderId: order._id,
-                                                                            blockHash: e.blockHash,
-                                                                            blockNumber: e.blockNumber,
-                                                                            contractAddress: order.receipt.contractAddress,
-                                                                            cumulativeGasUsed: order.receipt.cumulativeGasUsed,
-                                                                            gasUsed: order.receipt.gasUsed,
-                                                                            from: order.receipt.from,
-                                                                            to: order.receipt.to,
-                                                                            status: order.receipt.status,
-                                                                            transactionHash: e.transactionHash,
-                                                                            transactionIndex: e.transactionIndex
-                                                                        });
-                                                                        transaction.save(err => {
-                                                                            if (err) {
-                                                                                console.log('eventsManager: transaction.save: ', err);
-                                                                            }
-                                                                        });
-
-                                                                        removePending(order._id);
-
-                                                                        // console.log('Type: ', type);
-                                                                        // console.log('Action: ', order.action);
-                                                                        // console.log('Count: ', cryptoCount);
-                                                                        // console.log('Ids: ', cryptoIds.join(','));
-                                                                        // console.log('Quantities: ', quantities.join(','));
-                                                                        // console.log('Prices: ', prices.join(','));
-                                                                        // console.log('\n');
-
-                                                                        break;
                                                                     }
                                                                 }
                                                             }
@@ -853,8 +857,6 @@ const eventsManager = async () => {
                                                 }
                                             }
                                         }
-
-                                        prevBlock = Math.max(prevBlock, e.blockNumber);
                                     }
                                 }
                             } catch (err) {
@@ -864,10 +866,8 @@ const eventsManager = async () => {
                             console.log('End order: ', order._id);
                         });
 
-                        const next = new Blocks({
-                            number: prevBlock
-                        });
-                        next.save(err => {
+                        prev.number = Math.max(prevBlock, events[events.length - 1].blockNumber);
+                        prev.save(err => {
                             if (err) {
                                 console.log('Saving prevBlock: ', err);
                             }
