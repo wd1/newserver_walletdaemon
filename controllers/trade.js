@@ -602,7 +602,7 @@ const eventsManager = async () => {
     }
 
     try {
-        let prevBlock = 4000000;
+        let prevBlock = 0;
         let prev = await Blocks.findOne({}).exec();
         if (prev) {
             prevBlock = prev.number;
