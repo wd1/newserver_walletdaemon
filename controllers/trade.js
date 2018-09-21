@@ -603,7 +603,7 @@ const eventsManager = async () => {
 
     try {
         let prevBlock = 0;
-        const prev = await Blocks.findOne({}).exec();
+        let prev = await Blocks.findOne({}).exec();
         if (prev) {
             prevBlock = prev.number;
         }
@@ -866,7 +866,13 @@ const eventsManager = async () => {
                             console.log('End order: ', order._id);
                         });
 
-                        prev.number = Math.max(prevBlock, events[events.length - 1].blockNumber);
+                        if (prev) {
+                            prev.number = Math.max(prevBlock, events[events.length - 1].blockNumber);
+                        } else {
+                            prev = new Blocks({
+                                number: Math.max(prevBlock, events[events.length - 1].blockNumber)
+                            });
+                        }
                         prev.save(err => {
                             if (err) {
                                 console.log('Saving prevBlock: ', err);
