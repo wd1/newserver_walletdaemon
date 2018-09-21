@@ -602,7 +602,7 @@ const eventsManager = async () => {
     }
 
     try {
-        let prevBlock = 0;
+        let prevBlock = 4000000;
         let prev = await Blocks.findOne({}).exec();
         if (prev) {
             prevBlock = prev.number;
@@ -627,6 +627,7 @@ const eventsManager = async () => {
 
                         const ords = await Orders.find({ txId: { $ne: null } }, 'txId', { lean: true }).exec();
                         const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
+                        const assets = await Assets.find({}).exec();
                         const indexes = await Indexes.find({}).exec();
                         const idxContains = await IndexContains.find({}, null, { lean: true }).exec();
 
@@ -706,28 +707,29 @@ const eventsManager = async () => {
                                                                                 console.log('eventsManager: asset.save: ', err);
                                                                             }
                                                                         });
-                                                                    } else {
-                                                                        Assets.findOne({ _id: order.assetId, accountId: order.accountId }, (err, asset) => {
-                                                                            if (asset.quantity === order.quantity) {
+                                                                    } else if (assets && assets.length > 0) {
+                                                                        const assetIdx = assets.findIndex(a => (a._id == order.assetId && a.accountId == order.accountId));
+                                                                        if (assetIdx > -1) {
+                                                                            if (assets[assetIdx].quantity === order.quantity) {
                                                                                 // Delete asset in case of selling whole amount of asset
-                                                                                Assets.deleteOne({ _id: asset._id }, err => {
+                                                                                Assets.deleteOne({ _id: assets[assetIdx]._id }, err => {
                                                                                     if (err) {
                                                                                         console.log('eventsManager: Assets.deleteOne: ', err);
                                                                                     }
                                                                                 });
                                                                             } else {
                                                                                 // Update asset amount and quantity
-                                                                                asset.quantity -= order.quantity;
-                                                                                asset.amount -= order.amount;
-                                                                                asset.txId.push(e.transactionHash);
-                                                                                asset.orderType = order.type;
-                                                                                asset.save(err => {
+                                                                                assets[assetIdx].quantity -= order.quantity;
+                                                                                assets[assetIdx].amount -= order.amount;
+                                                                                assets[assetIdx].txId.push(e.transactionHash);
+                                                                                assets[assetIdx].orderType = order.type;
+                                                                                assets[assetIdx].save(err => {
                                                                                     if (err) {
                                                                                         console.log('eventsManager: asset.save: ', err);
                                                                                     }
                                                                                 });
                                                                             }
-                                                                        });
+                                                                        }
                                                                     }
 
                                                                     // Create transaction
