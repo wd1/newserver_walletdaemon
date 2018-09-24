@@ -24,10 +24,10 @@ const ordersSchema = new mongoose.Schema({
         blockNumber: { type: Number, default: 0 }
     },
     txId: String,
-    assets: {
+    assets: [{
         symbol: String,
         percent: { type: Number, default: 0 }
-    },
+    }],
     timestamp: Number
 }, { timestamps: true });
 
