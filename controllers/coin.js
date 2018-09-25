@@ -199,46 +199,9 @@ const getCryptoCompareId = () => {
                 } catch (err) {
                     console.log('getCryptoCompareId: coinlist: ', err);
                 }
-
-                // getCreatedAt();
             });
-        } else {
-            // getCreatedAt();
         }
     });
-};
-
-const getCreatedAt = () => {
-    try {
-        Coins.find((err, coins) => {
-            if (err) {
-                console.log('getCreatedAt: find: ', err);
-                return;
-            }
-
-            coins.forEach(coin => {
-                if (coin.cryptoCompareId && !coin.created) {
-                    request(`https://www.cryptocompare.com/api/data/coinsnapshotfullbyid?id=${coin.cryptoCompareId}`, (err, response) => {
-                        if (err) {
-                            console.log('getCryptoCompareId: cryptocompare: ', err);
-                            return;
-                        }
-
-                        const body = JSON.parse(response.body);
-
-                        coin.created = body.Data.General.StartDate;
-                        coin.save(err => {
-                            if (err) {
-                                console.log('getCryptoCompareId: save: ', err);
-                            }
-                        });
-                    });
-                }
-            });
-        });
-    } catch (err) {
-        console.log('getCreatedAt: catch: ', err);
-    }
 };
 
 const getPricesFromCryptoCompare = () => {

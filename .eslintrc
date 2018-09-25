@@ -41,6 +41,7 @@
     "eqeqeq": "warn",
     "no-await-in-loop": "warn",
     "no-use-before-define": "warn",
-    "no-restricted-globals": "warn"
+    "no-restricted-globals": "warn",
+    "array-callback-return": "warn"
   }
 }
