@@ -244,6 +244,7 @@ const purchaseIndex = (account, order, pending, coins, coIndex, wallet) => {
         if (!index) return;
 
         const cryptoIds = [];
+        const prices = [];
         const quantities = [];
         const quantitiesInWei = [];
         const coinList = [];
@@ -260,6 +261,8 @@ const purchaseIndex = (account, order, pending, coins, coIndex, wallet) => {
 
                 cryptoIds.push(cryptoId);
 
+                prices.push(coins[coinIndex].price);
+
                 const quantity = coins[coIndex].price * parseFloat(pending.amount) * pending.assets[i].percent / 100 / coins[coinIndex].price;
                 quantities.push(quantity);
                 quantitiesInWei.push(Web3Service.toWei(quantity));
@@ -271,6 +274,19 @@ const purchaseIndex = (account, order, pending, coins, coIndex, wallet) => {
 
         const amountInWei = Web3Service.toWei((realAmount + 4.99) / coins[coIndex].price);
         if ((new BigNumber(amountInWei)).isGreaterThan(new BigNumber(wallet.quantity))) return;
+
+        order.amount = realAmount;
+        order.assets = pending.assets.map((asset, idx) => ({
+            symbol: asset.symbol,
+            percent: asset.percent,
+            price: prices[idx],
+            quantity: quantities[idx]
+        }));
+        order.save(err => {
+            if (err) {
+                console.log('purchaseIndex: order.save: ', err);
+            }
+        });
 
         // Get nonce
         const nonce = new Date().getTime();
@@ -339,8 +355,10 @@ const purchaseIndex = (account, order, pending, coins, coIndex, wallet) => {
                         .then(tx => {
                             if (tx.receipt && tx.receipt.transactionHash) {
                                 // Update order
-                                order.receipt = tx.receipt;
-                                order.amount = realAmount;
+                                order.receipt = {
+                                    ...tx.receipt,
+                                    timestamp: Math.round((new Date()).getTime() / 1000)
+                                };
                                 order.save(err => {
                                     if (err) {
                                         console.log('purchaseIndex: order.save: ', err);
@@ -491,7 +509,6 @@ const sellIndex = (account, order, pending, coins, coIndex) => {
         const nonce = new Date().getTime();
 
         const cryptoIds = [];
-        const quantities = [];
         const quantitiesInWei = [];
         let amount = 0;
         try {
@@ -503,7 +520,6 @@ const sellIndex = (account, order, pending, coins, coIndex) => {
                     if (cryptoId === -1) return;
 
                     cryptoIds.push(cryptoId);
-                    quantities.push(indexContains[i].quantity);
                     quantitiesInWei.push(Web3Service.toWei(indexContains[i].quantity));
                     amount += coins[coinIndex].price * indexContains[i].quantity;
                 }
@@ -561,7 +577,10 @@ const sellIndex = (account, order, pending, coins, coIndex) => {
                         if (tx.receipt && tx.receipt.transactionHash) {
                             // Update order
                             order.amount = amount;
-                            order.receipt = tx.receipt;
+                            order.receipt = {
+                                ...tx.receipt,
+                                timestamp: Math.round((new Date()).getTime() / 1000)
+                            };
                             order.save(err => {
                                 if (err) {
                                     console.log('sellIndex: order.save: ', err);
