@@ -53,14 +53,15 @@ const getWalletWeb3 = () => {
         }
 
         if (coins && coins.length > 0) {
-            let coin, coinEth;
+            let coin;
+            let coinEth;
 
-            let coinIdx = coins.findIndex(coin => coin.symbol === 'COIN');
+            const coinIdx = coins.findIndex(coin => coin.symbol === 'COIN');
             if (coinIdx > -1) {
                 coin = coins[coinIdx];
             }
 
-            let coinEthIdx = coins.findIndex(coin => coin.symbol === 'ETH');
+            const coinEthIdx = coins.findIndex(coin => coin.symbol === 'ETH');
             if (coinEthIdx > -1) {
                 coinEth = coins[coinEthIdx];
             }
@@ -164,8 +165,8 @@ const getTokenTransactions = () => {
 };
 
 const getTransactionRequest = (account, page, coins) => {
-    const url = 'https://api-ropsten.etherscan.io/api?module=account&action=tokentx&startblock=0&endblock=latest&offset=10000&sort=desc&apikey=' + ApiKey + '&address=';
-    request(url + account.beneficiary + '&page=' + page, async (err, response) => {
+    const url = `https://api-ropsten.etherscan.io/api?module=account&action=tokentx&startblock=0&endblock=latest&offset=10000&sort=desc&apikey=${ApiKey}&address=`;
+    request(`${url + account.beneficiary}&page=${page}`, async (err, response) => {
         if (err) {
             console.log('getTokenTransactions: etherscan: ', err);
             getTransactionRequest(account, page, coins);
@@ -188,15 +189,17 @@ const getTransactionRequest = (account, page, coins) => {
                             action = 'receive';
                         }
 
-                        let coinIndex = coins.findIndex(coin => coin.symbol === tx.tokenSymbol);
+                        const coinIndex = coins.findIndex(coin => coin.symbol === tx.tokenSymbol);
                         if (coinIndex > -1) {
-                            let tokenTransaction = await TokenTransactions.findOne({ accountId: account._id, coinId: coins[coinIndex]._id, amount: tx.value, txId: tx.hash }).exec();
+                            let tokenTransaction = await TokenTransactions.findOne({
+                                accountId: account._id, coinId: coins[coinIndex]._id, amount: tx.value, txId: tx.hash
+                            }).exec();
                             if (!tokenTransaction) {
                                 tokenTransaction = new TokenTransactions({
                                     accountId: account._id,
                                     coinId: coins[coinIndex]._id,
                                     amount: tx.value,
-                                    timestamp: parseInt(tx.timeStamp),
+                                    timestamp: parseInt(tx.timeStamp, 10),
                                     txId: tx.hash,
                                     from: tx.from,
                                     to: tx.to,
@@ -248,8 +251,8 @@ const getEtherTransactions = () => {
 };
 
 const getEtherTransactionsRequest = (account, page, coin) => {
-    const url = 'https://api-ropsten.etherscan.io/api?module=account&action=txlist&startblock=0&endblock=latest&offset=10000&sort=desc&apikey=' + ApiKey + '&address=';
-    request(url + account.beneficiary + '&page=' + page, async (err, response) => {
+    const url = `https://api-ropsten.etherscan.io/api?module=account&action=txlist&startblock=0&endblock=latest&offset=10000&sort=desc&apikey=${ApiKey}&address=`;
+    request(`${url + account.beneficiary}&page=${page}`, async (err, response) => {
         if (err) {
             console.log('getEtherTransactions: etherscan: ', err);
             getEtherTransactionsRequest(account, page, coin);
@@ -274,17 +277,19 @@ const getEtherTransactionsRequest = (account, page, coin) => {
                             }
 
                             try {
-                                let tokenTransaction = await TokenTransactions.findOne({ accountId: account._id, coinId: coin._id, amount: tx.value, txId: tx.hash }).exec();
+                                let tokenTransaction = await TokenTransactions.findOne({
+                                    accountId: account._id, coinId: coin._id, amount: tx.value, txId: tx.hash
+                                }).exec();
                                 if (!tokenTransaction) {
                                     tokenTransaction = new TokenTransactions({
                                         accountId: account._id,
                                         coinId: coin._id,
                                         amount: tx.value,
-                                        timestamp: parseInt(tx.timeStamp),
+                                        timestamp: parseInt(tx.timeStamp, 10),
                                         txId: tx.hash,
                                         from: tx.from,
                                         to: tx.to,
-                                        action: action,
+                                        action,
                                         status: tx.txreceipt_status === '1' ? 'Success' : 'Fail'
                                     });
 

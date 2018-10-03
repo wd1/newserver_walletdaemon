@@ -41,7 +41,7 @@ const multiplyByNumber = (num, x, base) => {
         if (num & 1) {
             result = add(result, power, base);
         }
-        num = num >> 1;
+        num >>= 1;
         if (num === 0) break;
         power = add(power, power, base);
     }
@@ -82,12 +82,12 @@ const convertBase = (str, fromBase, toBase) => {
     return out;
 };
 
-exports.decToHex = (decStr) => {
+exports.decToHex = decStr => {
     const hex = convertBase(decStr, 10, 16);
-    return hex ? '0x' + hex : null;
+    return hex ? `0x${hex}` : null;
 };
 
-exports.hexToDec = (hexStr) => {
+exports.hexToDec = hexStr => {
     if (hexStr.substring(0, 2) === '0x') hexStr = hexStr.substring(2);
     hexStr = hexStr.toLowerCase();
     return convertBase(hexStr, 16, 10);

@@ -21,9 +21,16 @@ const ordersSchema = new mongoose.Schema({
         status: String,
         transactionHash: String,
         blockHash: String,
-        blockNumber: { type: Number, default: 0 }
+        blockNumber: { type: Number, default: 0 },
+        timestamp: { type: Number, default: 0 }
     },
     txId: String,
+    assets: [{
+        symbol: String,
+        percent: { type: Number, default: 0 },
+        price: { type: Number, default: 0 },
+        quantity: { type: Number, default: 0 }
+    }],
     timestamp: Number
 }, { timestamps: true });
 
