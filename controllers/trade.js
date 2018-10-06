@@ -263,7 +263,7 @@ const purchaseIndex = (account, order, pending, coins, coIndex, wallet) => {
 
                 prices.push(coins[coinIndex].price);
 
-                const quantity = coins[coIndex].price * parseFloat(pending.amount) * pending.assets[i].percent / 100 / coins[coinIndex].price;
+                const quantity = parseFloat(pending.amount) * pending.assets[i].percent / 100 / coins[coinIndex].price;
                 quantities.push(quantity);
                 quantitiesInWei.push(Web3Service.toWei(quantity));
 
