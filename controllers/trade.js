@@ -646,7 +646,6 @@ const eventsManager = async () => {
                             console.log('Starting ==================================');
                             processing = true;
 
-                            const ords = await Orders.find({ txId: { $ne: null } }, 'txId', { lean: true }).exec();
                             const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
                             const assets = await Assets.find({}).exec();
                             const indexes = await Indexes.find({}).exec();
@@ -656,17 +655,18 @@ const eventsManager = async () => {
                                 console.log('Start order: ', order._id);
 
                                 try {
-                                    // const now = Math.round((new Date()).getTime() / 1000);
-                                    // if (now - order.receipt.timestamp > 3600) {
-                                    //     order.status = 'Failed';
-                                    //     order.save(err => {
-                                    //         if (err) {
-                                    //             console.log('eventsManager: order.save: ', err);
-                                    //         }
-                                    //     });
-                                    //     return;
-                                    // }
+                                    const now = Math.round((new Date()).getTime() / 1000);
+                                    if (now - order.receipt.timestamp > 86400) {
+                                        order.status = 'Failed';
+                                        order.save(err => {
+                                            if (err) {
+                                                console.log('eventsManager: order.save: ', err);
+                                            }
+                                        });
+                                        return;
+                                    }
 
+                                    const ords = await Orders.find({ txId: { $ne: null } }, 'txId', { lean: true }).exec();
                                     for (let i = 0; i < events.length; i++) {
                                         const e = events[i];
                                         if (e.data && e.transactionHash) {
@@ -783,6 +783,9 @@ const eventsManager = async () => {
                                                                         // console.log('Prices: ', prices.join(','));
                                                                         // console.log('\n');
 
+                                                                        // Remove already detected event
+                                                                        events.splice(i, 1);
+
                                                                         break;
                                                                     }
                                                                 }
@@ -870,6 +873,9 @@ const eventsManager = async () => {
                                                                                 // console.log('Prices: ', prices.join(','));
                                                                                 // console.log('\n');
 
+                                                                                // Remove already detected event
+                                                                                events.splice(i, 1);
+
                                                                                 break;
                                                                             }
                                                                         }
@@ -881,6 +887,11 @@ const eventsManager = async () => {
                                                 }
                                             }
                                         }
+
+                                        // Update blocknumber in case the latest event does not have block number
+                                        if (e.blockNumber) {
+                                            fromBlock = Math.max(e.blockNumber, fromBlock);
+                                        }
                                     }
                                 } catch (err) {
                                     console.log('eventsManager asyncForEach: ', err);
@@ -890,10 +901,10 @@ const eventsManager = async () => {
                             });
 
                             if (prev) {
-                                prev.number = Math.max(prevBlock, events[events.length - 1].blockNumber);
+                                prev.number = fromBlock;
                             } else {
                                 prev = new Blocks({
-                                    number: Math.max(prevBlock, events[events.length - 1].blockNumber)
+                                    number: fromBlock
                                 });
                             }
                             prev.save(err => {
