@@ -646,7 +646,6 @@ const eventsManager = async () => {
                             console.log('Starting ==================================');
                             processing = true;
 
-                            const ords = await Orders.find({ txId: { $ne: null } }, 'txId', { lean: true }).exec();
                             const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
                             const assets = await Assets.find({}).exec();
                             const indexes = await Indexes.find({}).exec();
@@ -656,17 +655,18 @@ const eventsManager = async () => {
                                 console.log('Start order: ', order._id);
 
                                 try {
-                                    // const now = Math.round((new Date()).getTime() / 1000);
-                                    // if (now - order.receipt.timestamp > 3600) {
-                                    //     order.status = 'Failed';
-                                    //     order.save(err => {
-                                    //         if (err) {
-                                    //             console.log('eventsManager: order.save: ', err);
-                                    //         }
-                                    //     });
-                                    //     return;
-                                    // }
+                                    const now = Math.round((new Date()).getTime() / 1000);
+                                    if (now - order.receipt.timestamp > 86400) {
+                                        order.status = 'Failed';
+                                        order.save(err => {
+                                            if (err) {
+                                                console.log('eventsManager: order.save: ', err);
+                                            }
+                                        });
+                                        return;
+                                    }
 
+                                    const ords = await Orders.find({ txId: { $ne: null } }, 'txId', { lean: true }).exec();
                                     for (let i = 0; i < events.length; i++) {
                                         const e = events[i];
                                         if (e.data && e.transactionHash) {
