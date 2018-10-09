@@ -783,6 +783,9 @@ const eventsManager = async () => {
                                                                         // console.log('Prices: ', prices.join(','));
                                                                         // console.log('\n');
 
+                                                                        // Remove already detected event
+                                                                        events.splice(i, 1);
+
                                                                         break;
                                                                     }
                                                                 }
@@ -870,6 +873,9 @@ const eventsManager = async () => {
                                                                                 // console.log('Prices: ', prices.join(','));
                                                                                 // console.log('\n');
 
+                                                                                // Remove already detected event
+                                                                                events.splice(i, 1);
+
                                                                                 break;
                                                                             }
                                                                         }
@@ -881,6 +887,11 @@ const eventsManager = async () => {
                                                 }
                                             }
                                         }
+
+                                        // Update blocknumber in case the latest event does not have block number
+                                        if (e.blockNumber) {
+                                            fromBlock = Math.max(e.blockNumber, fromBlock);
+                                        }
                                     }
                                 } catch (err) {
                                     console.log('eventsManager asyncForEach: ', err);
@@ -890,10 +901,10 @@ const eventsManager = async () => {
                             });
 
                             if (prev) {
-                                prev.number = Math.max(prevBlock, events[events.length - 1].blockNumber);
+                                prev.number = fromBlock;
                             } else {
                                 prev = new Blocks({
-                                    number: Math.max(prevBlock, events[events.length - 1].blockNumber)
+                                    number: fromBlock
                                 });
                             }
                             prev.save(err => {
