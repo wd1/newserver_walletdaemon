@@ -655,7 +655,7 @@ const eventsManager = async () => {
                                 console.log('Start order: ', order._id);
 
                                 try {
-                                    if (new Date().getTime() - new Date(order.createdAt).getTime() > 86400000) {
+                                    if (new Date().getTime() - new Date(order.updatedAt).getTime() > 86400000) {
                                         order.status = 'Failed';
                                         order.save(err => {
                                             if (err) {
