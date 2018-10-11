@@ -655,8 +655,7 @@ const eventsManager = async () => {
                                 console.log('Start order: ', order._id);
 
                                 try {
-                                    const now = Math.round((new Date()).getTime() / 1000);
-                                    if (now - order.receipt.timestamp > 86400) {
+                                    if (new Date().getTime() - new Date(order.updatedAt).getTime() > 86400000) {
                                         order.status = 'Failed';
                                         order.save(err => {
                                             if (err) {
