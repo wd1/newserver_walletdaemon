@@ -655,15 +655,16 @@ const eventsManager = async () => {
                                 console.log('Start order: ', order._id);
 
                                 try {
-                                    // if (new Date().getTime() - new Date(order.updatedAt).getTime() > 86400000) {
-                                    //     order.status = 'Failed';
-                                    //     order.save(err => {
-                                    //         if (err) {
-                                    //             console.log('eventsManager: order.save: ', err);
-                                    //         }
-                                    //     });
-                                    //     return;
-                                    // }
+                                    // Expire order if the main transaction is not detected in 30mins
+                                    if (new Date().getTime() - new Date(order.updatedAt).getTime() > 1800000) {
+                                        order.status = 'Failed';
+                                        order.save(err => {
+                                            if (err) {
+                                                console.log('eventsManager: order.save: ', err);
+                                            }
+                                        });
+                                        return;
+                                    }
 
                                     const ords = await Orders.find({ txId: { $ne: null } }, 'txId', { lean: true }).exec();
                                     for (let i = 0; i < events.length; i++) {
