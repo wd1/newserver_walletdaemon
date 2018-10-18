@@ -669,7 +669,7 @@ const eventsManager = async () => {
                                     const ords = await Orders.find({ txId: { $ne: null } }, 'txId', { lean: true }).exec();
                                     for (let i = 0; i < events.length; i++) {
                                         const e = events[i];
-                                        if (e.data && e.transactionHash) {
+                                        if (e.data && e.transactionHash && e.blockNumber > order.receipt.blockNumber) {
                                             if (
                                                 (order.action === 'Buy' && e.topics[0] === '0x6a75660680cd3a8f7f34c5df6451086e3222c8a9e16e568b6e698098e8fd970b')
                                                 || (order.action === 'Sell' && e.topics[0] === '0x5e1656ea49c37d58c071f8ec59918a4e2380766f4956535b3724476daad4c4fd')
