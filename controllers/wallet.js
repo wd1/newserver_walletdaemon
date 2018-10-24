@@ -6,7 +6,7 @@ const Wallets = require('../models/Wallets');
 const Coins = require('../models/Coins');
 const TokenTransactions = require('../models/TokenTransactions');
 
-const { COINVEST_TOKEN_ADDRESS, ApiKey } = require('../services/Config');
+const { ApiKey } = require('../services/Config');
 const Web3Service = require('../services/Web3Service');
 const TruffleService = require('../services/TruffleService');
 
@@ -14,36 +14,6 @@ let updateWallet;
 let updateWalletWeb3;
 let updateTokenTransaction;
 let updateEtherTransaction;
-
-exports.walletSchedule = () => {
-    updateWalletWeb3 = schedule.scheduleJob('*/30 * * * * *', getWalletWeb3);
-    updateTokenTransaction = schedule.scheduleJob('*/30 * * * * *', getTokenTransactions);
-    updateEtherTransaction = schedule.scheduleJob('*/30 * * * * *', getEtherTransactions);
-};
-
-exports.cancelWalletSchedule = () => {
-    if (updateWallet) {
-        updateWallet.cancel();
-    }
-};
-
-exports.cancelWalletWeb3Schedule = () => {
-    if (updateWalletWeb3) {
-        updateWalletWeb3.cancel();
-    }
-};
-
-exports.cancelTokenTransactionSchedule = () => {
-    if (updateTokenTransaction) {
-        updateTokenTransaction.cancel();
-    }
-};
-
-exports.cancelEtherTransactionSchedule = () => {
-    if (updateEtherTransaction) {
-        updateEtherTransaction.cancel();
-    }
-};
 
 const getWalletWeb3 = () => {
     Coins.find({ symbol: ['ETH', 'COIN'] }, 'symbol', { lean: true }, (err, coins) => {
@@ -142,28 +112,6 @@ const getWalletWeb3 = () => {
     });
 };
 
-const getTokenTransactions = () => {
-    Coins.find({}, 'symbol', { lean: true }, (err, coins) => {
-        if (err) {
-            console.log('getTokenTransactions: Coins.find: ', err);
-            return;
-        }
-
-        if (coins && coins.length > 0) {
-            Accounts.find({}, 'beneficiary', { lean: true }, (err, accounts) => {
-                if (err) {
-                    console.log('getTokenTransactions: Accounts.find: ', err);
-                    return;
-                }
-
-                accounts.forEach(account => {
-                    getTransactionRequest(account, 1, coins);
-                });
-            });
-        }
-    });
-};
-
 const getTransactionRequest = (account, page, coins) => {
     const url = `https://api-ropsten.etherscan.io/api?module=account&action=tokentx&startblock=0&endblock=latest&offset=10000&sort=desc&apikey=${ApiKey}&address=`;
     request(`${url + account.beneficiary}&page=${page}`, async (err, response) => {
@@ -228,22 +176,22 @@ const getTransactionRequest = (account, page, coins) => {
     });
 };
 
-const getEtherTransactions = () => {
-    Coins.findOne({ symbol: 'ETH' }, 'symbol', { lean: true }, (err, coin) => {
+const getTokenTransactions = () => {
+    Coins.find({}, 'symbol', { lean: true }, (err, coins) => {
         if (err) {
-            console.log('getEtherTransactions: Coins.findOne: ', err);
+            console.log('getTokenTransactions: Coins.find: ', err);
             return;
         }
 
-        if (coin) {
+        if (coins && coins.length > 0) {
             Accounts.find({}, 'beneficiary', { lean: true }, (err, accounts) => {
                 if (err) {
-                    console.log('getEtherTransactions: Accounts.find: ', err);
+                    console.log('getTokenTransactions: Accounts.find: ', err);
                     return;
                 }
 
                 accounts.forEach(account => {
-                    getEtherTransactionsRequest(account, 1, coin);
+                    getTransactionRequest(account, 1, coins);
                 });
             });
         }
@@ -316,4 +264,56 @@ const getEtherTransactionsRequest = (account, page, coin) => {
             console.log('getEtherTransactionsRequest: catch: ', err);
         }
     });
+};
+
+const getEtherTransactions = () => {
+    Coins.findOne({ symbol: 'ETH' }, 'symbol', { lean: true }, (err, coin) => {
+        if (err) {
+            console.log('getEtherTransactions: Coins.findOne: ', err);
+            return;
+        }
+
+        if (coin) {
+            Accounts.find({}, 'beneficiary', { lean: true }, (err, accounts) => {
+                if (err) {
+                    console.log('getEtherTransactions: Accounts.find: ', err);
+                    return;
+                }
+
+                accounts.forEach(account => {
+                    getEtherTransactionsRequest(account, 1, coin);
+                });
+            });
+        }
+    });
+};
+
+exports.walletSchedule = () => {
+    updateWalletWeb3 = schedule.scheduleJob('*/30 * * * * *', getWalletWeb3);
+    updateTokenTransaction = schedule.scheduleJob('*/30 * * * * *', getTokenTransactions);
+    updateEtherTransaction = schedule.scheduleJob('*/30 * * * * *', getEtherTransactions);
+};
+
+exports.cancelWalletSchedule = () => {
+    if (updateWallet) {
+        updateWallet.cancel();
+    }
+};
+
+exports.cancelWalletWeb3Schedule = () => {
+    if (updateWalletWeb3) {
+        updateWalletWeb3.cancel();
+    }
+};
+
+exports.cancelTokenTransactionSchedule = () => {
+    if (updateTokenTransaction) {
+        updateTokenTransaction.cancel();
+    }
+};
+
+exports.cancelEtherTransactionSchedule = () => {
+    if (updateEtherTransaction) {
+        updateEtherTransaction.cancel();
+    }
 };
