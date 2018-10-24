@@ -8,30 +8,6 @@ let updateAsset;
 let updateCryptoCompareId;
 let updateCoinPrices;
 
-exports.coinSchedule = () => {
-    updateAsset = schedule.scheduleJob('*/1 * * * *', getAssets);
-    updateCryptoCompareId = schedule.scheduleJob('*/1 * * * *', getCryptoCompareId);
-    updateCoinPrices = schedule.scheduleJob('*/1 * * * *', getPricesFromCryptoCompare);
-};
-
-exports.cancelAssetSchedule = () => {
-    if (updateAsset) {
-        updateAsset.cancel();
-    }
-};
-
-exports.cancelCryptoCompareSchedule = () => {
-    if (updateCryptoCompareId) {
-        updateCryptoCompareId.cancel();
-    }
-};
-
-exports.cancelPriceSchedule = () => {
-    if (updateCoinPrices) {
-        updateCoinPrices.cancel();
-    }
-};
-
 const getAssets = () => {
     request('https://api.coinmarketcap.com/v2/listings', (err, response) => {
         if (err) {
@@ -238,4 +214,28 @@ const getPricesFromCryptoCompare = () => {
             });
         }
     });
+};
+
+exports.coinSchedule = () => {
+    updateAsset = schedule.scheduleJob('*/1 * * * *', getAssets);
+    updateCryptoCompareId = schedule.scheduleJob('*/1 * * * *', getCryptoCompareId);
+    updateCoinPrices = schedule.scheduleJob('*/10 * * * * *', getPricesFromCryptoCompare);
+};
+
+exports.cancelAssetSchedule = () => {
+    if (updateAsset) {
+        updateAsset.cancel();
+    }
+};
+
+exports.cancelCryptoCompareSchedule = () => {
+    if (updateCryptoCompareId) {
+        updateCryptoCompareId.cancel();
+    }
+};
+
+exports.cancelPriceSchedule = () => {
+    if (updateCoinPrices) {
+        updateCoinPrices.cancel();
+    }
 };
