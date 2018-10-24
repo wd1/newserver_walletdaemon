@@ -126,21 +126,6 @@ exports.recoverPreSigned = (sig, fn, value, extraData, gasPrice, nonce) => {
     });
 };
 
-exports.holdings = function (address) {
-    const UserDataContractInstance = UserDataContract.at(INVESTMENT_CONTRACT_ADDRESS);
-
-    return new Promise((resolve, reject) => {
-        UserDataContractInstance.returnHoldings(address)
-            .then(result => {
-                resolve(result);
-            })
-            .catch(err => {
-                console.log('Truffle holdings: ', err);
-                reject(err);
-            });
-    });
-};
-
 exports.coinBalance = address => {
     const TokenContractInstance = TokenContract.at(COINVEST_TOKEN_ADDRESS);
 
