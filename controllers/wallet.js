@@ -4,9 +4,10 @@ const schedule = require('node-schedule');
 const Accounts = require('../models/Accounts');
 const Wallets = require('../models/Wallets');
 const Coins = require('../models/Coins');
+const CoinWallets = require('../models/CoinWallets');
 const TokenTransactions = require('../models/TokenTransactions');
 
-const { ApiKey } = require('../services/Config');
+const { COINVEST_TOKEN_ADDRESS_V1, COINVEST_TOKEN_ADDRESS_V3, ApiKey } = require('../services/Config');
 const Web3Service = require('../services/Web3Service');
 const TruffleService = require('../services/TruffleService');
 
@@ -104,6 +105,74 @@ const getWalletWeb3 = () => {
                                 .catch(err => {
                                     console.log('getWalletWeb3: coinBalance: ', err);
                                 });
+
+                            const url = `https://api.etherscan.io/api?module=account&action=tokenbalance&tag=latest&apikey=${ApiKey}&address=${account.beneficiary}&contractaddress=`;
+
+                            request(`${url + COINVEST_TOKEN_ADDRESS_V1}`, async (err, response) => {
+                                if (err) {
+                                    console.log('getWalletWeb3 - v1: ', err);
+                                    return;
+                                }
+
+                                try {
+                                    if (response.statusCode === 200) {
+                                        const data = JSON.parse(response.body);
+                                        if (data.result) {
+                                            let v1Wallet = await CoinWallets.findOne({ accountId: account._id, version: 'v1' }).exec();
+                                            if (v1Wallet) {
+                                                v1Wallet.quantity = data.result;
+                                            } else {
+                                                v1Wallet = new CoinWallets({
+                                                    accountId: account._id,
+                                                    version: 'v1',
+                                                    quantity: data.result
+                                                });
+                                            }
+
+                                            v1Wallet.save(err => {
+                                                if (err) {
+                                                    console.log('getWalletWeb3 - v1.save: ', err);
+                                                }
+                                            });
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.log('getWalletWeb3 - v1: ', err);
+                                }
+                            });
+
+                            request(`${url + COINVEST_TOKEN_ADDRESS_V3}`, async (err, response) => {
+                                if (err) {
+                                    console.log('getWalletWeb3 - v3: ', err);
+                                    return;
+                                }
+
+                                try {
+                                    if (response.statusCode === 200) {
+                                        const data = JSON.parse(response.body);
+                                        if (data.result) {
+                                            let v1Wallet = await CoinWallets.findOne({ accountId: account._id, version: 'v3' }).exec();
+                                            if (v1Wallet) {
+                                                v1Wallet.quantity = data.result;
+                                            } else {
+                                                v1Wallet = new CoinWallets({
+                                                    accountId: account._id,
+                                                    version: 'v3',
+                                                    quantity: data.result
+                                                });
+                                            }
+
+                                            v1Wallet.save(err => {
+                                                if (err) {
+                                                    console.log('getWalletWeb3 - v3.save: ', err);
+                                                }
+                                            });
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.log('getWalletWeb3 - v3: ', err);
+                                }
+                            });
                         }
                     });
                 }
