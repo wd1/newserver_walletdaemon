@@ -7,9 +7,11 @@ const Coins = require('../models/Coins');
 const CoinWallets = require('../models/CoinWallets');
 const TokenTransactions = require('../models/TokenTransactions');
 
-const { COINVEST_TOKEN_ADDRESS_V1, COINVEST_TOKEN_ADDRESS_V3, ApiKey } = require('../services/Config');
+const { COINVEST_TOKEN_ADDRESS_V1, COINVEST_TOKEN_ADDRESS_V3 } = require('../services/Config');
 const Web3Service = require('../services/Web3Service');
 const TruffleService = require('../services/TruffleService');
+
+const { ETHSCAN_URI, ETHSCAN_API_KEY } = process.env;
 
 let updateWallet;
 let updateWalletWeb3;
@@ -106,7 +108,7 @@ const getWalletWeb3 = () => {
                                     console.log('getWalletWeb3: coinBalance: ', err);
                                 });
 
-                            const url = `https://api.etherscan.io/api?module=account&action=tokenbalance&tag=latest&apikey=${ApiKey}&address=${account.beneficiary}&contractaddress=`;
+                            const url = `${ETHSCAN_URI}&action=tokenbalance&tag=latest&apikey=${ETHSCAN_API_KEY}&address=${account.beneficiary}&contractaddress=`;
 
                             request(`${url + COINVEST_TOKEN_ADDRESS_V1}`, async (err, response) => {
                                 if (err) {
@@ -182,7 +184,7 @@ const getWalletWeb3 = () => {
 };
 
 const getTransactionRequest = (account, page, coins) => {
-    const url = `https://api-ropsten.etherscan.io/api?module=account&action=tokentx&startblock=0&endblock=latest&offset=10000&sort=desc&apikey=${ApiKey}&address=`;
+    const url = `${ETHSCAN_URI}&action=tokentx&startblock=0&endblock=latest&offset=10000&sort=desc&apikey=${ETHSCAN_API_KEY}&address=`;
     request(`${url + account.beneficiary}&page=${page}`, async (err, response) => {
         if (err) {
             console.log('getTokenTransactions: etherscan: ', err);
@@ -268,7 +270,7 @@ const getTokenTransactions = () => {
 };
 
 const getEtherTransactionsRequest = (account, page, coin) => {
-    const url = `https://api-ropsten.etherscan.io/api?module=account&action=txlist&startblock=0&endblock=latest&offset=10000&sort=desc&apikey=${ApiKey}&address=`;
+    const url = `${ETHSCAN_URI}&action=txlist&startblock=0&endblock=latest&offset=10000&sort=desc&apikey=${ETHSCAN_API_KEY}&address=`;
     request(`${url + account.beneficiary}&page=${page}`, async (err, response) => {
         if (err) {
             console.log('getEtherTransactions: etherscan: ', err);
