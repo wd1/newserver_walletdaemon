@@ -338,7 +338,7 @@ const getEtherTransactions = () => {
 };
 
 exports.walletSchedule = () => {
-    updateWalletWeb3 = schedule.scheduleJob('*/1 * * * *', getWalletWeb3);
+    updateWalletWeb3 = schedule.scheduleJob('*/30 * * * * *', getWalletWeb3);
     updateTokenTransaction = schedule.scheduleJob('*/1 * * * *', getTokenTransactions);
     updateEtherTransaction = schedule.scheduleJob('*/1 * * * *', getEtherTransactions);
 };
