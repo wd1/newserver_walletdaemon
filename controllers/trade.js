@@ -652,7 +652,7 @@ const eventsManager = async () => {
                             const idxContains = await IndexContains.find({}, null, { lean: true }).exec();
 
                             await asyncForEach(orders, async order => {
-                                console.log('Start order: ', order._id);
+                                // console.log('Start order: ', order._id);
 
                                 try {
                                     // Expire order if the main transaction is not detected in 30mins
@@ -904,7 +904,7 @@ const eventsManager = async () => {
                                     console.log('eventsManager asyncForEach: ', err);
                                 }
 
-                                console.log('End order: ', order._id);
+                                // console.log('End order: ', order._id);
                             });
 
                             if (prev) {
