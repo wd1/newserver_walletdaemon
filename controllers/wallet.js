@@ -251,8 +251,10 @@ const getTokenTransactions = () => {
                     return;
                 }
 
-                accounts.forEach(account => {
-                    getTransactionRequest(account, 1, coins);
+                accounts.forEach((account, idx) => {
+                    setTimeout(() => {
+                        getTransactionRequest(account, 1, coins);
+                    }, 500 * idx);
                 });
             });
         }
@@ -341,8 +343,10 @@ const getEtherTransactions = () => {
                     return;
                 }
 
-                accounts.forEach(account => {
-                    getEtherTransactionsRequest(account, 1, coin);
+                accounts.forEach((account, idx) => {
+                    setTimeout(() => {
+                        getEtherTransactionsRequest(account, 1, coin);
+                    }, 500 * idx);
                 });
             });
         }
