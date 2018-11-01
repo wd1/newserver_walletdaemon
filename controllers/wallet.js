@@ -330,9 +330,9 @@ const getEtherTransactions = async () => {
 };
 
 exports.walletSchedule = () => {
-    updateWalletWeb3 = schedule.scheduleJob('*/15 * * * * *', getWalletWeb3);
-    updateTokenTransaction = schedule.scheduleJob('*/1 * * * *', getTokenTransactions);
-    updateEtherTransaction = schedule.scheduleJob('*/1 * * * *', getEtherTransactions);
+    updateWalletWeb3 = schedule.scheduleJob('*/30 * * * * *', getWalletWeb3);
+    updateTokenTransaction = schedule.scheduleJob('*/2 * * * *', getTokenTransactions);
+    updateEtherTransaction = schedule.scheduleJob('*/2 * * * *', getEtherTransactions);
 };
 
 exports.cancelWalletSchedule = () => {
