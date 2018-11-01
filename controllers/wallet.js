@@ -18,13 +18,9 @@ let updateWalletWeb3;
 let updateTokenTransaction;
 let updateEtherTransaction;
 
-const getWalletWeb3 = () => {
-    Coins.find({ symbol: ['ETH', 'COIN'] }, 'symbol', { lean: true }, (err, coins) => {
-        if (err) {
-            console.log('getWallet: Coins.find: ', err);
-            return;
-        }
-
+const getWalletWeb3 = async () => {
+    try {
+        const coins = await Coins.find({ symbol: ['ETH', 'COIN'] }, 'symbol', { lean: true }).exec();
         if (coins && coins.length > 0) {
             let coin;
             let coinEth;
@@ -39,138 +35,134 @@ const getWalletWeb3 = () => {
                 coinEth = coins[coinEthIdx];
             }
 
-            Accounts.find({}, 'beneficiary', { lean: true }, (err, accounts) => {
-                if (err) {
-                    console.log('getWalletWeb3: find: ', err);
-                    return;
-                }
+            const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
+            if (accounts && accounts.length > 0) {
+                accounts.forEach(account => {
+                    if (coinEth) {
+                        Web3Service.getBalance(account.beneficiary)
+                            .then(balance => {
+                                Wallets.findOne({ accountId: account._id, coinId: coinEth._id }, (err, wallet) => {
+                                    if (err) {
+                                        console.log('getWalletWeb3: Wallets.findOne: ', err);
+                                        return;
+                                    }
 
-                if (accounts && accounts.length > 0) {
-                    accounts.forEach(account => {
-                        if (coinEth) {
-                            Web3Service.getBalance(account.beneficiary)
-                                .then(balance => {
-                                    Wallets.findOne({ accountId: account._id, coinId: coinEth._id }, (err, wallet) => {
-                                        if (err) {
-                                            console.log('getWalletWeb3: Wallets.findOne: ', err);
-                                            return;
-                                        }
-
-                                        if (wallet) {
-                                            wallet.set({ quantity: balance });
-                                        } else {
-                                            wallet = new Wallets({
-                                                accountId: account._id,
-                                                coinId: coinEth._id,
-                                                quantity: balance
-                                            });
-                                        }
-
-                                        wallet.save(err => {
-                                            if (err) {
-                                                console.log('getWalletWeb3: wallet.save: ', err);
-                                            }
+                                    if (wallet) {
+                                        wallet.set({ quantity: balance });
+                                    } else {
+                                        wallet = new Wallets({
+                                            accountId: account._id,
+                                            coinId: coinEth._id,
+                                            quantity: balance
                                         });
-                                    });
-                                })
-                                .catch(err => {
-                                    console.log('getWalletWeb3: getBalance: ', err);
-                                });
-                        }
+                                    }
 
-                        if (coin) {
-                            TruffleService.coinBalance(account.beneficiary)
-                                .then(balance => {
-                                    Wallets.findOne({ accountId: account._id, coinId: coin._id }, (err, wallet) => {
+                                    wallet.save(err => {
                                         if (err) {
-                                            console.log('getWalletWeb3: Wallets.findOne: ', err);
-                                            return;
+                                            console.log('getWalletWeb3: wallet.save: ', err);
                                         }
-
-                                        if (wallet) {
-                                            wallet.set({ quantity: balance });
-                                        } else {
-                                            wallet = new Wallets({
-                                                accountId: account._id,
-                                                coinId: coin._id,
-                                                quantity: balance
-                                            });
-                                        }
-
-                                        wallet.save(err => {
-                                            if (err) {
-                                                console.log('getWalletWeb3: wallet.save: ', err);
-                                            }
-                                        });
                                     });
-                                })
-                                .catch(err => {
-                                    console.log('getWalletWeb3: coinBalance: ', err);
                                 });
+                            })
+                            .catch(err => {
+                                console.log('getWalletWeb3: getBalance: ', err);
+                            });
+                    }
 
-                            TruffleService.coinBalanceOther(account.beneficiary, COINVEST_TOKEN_ADDRESS_V1)
-                                .then(async balance => {
-                                    CoinWallets.findOne({ accountId: account._id, version: 'v1' }, (err, wallet) => {
+                    if (coin) {
+                        TruffleService.coinBalance(account.beneficiary)
+                            .then(balance => {
+                                Wallets.findOne({ accountId: account._id, coinId: coin._id }, (err, wallet) => {
+                                    if (err) {
+                                        console.log('getWalletWeb3: Wallets.findOne: ', err);
+                                        return;
+                                    }
+
+                                    if (wallet) {
+                                        wallet.set({ quantity: balance });
+                                    } else {
+                                        wallet = new Wallets({
+                                            accountId: account._id,
+                                            coinId: coin._id,
+                                            quantity: balance
+                                        });
+                                    }
+
+                                    wallet.save(err => {
                                         if (err) {
-                                            console.log('getWalletWeb3: CoinWallets.v1: ', err);
-                                            return;
+                                            console.log('getWalletWeb3: wallet.save: ', err);
                                         }
-
-                                        if (wallet) {
-                                            wallet.set({ quantity: balance });
-                                        } else {
-                                            wallet = new CoinWallets({
-                                                accountId: account._id,
-                                                version: 'v1',
-                                                quantity: balance
-                                            });
-                                        }
-
-                                        wallet.save(err => {
-                                            if (err) {
-                                                console.log('getWalletWeb3 - v1.save: ', err);
-                                            }
-                                        });
                                     });
-                                })
-                                .catch(err => {
-                                    console.log('getWalletWeb3 - v1: ', err);
                                 });
+                            })
+                            .catch(err => {
+                                console.log('getWalletWeb3: coinBalance: ', err);
+                            });
 
-                            TruffleService.coinBalanceOther(account.beneficiary, COINVEST_TOKEN_ADDRESS_V3)
-                                .then(async balance => {
-                                    CoinWallets.findOne({ accountId: account._id, version: 'v3' }, (err, wallet) => {
+                        TruffleService.coinBalanceOther(account.beneficiary, COINVEST_TOKEN_ADDRESS_V1)
+                            .then(async balance => {
+                                CoinWallets.findOne({ accountId: account._id, version: 'v1' }, (err, wallet) => {
+                                    if (err) {
+                                        console.log('getWalletWeb3: CoinWallets.v1: ', err);
+                                        return;
+                                    }
+
+                                    if (wallet) {
+                                        wallet.set({ quantity: balance });
+                                    } else {
+                                        wallet = new CoinWallets({
+                                            accountId: account._id,
+                                            version: 'v1',
+                                            quantity: balance
+                                        });
+                                    }
+
+                                    wallet.save(err => {
                                         if (err) {
-                                            console.log('getWalletWeb3: CoinWallets.v3: ', err);
-                                            return;
+                                            console.log('getWalletWeb3 - v1.save: ', err);
                                         }
-
-                                        if (wallet) {
-                                            wallet.set({ quantity: balance });
-                                        } else {
-                                            wallet = new CoinWallets({
-                                                accountId: account._id,
-                                                version: 'v3',
-                                                quantity: balance
-                                            });
-                                        }
-
-                                        wallet.save(err => {
-                                            if (err) {
-                                                console.log('getWalletWeb3 - v3.save: ', err);
-                                            }
-                                        });
                                     });
-                                })
-                                .catch(err => {
-                                    console.log('getWalletWeb3 - v3: ', err);
                                 });
-                        }
-                    });
-                }
-            });
+                            })
+                            .catch(err => {
+                                console.log('getWalletWeb3 - v1: ', err);
+                            });
+
+                        TruffleService.coinBalanceOther(account.beneficiary, COINVEST_TOKEN_ADDRESS_V3)
+                            .then(async balance => {
+                                CoinWallets.findOne({ accountId: account._id, version: 'v3' }, (err, wallet) => {
+                                    if (err) {
+                                        console.log('getWalletWeb3: CoinWallets.v3: ', err);
+                                        return;
+                                    }
+
+                                    if (wallet) {
+                                        wallet.set({ quantity: balance });
+                                    } else {
+                                        wallet = new CoinWallets({
+                                            accountId: account._id,
+                                            version: 'v3',
+                                            quantity: balance
+                                        });
+                                    }
+
+                                    wallet.save(err => {
+                                        if (err) {
+                                            console.log('getWalletWeb3 - v3.save: ', err);
+                                        }
+                                    });
+                                });
+                            })
+                            .catch(err => {
+                                console.log('getWalletWeb3 - v3: ', err);
+                            });
+                    }
+                });
+            }
         }
-    });
+    } catch (e) {
+        console.log('getWalletWeb3: ', e);
+    }
 };
 
 const getTransactionRequest = (account, page, coins) => {
@@ -237,28 +229,20 @@ const getTransactionRequest = (account, page, coins) => {
     });
 };
 
-const getTokenTransactions = () => {
-    Coins.find({}, 'symbol', { lean: true }, (err, coins) => {
-        if (err) {
-            console.log('getTokenTransactions: Coins.find: ', err);
-            return;
-        }
-
+const getTokenTransactions = async () => {
+    try {
+        const coins = await Coins.find({}, 'symbol', { lean: true }).exec();
         if (coins && coins.length > 0) {
-            Accounts.find({}, 'beneficiary', { lean: true }, (err, accounts) => {
-                if (err) {
-                    console.log('getTokenTransactions: Accounts.find: ', err);
-                    return;
-                }
-
-                accounts.forEach((account, idx) => {
-                    setTimeout(() => {
-                        getTransactionRequest(account, 1, coins);
-                    }, 500 * idx);
-                });
+            const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
+            accounts.forEach((account, idx) => {
+                setTimeout(() => {
+                    getTransactionRequest(account, 1, coins);
+                }, 200 * idx);
             });
         }
-    });
+    } catch (e) {
+        console.log('getTokenTransactions: ', e);
+    }
 };
 
 const getEtherTransactionsRequest = (account, page, coin) => {
@@ -329,28 +313,20 @@ const getEtherTransactionsRequest = (account, page, coin) => {
     });
 };
 
-const getEtherTransactions = () => {
-    Coins.findOne({ symbol: 'ETH' }, 'symbol', { lean: true }, (err, coin) => {
-        if (err) {
-            console.log('getEtherTransactions: Coins.findOne: ', err);
-            return;
-        }
-
+const getEtherTransactions = async () => {
+    try {
+        const coin = await Coins.findOne({ symbol: 'ETH' }, 'symbol', { lean: true }).exec();
         if (coin) {
-            Accounts.find({}, 'beneficiary', { lean: true }, (err, accounts) => {
-                if (err) {
-                    console.log('getEtherTransactions: Accounts.find: ', err);
-                    return;
-                }
-
-                accounts.forEach((account, idx) => {
-                    setTimeout(() => {
-                        getEtherTransactionsRequest(account, 1, coin);
-                    }, 500 * idx);
-                });
+            const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
+            accounts.forEach((account, idx) => {
+                setTimeout(() => {
+                    getEtherTransactionsRequest(account, 1, coin);
+                }, 200 * idx);
             });
         }
-    });
+    } catch (e) {
+        console.log('getEtherTransactions: ', e);
+    }
 };
 
 exports.walletSchedule = () => {
