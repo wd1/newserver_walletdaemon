@@ -110,21 +110,27 @@ const getWalletWeb3 = () => {
 
                             TruffleService.coinBalanceOther(account.beneficiary, COINVEST_TOKEN_ADDRESS_V1)
                                 .then(async balance => {
-                                    let v1Wallet = await CoinWallets.findOne({ accountId: account._id, version: 'v1' }).exec();
-                                    if (v1Wallet) {
-                                        v1Wallet.set({ quantity: balance });
-                                    } else {
-                                        v1Wallet = new CoinWallets({
-                                            accountId: account._id,
-                                            version: 'v1',
-                                            quantity: balance
-                                        });
-                                    }
-
-                                    v1Wallet.save(err => {
+                                    CoinWallets.findOne({ accountId: account._id, version: 'v1' }, (err, wallet) => {
                                         if (err) {
-                                            console.log('getWalletWeb3 - v1.save: ', err);
+                                            console.log('getWalletWeb3: CoinWallets.v1: ', err);
+                                            return;
                                         }
+
+                                        if (wallet) {
+                                            wallet.set({ quantity: balance });
+                                        } else {
+                                            wallet = new CoinWallets({
+                                                accountId: account._id,
+                                                version: 'v1',
+                                                quantity: balance
+                                            });
+                                        }
+
+                                        wallet.save(err => {
+                                            if (err) {
+                                                console.log('getWalletWeb3 - v1.save: ', err);
+                                            }
+                                        });
                                     });
                                 })
                                 .catch(err => {
@@ -133,21 +139,27 @@ const getWalletWeb3 = () => {
 
                             TruffleService.coinBalanceOther(account.beneficiary, COINVEST_TOKEN_ADDRESS_V3)
                                 .then(async balance => {
-                                    let v3Wallet = await CoinWallets.findOne({ accountId: account._id, version: 'v3' }).exec();
-                                    if (v3Wallet) {
-                                        v3Wallet.set({ quantity: balance });
-                                    } else {
-                                        v3Wallet = new CoinWallets({
-                                            accountId: account._id,
-                                            version: 'v3',
-                                            quantity: balance
-                                        });
-                                    }
-
-                                    v3Wallet.save(err => {
+                                    CoinWallets.findOne({ accountId: account._id, version: 'v3' }, (err, wallet) => {
                                         if (err) {
-                                            console.log('getWalletWeb3 - v3.save: ', err);
+                                            console.log('getWalletWeb3: CoinWallets.v3: ', err);
+                                            return;
                                         }
+
+                                        if (wallet) {
+                                            wallet.set({ quantity: balance });
+                                        } else {
+                                            wallet = new CoinWallets({
+                                                accountId: account._id,
+                                                version: 'v3',
+                                                quantity: balance
+                                            });
+                                        }
+
+                                        wallet.save(err => {
+                                            if (err) {
+                                                console.log('getWalletWeb3 - v3.save: ', err);
+                                            }
+                                        });
                                     });
                                 })
                                 .catch(err => {
@@ -239,8 +251,10 @@ const getTokenTransactions = () => {
                     return;
                 }
 
-                accounts.forEach(account => {
-                    getTransactionRequest(account, 1, coins);
+                accounts.forEach((account, idx) => {
+                    setTimeout(() => {
+                        getTransactionRequest(account, 1, coins);
+                    }, 500 * idx);
                 });
             });
         }
@@ -329,8 +343,10 @@ const getEtherTransactions = () => {
                     return;
                 }
 
-                accounts.forEach(account => {
-                    getEtherTransactionsRequest(account, 1, coin);
+                accounts.forEach((account, idx) => {
+                    setTimeout(() => {
+                        getEtherTransactionsRequest(account, 1, coin);
+                    }, 500 * idx);
                 });
             });
         }
