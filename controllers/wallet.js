@@ -203,29 +203,22 @@ const getWalletWeb3Infura = async () => {
 
                                     Wallets.findOne({ accountId: account._id, coinId: coinEth._id }, (err, wallet) => {
                                         if (err) {
-                                            console.log('getWalletWeb3: Wallets.findOne: ', err);
+                                            console.log('getWalletWeb3Infura - Wallets.findOne: ', err);
                                             return;
                                         }
 
                                         if (wallet) {
-                                            wallet.set({ quantity: balance });
-                                        } else {
-                                            wallet = new Wallets({
-                                                accountId: account._id,
-                                                coinId: coinEth._id,
-                                                quantity: balance
+                                            wallet.quantity = balance;
+                                            wallet.save(err => {
+                                                if (err) {
+                                                    console.log('getWalletWeb3Infura - wallet.save: ', err);
+                                                }
                                             });
                                         }
-
-                                        wallet.save(err => {
-                                            if (err) {
-                                                console.log('getWalletWeb3: wallet.save: ', err);
-                                            }
-                                        });
                                     });
                                 })
                                 .catch(err => {
-                                    console.log('getWalletWeb3 - ETH: ', err);
+                                    console.log('getWalletWeb3Infura - ETH: ', err);
                                 });
                         }
 
@@ -235,7 +228,7 @@ const getWalletWeb3Infura = async () => {
 
                             request(`${url + COINVEST_TOKEN_ADDRESS}`, async (err, response) => {
                                 if (err) {
-                                    console.log('getWalletWeb3 - v2: ', err);
+                                    console.log('getWalletWeb3Infura - v2: ', err);
                                     return;
                                 }
 
@@ -243,32 +236,25 @@ const getWalletWeb3Infura = async () => {
                                     if (response.statusCode === 200) {
                                         const data = JSON.parse(response.body);
                                         if (data.result) {
-                                            let v2Wallet = await Wallets.findOne({ accountId: account._id, coinId: coin._id }).exec();
+                                            const v2Wallet = await Wallets.findOne({ accountId: account._id, coinId: coin._id }).exec();
                                             if (v2Wallet) {
                                                 v2Wallet.quantity = data.result;
-                                            } else {
-                                                v2Wallet = new CoinWallets({
-                                                    accountId: account._id,
-                                                    coinId: coin._id,
-                                                    quantity: data.result
+                                                v2Wallet.save(err => {
+                                                    if (err) {
+                                                        console.log('getWalletWeb3Infura - v2.save: ', err);
+                                                    }
                                                 });
                                             }
-
-                                            v2Wallet.save(err => {
-                                                if (err) {
-                                                    console.log('getWalletWeb3 - v2.save: ', err);
-                                                }
-                                            });
                                         }
                                     }
                                 } catch (e) {
-                                    console.log('getWalletWeb3 - v2: ', err);
+                                    console.log('getWalletWeb3Infura - v2: ', err);
                                 }
                             });
 
                             request(`${url + COINVEST_TOKEN_ADDRESS_V1}`, async (err, response) => {
                                 if (err) {
-                                    console.log('getWalletWeb3 - v1: ', err);
+                                    console.log('getWalletWeb3Infura - v1: ', err);
                                     return;
                                 }
 
@@ -276,32 +262,25 @@ const getWalletWeb3Infura = async () => {
                                     if (response.statusCode === 200) {
                                         const data = JSON.parse(response.body);
                                         if (data.result) {
-                                            let v1Wallet = await CoinWallets.findOne({ accountId: account._id, version: 'v1' }).exec();
+                                            const v1Wallet = await CoinWallets.findOne({ accountId: account._id, version: 'v1' }).exec();
                                             if (v1Wallet) {
                                                 v1Wallet.quantity = data.result;
-                                            } else {
-                                                v1Wallet = new CoinWallets({
-                                                    accountId: account._id,
-                                                    version: 'v1',
-                                                    quantity: data.result
+                                                v1Wallet.save(err => {
+                                                    if (err) {
+                                                        console.log('getWalletWeb3Infura - v1.save: ', err);
+                                                    }
                                                 });
                                             }
-
-                                            v1Wallet.save(err => {
-                                                if (err) {
-                                                    console.log('getWalletWeb3 - v1.save: ', err);
-                                                }
-                                            });
                                         }
                                     }
                                 } catch (e) {
-                                    console.log('getWalletWeb3 - v1: ', err);
+                                    console.log('getWalletWeb3Infura - v1: ', err);
                                 }
                             });
 
                             request(`${url + COINVEST_TOKEN_ADDRESS_V3}`, async (err, response) => {
                                 if (err) {
-                                    console.log('getWalletWeb3 - v3: ', err);
+                                    console.log('getWalletWeb3Infura - v3: ', err);
                                     return;
                                 }
 
@@ -309,26 +288,19 @@ const getWalletWeb3Infura = async () => {
                                     if (response.statusCode === 200) {
                                         const data = JSON.parse(response.body);
                                         if (data.result) {
-                                            let v3Wallet = await CoinWallets.findOne({ accountId: account._id, version: 'v3' }).exec();
+                                            const v3Wallet = await CoinWallets.findOne({ accountId: account._id, version: 'v3' }).exec();
                                             if (v3Wallet) {
                                                 v3Wallet.quantity = data.result;
-                                            } else {
-                                                v3Wallet = new CoinWallets({
-                                                    accountId: account._id,
-                                                    version: 'v3',
-                                                    quantity: data.result
+                                                v3Wallet.save(err => {
+                                                    if (err) {
+                                                        console.log('getWalletWeb3Infura - v3.save: ', err);
+                                                    }
                                                 });
                                             }
-
-                                            v3Wallet.save(err => {
-                                                if (err) {
-                                                    console.log('getWalletWeb3 - v3.save: ', err);
-                                                }
-                                            });
                                         }
                                     }
                                 } catch (e) {
-                                    console.log('getWalletWeb3 - v3: ', err);
+                                    console.log('getWalletWeb3Infura - v3: ', err);
                                 }
                             });
                         }
