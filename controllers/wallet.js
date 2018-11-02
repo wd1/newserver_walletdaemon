@@ -381,30 +381,55 @@ const getTransactionRequest = (account, page, coins) => {
                             action = 'receive';
                         }
 
-                        const coinIndex = coins.findIndex(coin => coin.symbol === tx.tokenSymbol);
-                        if (coinIndex > -1) {
-                            let tokenTransaction = await TokenTransactions.findOne({
-                                accountId: account._id, coinId: coins[coinIndex]._id, amount: tx.value, txId: tx.hash
-                            }).exec();
-                            if (!tokenTransaction) {
-                                tokenTransaction = new TokenTransactions({
+                        let symbol = tx.tokenSymbol;
+                        if (!symbol) {
+                            const tokenIdx = tokenList.findIndex(t => t.address === tx.contractAddress);
+                            symbol = (tokenIdx > -1) ? tokenList[tokenIdx].symbol : symbol;
+                        }
+
+                        let version = null;
+                        if (tx.contractAddress === COINVEST_TOKEN_ADDRESS_V1) {
+                            symbol = 'COIN';
+                            version = 'v1';
+                        } else if (tx.contractAddress === COINVEST_TOKEN_ADDRESS) {
+                            symbol = 'COIN';
+                            version = 'v2';
+                        } else if (tx.contractAddress === COINVEST_TOKEN_ADDRESS_V3) {
+                            symbol = 'COIN';
+                            version = 'v3';
+                        }
+
+                        if (symbol) {
+                            const coinIndex = coins.findIndex(coin => coin.symbol === symbol);
+                            if (coinIndex > -1) {
+                                let tokenTransaction = await TokenTransactions.findOne({
                                     accountId: account._id,
                                     coinId: coins[coinIndex]._id,
                                     amount: tx.value,
-                                    timestamp: parseInt(tx.timeStamp, 10),
                                     txId: tx.hash,
-                                    from: tx.from,
-                                    to: tx.to,
-                                    action
-                                });
+                                    version
+                                }).exec();
+                                if (!tokenTransaction) {
+                                    tokenTransaction = new TokenTransactions({
+                                        accountId: account._id,
+                                        coinId: coins[coinIndex]._id,
+                                        amount: tx.value,
+                                        timestamp: parseInt(tx.timeStamp, 10),
+                                        txId: tx.hash,
+                                        from: tx.from,
+                                        to: tx.to,
+                                        action,
+                                        version
+                                    });
 
-                                tokenTransaction.save(err => {
-                                    if (err) {
-                                        console.log('getTokenTransactions: save: ', err);
-                                    }
-                                });
+                                    tokenTransaction.save(err => {
+                                        if (err) {
+                                            console.log('getTokenTransactions: save: ', err);
+                                        }
+                                    });
 
-                                allSaved = false;
+                                    allSaved = false;
+                                }
                             }
                         }
                     }
