@@ -5416,5 +5416,11 @@ exports.tokenList = [
         symbol: 'ZST',
         decimal: 8,
         type: 'default'
+    },
+    {
+        address: '0x9e7e5b5651e826B301A9567a5Bb950a42bb17904',
+        symbol: 'WIT',
+        decimal: 8,
+        type: 'default'
     }
 ];
