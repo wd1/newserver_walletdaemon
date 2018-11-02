@@ -11,7 +11,12 @@ const TokenTransactions = require('../models/TokenTransactions');
 
 const { bignumberToString } = require('../services/bignumber2string');
 
-const { COINVEST_TOKEN_ADDRESS, COINVEST_TOKEN_ADDRESS_V1, COINVEST_TOKEN_ADDRESS_V3 } = require('../services/Config');
+const {
+    COINVEST_TOKEN_ADDRESS,
+    COINVEST_TOKEN_ADDRESS_V1,
+    COINVEST_TOKEN_ADDRESS_V3,
+    tokenList
+} = require('../services/Config');
 const Web3Service = require('../services/Web3Service');
 const TruffleService = require('../services/TruffleService');
 
@@ -190,37 +195,75 @@ const getWalletWeb3Infura = async () => {
             if (accounts && accounts.length > 0) {
                 accounts.forEach((account, idx) => {
                     setTimeout(() => {
-                        if (coinEth) {
-                            axios.post(GETH_INFURA, {
-                                jsonrpc: '2.0',
-                                method: 'eth_getBalance',
-                                params: [account.beneficiary, 'latest'],
-                                id: 1
-                            })
-                                .then(result => result.data)
-                                .then(data => {
-                                    const balance = bignumberToString(new BigNumber(data.result, 16));
+                        Wallets.find({ accountId: account._id }, (err, wallets) => {
+                            if (err) {
+                                console.log('getWalletWeb3Infura - Wallets.find: ', err);
+                                return;
+                            }
 
-                                    Wallets.findOne({ accountId: account._id, coinId: coinEth._id }, (err, wallet) => {
-                                        if (err) {
-                                            console.log('getWalletWeb3Infura - Wallets.findOne: ', err);
+                            if (wallets && wallets.length > 0) {
+                                wallets.forEach(wallet => {
+                                    const coIdx = coins.findIndex(c => c._id == wallet.coinId);
+                                    if (coIdx > -1) {
+                                        if (coins[coIdx].symbol === 'COIN') {
                                             return;
                                         }
 
-                                        if (wallet) {
-                                            wallet.quantity = balance;
-                                            wallet.save(err => {
-                                                if (err) {
-                                                    console.log('getWalletWeb3Infura - wallet.save: ', err);
-                                                }
-                                            });
+                                        if (coins[coIdx].symbol === 'ETH' && coinEth) {
+                                            axios.post(GETH_INFURA, {
+                                                jsonrpc: '2.0',
+                                                method: 'eth_getBalance',
+                                                params: [account.beneficiary, 'latest'],
+                                                id: 1
+                                            })
+                                                .then(result => result.data)
+                                                .then(data => {
+                                                    wallet.quantity = bignumberToString(new BigNumber(data.result, 16));
+                                                    wallet.save(err => {
+                                                        if (err) {
+                                                            console.log('getWalletWeb3Infura - wallet.save: ', err);
+                                                        }
+                                                    });
+                                                })
+                                                .catch(err => {
+                                                    console.log('getWalletWeb3Infura - ETH: ', err.response);
+                                                });
+                                        } else {
+                                            const tokenIdx = tokenList.findIndex(t => t.symbol === coins[coIdx].symbol);
+                                            if (tokenIdx > -1) {
+                                                const contractAddress = tokenList[tokenIdx].address;
+
+                                                const url = `${ETHSCAN_URI}&action=tokenbalance&tag=latest&apikey=${ETHSCAN_API_KEY}&address=${account.beneficiary}&contractaddress=${contractAddress}`;
+
+
+                                                request(url, (err, response) => {
+                                                    if (err) {
+                                                        console.log('getWalletWeb3Infura - custom.get: ', err);
+                                                        return;
+                                                    }
+
+                                                    try {
+                                                        if (response.statusCode === 200) {
+                                                            const data = JSON.parse(response.body);
+                                                            if (data.result) {
+                                                                wallet.quantity = data.result;
+                                                                wallet.save(err => {
+                                                                    if (err) {
+                                                                        console.log('getWalletWeb3Infura - custom.save: ', err);
+                                                                    }
+                                                                });
+                                                            }
+                                                        }
+                                                    } catch (e) {
+                                                        console.log('getWalletWeb3Infura - custom: ', err);
+                                                    }
+                                                });
+                                            }
                                         }
-                                    });
-                                })
-                                .catch(err => {
-                                    console.log('getWalletWeb3Infura - ETH: ', err);
+                                    }
                                 });
-                        }
+                            }
+                        });
 
                         if (coin) {
                             const url = `${ETHSCAN_URI}&action=tokenbalance&tag=latest&apikey=${ETHSCAN_API_KEY}&address=${account.beneficiary}&contractaddress=`;
