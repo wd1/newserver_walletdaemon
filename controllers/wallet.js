@@ -29,7 +29,7 @@ let updateEtherTransaction;
 
 const getWalletWeb3 = async () => {
     try {
-        const coins = await Coins.find({ symbol: ['ETH', 'COIN'] }, 'symbol', { lean: true }).exec();
+        const coins = await Coins.find({}, 'symbol', { lean: true }).exec();
         if (coins && coins.length > 0) {
             let coin;
             let coinEth;
@@ -176,7 +176,7 @@ const getWalletWeb3 = async () => {
 
 const getWalletWeb3Infura = async () => {
     try {
-        const coins = await Coins.find({ symbol: ['ETH', 'COIN'] }, 'symbol', { lean: true }).exec();
+        const coins = await Coins.find({}, 'symbol', { lean: true }).exec();
         if (coins && coins.length > 0) {
             let coin;
             let coinEth;
@@ -234,8 +234,6 @@ const getWalletWeb3Infura = async () => {
                                                 const contractAddress = tokenList[tokenIdx].address;
 
                                                 const url = `${ETHSCAN_URI}&action=tokenbalance&tag=latest&apikey=${ETHSCAN_API_KEY}&address=${account.beneficiary}&contractaddress=${contractAddress}`;
-
-
                                                 request(url, (err, response) => {
                                                     if (err) {
                                                         console.log('getWalletWeb3Infura - custom.get: ', err);
@@ -267,7 +265,6 @@ const getWalletWeb3Infura = async () => {
 
                         if (coin) {
                             const url = `${ETHSCAN_URI}&action=tokenbalance&tag=latest&apikey=${ETHSCAN_API_KEY}&address=${account.beneficiary}&contractaddress=`;
-
 
                             request(`${url + COINVEST_TOKEN_ADDRESS}`, async (err, response) => {
                                 if (err) {
