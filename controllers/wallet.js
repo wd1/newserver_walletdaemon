@@ -226,7 +226,7 @@ const getWalletWeb3Infura = async () => {
                                                     });
                                                 })
                                                 .catch(err => {
-                                                    console.log('getWalletWeb3Infura - ETH: ', err.response);
+                                                    console.log('getWalletWeb3Infura - ETH: ', err.response.statusText);
                                                 });
                                         } else {
                                             const tokenIdx = tokenList.findIndex(t => t.symbol === coins[coIdx].symbol);
