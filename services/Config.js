@@ -4,6 +4,7 @@ exports.COINVEST_TOKEN_ADDRESS = process.env.COINVEST_TOKEN_ADDRESS_V2;
 exports.USER_DATA_ADDRESS = process.env.USER_DATA_ADDRESS;
 
 exports.COINVEST_TOKEN_ADDRESS_V1 = process.env.COINVEST_TOKEN_ADDRESS_V1;
+exports.COINVEST_TOKEN_ADDRESS_V2 = process.env.COINVEST_TOKEN_ADDRESS_V2;
 exports.COINVEST_TOKEN_ADDRESS_V3 = process.env.COINVEST_TOKEN_ADDRESS_V3;
 exports.TOKEN_SWAP_ADDRESS = process.env.TOKEN_SWAP_ADDRESS;
 
@@ -2412,10 +2413,25 @@ exports.tokenList = [
         type: 'default'
     },
     {
-        address: '0x31A24A6EFc66B919a6a6C36fe04e3FaD8D948db6',
+        address: process.env.COINVEST_TOKEN_ADDRESS_V1,
         symbol: 'COIN',
         decimal: 18,
-        type: 'default'
+        type: 'default',
+        version: 'v1'
+    },
+    {
+        address: process.env.COINVEST_TOKEN_ADDRESS_V2,
+        symbol: 'COIN',
+        decimal: 18,
+        type: 'default',
+        version: 'v2'
+    },
+    {
+        address: process.env.COINVEST_TOKEN_ADDRESS_V3,
+        symbol: 'COIN',
+        decimal: 18,
+        type: 'default',
+        version: 'v3'
     },
     {
         address: '0x9e96604445ec19ffed9a5e8dd7b50a29c899a10c',
