@@ -380,18 +380,18 @@ const getTransactionRequest = (account, page, coins) => {
 
                         let symbol = tx.tokenSymbol;
                         if (!symbol) {
-                            const tokenIdx = tokenList.findIndex(t => t.address === tx.contractAddress);
+                            const tokenIdx = tokenList.findIndex(t => t.address.toLowerCase() === tx.contractAddress.toLowerCase());
                             symbol = (tokenIdx > -1) ? tokenList[tokenIdx].symbol : symbol;
                         }
 
                         let version = null;
-                        if (tx.contractAddress === COINVEST_TOKEN_ADDRESS_V1) {
+                        if (tx.contractAddress.toLowerCase() === COINVEST_TOKEN_ADDRESS_V1.toLowerCase()) {
                             symbol = 'COIN';
                             version = 'v1';
-                        } else if (tx.contractAddress === COINVEST_TOKEN_ADDRESS) {
+                        } else if (tx.contractAddress.toLowerCase() === COINVEST_TOKEN_ADDRESS.toLowerCase()) {
                             symbol = 'COIN';
                             version = 'v2';
-                        } else if (tx.contractAddress === COINVEST_TOKEN_ADDRESS_V3) {
+                        } else if (tx.contractAddress.toLowerCase() === COINVEST_TOKEN_ADDRESS_V3.toLowerCase()) {
                             symbol = 'COIN';
                             version = 'v3';
                         }
