@@ -210,24 +210,29 @@ const getWalletWeb3Infura = async () => {
                                         }
 
                                         if (coins[coIdx].symbol === 'ETH' && coinEth) {
-                                            axios.post(GETH_INFURA, {
-                                                jsonrpc: '2.0',
-                                                method: 'eth_getBalance',
-                                                params: [account.beneficiary, 'latest'],
-                                                id: 1
-                                            })
-                                                .then(result => result.data)
-                                                .then(data => {
-                                                    wallet.quantity = bignumberToString(new BigNumber(data.result, 16));
-                                                    wallet.save(err => {
-                                                        if (err) {
-                                                            console.log('getWalletWeb3Infura - wallet.save: ', err);
+                                            const url = `${ETHSCAN_URI}&action=balance&tag=latest&apikey=${ETHSCAN_API_KEY}&address=${account.beneficiary}`;
+                                            request(url, (err, response) => {
+                                                if (err) {
+                                                    console.log('getWalletWeb3Infura - eth.get: ', err);
+                                                    return;
+                                                }
+
+                                                try {
+                                                    if (response.statusCode === 200) {
+                                                        const data = JSON.parse(response.body);
+                                                        if (data.result) {
+                                                            wallet.quantity = data.result;
+                                                            wallet.save(err => {
+                                                                if (err) {
+                                                                    console.log('getWalletWeb3Infura - eth.save: ', err);
+                                                                }
+                                                            });
                                                         }
-                                                    });
-                                                })
-                                                .catch(err => {
-                                                    console.log('getWalletWeb3Infura - ETH: ', err.response.statusText);
-                                                });
+                                                    }
+                                                } catch (e) {
+                                                    console.log('getWalletWeb3Infura - eth: ', err);
+                                                }
+                                            });
                                         } else {
                                             const tokenIdx = tokenList.findIndex(t => t.symbol === coins[coIdx].symbol);
                                             if (tokenIdx > -1) {
