@@ -1,4 +1,5 @@
 const contract = require('truffle-contract');
+const standardAbi = require('human-standard-token-abi');
 
 const { bignumberToString } = require('./bignumber2string');
 
@@ -46,6 +47,23 @@ TokenContract.defaults({
 if (typeof TokenContract.currentProvider.sendAsync !== 'function') {
     TokenContract.currentProvider.sendAsync = function () {
         return TokenContract.currentProvider.send.apply(TokenContract.currentProvider, arguments);
+    };
+}
+
+// Generate TokenContract V1
+const TokenContractOther = contract({
+    abi: standardAbi,
+    gas: 1000000
+});
+TokenContractOther.setProvider(web3.currentProvider);
+TokenContractOther.defaults({
+    from: DEMO_MASTER_ADDRESS,
+    gas: 1000000,
+    gasPrice: 40000000000
+});
+if (typeof TokenContractOther.currentProvider.sendAsync !== 'function') {
+    TokenContractOther.currentProvider.sendAsync = function () {
+        return TokenContractOther.currentProvider.send.apply(TokenContractOther.currentProvider, arguments);
     };
 }
 
@@ -150,5 +168,19 @@ exports.eventsWatch = fromBlock => {
 
             resolve(response);
         });
+    });
+};
+
+exports.coinBalanceOther = (address, contractAddress) => {
+    const TokenContractInstance = TokenContractOther.at(contractAddress);
+
+    return new Promise((resolve, reject) => {
+        TokenContractInstance.balanceOf(address)
+            .then(result => {
+                resolve(bignumberToString(result));
+            })
+            .catch(err => {
+                reject(err);
+            });
     });
 };

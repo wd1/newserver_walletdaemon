@@ -9,7 +9,8 @@ const tokenTransactionsSchema = new mongoose.Schema({
     from: String,
     to: String,
     action: String,
-    status: String
+    status: String,
+    version: String
 }, { timestamps: true });
 
 const TokenTransactions = mongoose.model('TokenTransactions', tokenTransactionsSchema);

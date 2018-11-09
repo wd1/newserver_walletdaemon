@@ -42,6 +42,8 @@
     "no-await-in-loop": "warn",
     "no-use-before-define": "warn",
     "no-restricted-globals": "warn",
-    "array-callback-return": "warn"
+    "array-callback-return": "warn",
+    "quotes": "warn",
+    "quote-props": "warn"
   }
 }

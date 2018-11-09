@@ -4,316 +4,833 @@ const schedule = require('node-schedule');
 const Accounts = require('../models/Accounts');
 const Wallets = require('../models/Wallets');
 const Coins = require('../models/Coins');
+const CoinWallets = require('../models/CoinWallets');
 const TokenTransactions = require('../models/TokenTransactions');
 
-const { COINVEST_TOKEN_ADDRESS, ApiKey } = require('../services/Config');
+const {
+    COINVEST_TOKEN_ADDRESS,
+    COINVEST_TOKEN_ADDRESS_V1,
+    COINVEST_TOKEN_ADDRESS_V3,
+    tokenList
+} = require('../services/Config');
 const Web3Service = require('../services/Web3Service');
 const TruffleService = require('../services/TruffleService');
 
-let updateWallet;
-let updateWalletWeb3;
-let updateTokenTransaction;
-let updateEtherTransaction;
+const {
+    ETHSCAN_URI,
+    ETHSCAN_API_KEY1,
+    ETHSCAN_API_KEY2,
+    ETHSCAN_API_KEY3,
+    ETHSCAN_API_KEY4,
+    ETHSCAN_API_KEY5,
+    ETHSCAN_API_KEY6
+} = process.env;
 
-exports.walletSchedule = () => {
-    updateWalletWeb3 = schedule.scheduleJob('*/30 * * * * *', getWalletWeb3);
-    updateTokenTransaction = schedule.scheduleJob('*/30 * * * * *', getTokenTransactions);
-    updateEtherTransaction = schedule.scheduleJob('*/30 * * * * *', getEtherTransactions);
-};
+/**
+ * Get wallets balances using Truffle & Web3
+ */
+// const getWalletWeb3 = async () => {
+//     try {
+//         const coins = await Coins.find({}, 'symbol', { lean: true }).exec();
+//         if (coins && coins.length > 0) {
+//             let coin;
+//             let coinEth;
+//
+//             const coinIdx = coins.findIndex(coin => coin.symbol === 'COIN');
+//             if (coinIdx > -1) {
+//                 coin = coins[coinIdx];
+//             }
+//
+//             const coinEthIdx = coins.findIndex(coin => coin.symbol === 'ETH');
+//             if (coinEthIdx > -1) {
+//                 coinEth = coins[coinEthIdx];
+//             }
+//
+//             const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
+//             if (accounts && accounts.length > 0) {
+//                 accounts.forEach(account => {
+//                     if (coinEth) {
+//                         Web3Service.getBalance(account.beneficiary)
+//                             .then(balance => {
+//                                 Wallets.findOne({ accountId: account._id, coinId: coinEth._id }, (err, wallet) => {
+//                                     if (err) {
+//                                         console.log('getWalletWeb3: Wallets.findOne: ', err);
+//                                         return;
+//                                     }
+//
+//                                     if (wallet) {
+//                                         wallet.set({ quantity: balance });
+//                                     } else {
+//                                         wallet = new Wallets({
+//                                             accountId: account._id,
+//                                             coinId: coinEth._id,
+//                                             quantity: balance
+//                                         });
+//                                     }
+//
+//                                     wallet.save(err => {
+//                                         if (err) {
+//                                             console.log('getWalletWeb3: wallet.save: ', err);
+//                                         }
+//                                     });
+//                                 });
+//                             })
+//                             .catch(err => {
+//                                 console.log('getWalletWeb3: getBalance: ', err);
+//                             });
+//                     }
+//
+//                     if (coin) {
+//                         TruffleService.coinBalance(account.beneficiary)
+//                             .then(balance => {
+//                                 Wallets.findOne({ accountId: account._id, coinId: coin._id }, (err, wallet) => {
+//                                     if (err) {
+//                                         console.log('getWalletWeb3: Wallets.findOne: ', err);
+//                                         return;
+//                                     }
+//
+//                                     if (wallet) {
+//                                         wallet.set({ quantity: balance });
+//                                     } else {
+//                                         wallet = new Wallets({
+//                                             accountId: account._id,
+//                                             coinId: coin._id,
+//                                             quantity: balance
+//                                         });
+//                                     }
+//
+//                                     wallet.save(err => {
+//                                         if (err) {
+//                                             console.log('getWalletWeb3: wallet.save: ', err);
+//                                         }
+//                                     });
+//                                 });
+//                             })
+//                             .catch(err => {
+//                                 console.log('getWalletWeb3: coinBalance: ', err);
+//                             });
+//
+//                         TruffleService.coinBalanceOther(account.beneficiary, COINVEST_TOKEN_ADDRESS_V1)
+//                             .then(async balance => {
+//                                 CoinWallets.findOne({ accountId: account._id, version: 'v1' }, (err, wallet) => {
+//                                     if (err) {
+//                                         console.log('getWalletWeb3: CoinWallets.v1: ', err);
+//                                         return;
+//                                     }
+//
+//                                     if (wallet) {
+//                                         wallet.set({ quantity: balance });
+//                                     } else {
+//                                         wallet = new CoinWallets({
+//                                             accountId: account._id,
+//                                             version: 'v1',
+//                                             quantity: balance
+//                                         });
+//                                     }
+//
+//                                     wallet.save(err => {
+//                                         if (err) {
+//                                             console.log('getWalletWeb3 - v1.save: ', err);
+//                                         }
+//                                     });
+//                                 });
+//                             })
+//                             .catch(err => {
+//                                 console.log('getWalletWeb3 - v1: ', err);
+//                             });
+//
+//                         TruffleService.coinBalanceOther(account.beneficiary, COINVEST_TOKEN_ADDRESS_V3)
+//                             .then(async balance => {
+//                                 CoinWallets.findOne({ accountId: account._id, version: 'v3' }, (err, wallet) => {
+//                                     if (err) {
+//                                         console.log('getWalletWeb3: CoinWallets.v3: ', err);
+//                                         return;
+//                                     }
+//
+//                                     if (wallet) {
+//                                         wallet.set({ quantity: balance });
+//                                     } else {
+//                                         wallet = new CoinWallets({
+//                                             accountId: account._id,
+//                                             version: 'v3',
+//                                             quantity: balance
+//                                         });
+//                                     }
+//
+//                                     wallet.save(err => {
+//                                         if (err) {
+//                                             console.log('getWalletWeb3 - v3.save: ', err);
+//                                         }
+//                                     });
+//                                 });
+//                             })
+//                             .catch(err => {
+//                                 console.log('getWalletWeb3 - v3: ', err);
+//                             });
+//                     }
+//                 });
+//             }
+//         }
+//     } catch (e) {
+//         console.log('getWalletWeb3: ', e);
+//     }
+// };
 
-exports.cancelWalletSchedule = () => {
-    if (updateWallet) {
-        updateWallet.cancel();
-    }
-};
+/**
+ * Promise function to get Eth balance
+ */
+const asyncEthMultiple = (address, idx) => {
+    const url = `${ETHSCAN_URI}&action=balancemulti&tag=latest&apikey=${ETHSCAN_API_KEY1}&address=`;
 
-exports.cancelWalletWeb3Schedule = () => {
-    if (updateWalletWeb3) {
-        updateWalletWeb3.cancel();
-    }
-};
-
-exports.cancelTokenTransactionSchedule = () => {
-    if (updateTokenTransaction) {
-        updateTokenTransaction.cancel();
-    }
-};
-
-exports.cancelEtherTransactionSchedule = () => {
-    if (updateEtherTransaction) {
-        updateEtherTransaction.cancel();
-    }
-};
-
-const getWalletWeb3 = () => {
-    Coins.find({ symbol: ['ETH', 'COIN'] }, 'symbol', { lean: true }, (err, coins) => {
-        if (err) {
-            console.log('getWallet: Coins.find: ', err);
-            return;
-        }
-
-        if (coins && coins.length > 0) {
-            let coin;
-            let coinEth;
-
-            const coinIdx = coins.findIndex(coin => coin.symbol === 'COIN');
-            if (coinIdx > -1) {
-                coin = coins[coinIdx];
-            }
-
-            const coinEthIdx = coins.findIndex(coin => coin.symbol === 'ETH');
-            if (coinEthIdx > -1) {
-                coinEth = coins[coinEthIdx];
-            }
-
-            Accounts.find({}, 'beneficiary', { lean: true }, (err, accounts) => {
+    return new Promise(resolve => {
+        // Add some delay for each request because of etherscan rate limit
+        setTimeout(() => {
+            request(`${url}${address.toString()}`, (err, response) => {
                 if (err) {
-                    console.log('getWalletWeb3: find: ', err);
-                    return;
+                    console.log('asyncEthMultiple: ', err);
+                    resolve(null);
                 }
 
-                if (accounts && accounts.length > 0) {
-                    accounts.forEach(account => {
-                        if (coinEth) {
-                            Web3Service.getBalance(account.beneficiary)
-                                .then(balance => {
-                                    Wallets.findOne({ accountId: account._id, coinId: coinEth._id }, (err, wallet) => {
-                                        if (err) {
-                                            console.log('getWalletWeb3: Wallets.findOne: ', err);
-                                            return;
-                                        }
-
-                                        if (wallet) {
-                                            wallet.set({ quantity: balance });
-                                        } else {
-                                            wallet = new Wallets({
-                                                accountId: account._id,
-                                                coinId: coinEth._id,
-                                                quantity: balance
-                                            });
-                                        }
-
-                                        wallet.save(err => {
-                                            if (err) {
-                                                console.log('getWalletWeb3: wallet.save: ', err);
-                                            }
-                                        });
-                                    });
-                                })
-                                .catch(err => {
-                                    console.log('getWalletWeb3: getBalance: ', err);
-                                });
-                        }
-
-                        if (coin) {
-                            TruffleService.coinBalance(account.beneficiary)
-                                .then(balance => {
-                                    Wallets.findOne({ accountId: account._id, coinId: coin._id }, (err, wallet) => {
-                                        if (err) {
-                                            console.log('getWalletWeb3: Wallets.findOne: ', err);
-                                            return;
-                                        }
-
-                                        if (wallet) {
-                                            wallet.set({ quantity: balance });
-                                        } else {
-                                            wallet = new Wallets({
-                                                accountId: account._id,
-                                                coinId: coin._id,
-                                                quantity: balance
-                                            });
-                                        }
-
-                                        wallet.save(err => {
-                                            if (err) {
-                                                console.log('getWalletWeb3: wallet.save: ', err);
-                                            }
-                                        });
-                                    });
-                                })
-                                .catch(err => {
-                                    console.log('getWalletWeb3: coinBalance: ', err);
-                                });
-                        }
-                    });
+                try {
+                    if (response.statusCode === 200) {
+                        const data = JSON.parse(response.body);
+                        resolve(data.result);
+                    } else {
+                        resolve(null);
+                    }
+                } catch (e) {
+                    console.log('asyncEthMultiple: ', err);
+                    resolve(null);
                 }
             });
-        }
+        }, 100 * idx);
     });
 };
 
-const getTokenTransactions = () => {
-    Coins.find({}, 'symbol', { lean: true }, (err, coins) => {
-        if (err) {
-            console.log('getTokenTransactions: Coins.find: ', err);
+const getEthWallet = async () => {
+    try {
+        const coins = await Coins.find({}, 'symbol', { lean: true }).exec();
+        if (!coins || coins.length === 0) {
+            recallGetEthWallet();
             return;
         }
 
-        if (coins && coins.length > 0) {
-            Accounts.find({}, 'beneficiary', { lean: true }, (err, accounts) => {
-                if (err) {
-                    console.log('getTokenTransactions: Accounts.find: ', err);
-                    return;
-                }
-
-                accounts.forEach(account => {
-                    getTransactionRequest(account, 1, coins);
-                });
-            });
-        }
-    });
-};
-
-const getTransactionRequest = (account, page, coins) => {
-    const url = `https://api-ropsten.etherscan.io/api?module=account&action=tokentx&startblock=0&endblock=latest&offset=10000&sort=desc&apikey=${ApiKey}&address=`;
-    request(`${url + account.beneficiary}&page=${page}`, async (err, response) => {
-        if (err) {
-            console.log('getTokenTransactions: etherscan: ', err);
-            getTransactionRequest(account, page, coins);
+        const coinEthIdx = coins.findIndex(coin => coin.symbol === 'ETH');
+        if (coinEthIdx === -1) {
+            recallGetEthWallet();
             return;
         }
 
-        try {
-            if (response.statusCode === 200) {
-                const data = JSON.parse(response.body);
-                let allSaved = true;
+        const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
+        if (!accounts || accounts.length === 0) {
+            recallGetEthWallet();
+            return;
+        }
 
-                if (data.result && data.result.length > 0) {
-                    for (let i = 0; i < data.result.length; i++) {
-                        const tx = data.result[i];
+        const wallets = await Wallets.find({ coinId: coins[coinEthIdx]._id }).exec();
+        if (!wallets || wallets.length === 0) {
+            recallGetEthWallet();
+            return;
+        }
 
-                        let action = '';
-                        if (tx.from === account.beneficiary) {
-                            action = 'send';
-                        } else if (tx.to === account.beneficiary) {
-                            action = 'receive';
-                        }
+        const addresses = [];
+        for (let i = 0; i < accounts.length; i++) {
+            if (i % 20 === 0) {
+                addresses.push([accounts[i].beneficiary]);
+            } else {
+                addresses[addresses.length - 1].push(accounts[i].beneficiary);
+            }
+        }
 
-                        const coinIndex = coins.findIndex(coin => coin.symbol === tx.tokenSymbol);
-                        if (coinIndex > -1) {
-                            let tokenTransaction = await TokenTransactions.findOne({
-                                accountId: account._id, coinId: coins[coinIndex]._id, amount: tx.value, txId: tx.hash
-                            }).exec();
-                            if (!tokenTransaction) {
-                                tokenTransaction = new TokenTransactions({
-                                    accountId: account._id,
-                                    coinId: coins[coinIndex]._id,
-                                    amount: tx.value,
-                                    timestamp: parseInt(tx.timeStamp, 10),
-                                    txId: tx.hash,
-                                    from: tx.from,
-                                    to: tx.to,
-                                    action
-                                });
+        const actions = addresses.map(asyncEthMultiple);
 
-                                tokenTransaction.save(err => {
+        Promise.all(actions)
+            .then(data => data.filter(item => !!item))
+            .then(data => {
+                data.forEach(dt => {
+                    dt.forEach(d => {
+                        const accountIdx = accounts.findIndex(a => a.beneficiary === d.account);
+                        if (accountIdx > -1) {
+                            const walletIdx = wallets.findIndex(w => w.accountId == accounts[accountIdx]._id);
+                            if (walletIdx > -1) {
+                                wallets[walletIdx].quantity = d.balance;
+                                wallets[walletIdx].save(err => {
                                     if (err) {
-                                        console.log('getTokenTransactions: save: ', err);
+                                        console.log('getEthWallet - save: ', err);
                                     }
                                 });
-
-                                allSaved = false;
                             }
+                        }
+                    });
+                });
+
+                recallGetEthWallet();
+            })
+            .catch(e => {
+                console.log('getEthWallet: ', e);
+
+                recallGetEthWallet();
+            });
+    } catch (e) {
+        console.log('getEthWallet: ', e);
+
+        recallGetEthWallet();
+    }
+};
+
+const recallGetEthWallet = () => {
+    setTimeout(() => {
+        getEthWallet();
+    }, 5000);
+};
+
+/**
+ * Promise function to get Token balance
+ */
+const asyncTokenMultiple = (wallet, beneficiary, contractAddress, idx) => {
+    const url = `${ETHSCAN_URI}&action=tokenbalance&tag=latest&apikey=${ETHSCAN_API_KEY2}&address=${beneficiary}&contractaddress=${contractAddress}`;
+
+    return new Promise(resolve => {
+        // Add some delay for each request because of etherscan rate limit
+        setTimeout(() => {
+            request(url, (err, response) => {
+                if (err) {
+                    console.log('asyncTokenMultiple: ', err);
+                    resolve();
+                }
+
+                try {
+                    if (response.statusCode === 200) {
+                        const data = JSON.parse(response.body);
+                        wallet.quantity = data.result;
+                        wallet.save(err => {
+                            if (err) {
+                                console.log('asyncTokenMultiple - save: ', err);
+                            }
+                        });
+                        resolve();
+                    } else {
+                        resolve();
+                    }
+                } catch (e) {
+                    console.log('asyncTokenMultiple: ', err);
+                    resolve();
+                }
+            });
+        }, 100 * idx);
+    });
+};
+
+const getTokenWallet = async () => {
+    try {
+        const coins = await Coins.find({}, 'symbol', { lean: true }).exec();
+        if (!coins || coins.length === 0) {
+            recallGetEthWallet();
+            return;
+        }
+
+        const coinEthIdx = coins.findIndex(coin => coin.symbol === 'ETH');
+        if (coinEthIdx === -1) {
+            recallGetEthWallet();
+            return;
+        }
+
+        const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
+        if (!accounts || accounts.length === 0) {
+            recallGetEthWallet();
+            return;
+        }
+
+        const wallets = await Wallets.find({ coinId: { $ne: coins[coinEthIdx]._id } }).exec();
+        if (!wallets || wallets.length === 0) {
+            recallGetEthWallet();
+            return;
+        }
+
+        const actions = wallets.map((wallet, idx) => {
+            const accountIdx = accounts.findIndex(a => a._id == wallet.accountId);
+            if (accountIdx > -1) {
+                const coinIdx = coins.findIndex(c => c._id == wallet.coinId);
+                if (coinIdx > -1) {
+                    let contractAddress = '';
+                    if (coins[coinIdx].symbol === 'COIN') {
+                        contractAddress = COINVEST_TOKEN_ADDRESS;
+                    } else {
+                        const tokenIdx = tokenList.findIndex(t => t.symbol === coins[coinIdx].symbol);
+                        if (tokenIdx > -1) {
+                            contractAddress = tokenList[tokenIdx].address;
                         }
                     }
 
-                    getTransactionRequest(account, page + 1, coins);
+                    if (contractAddress) {
+                        return asyncTokenMultiple(wallet, accounts[accountIdx].beneficiary, contractAddress, idx);
+                    }
                 }
-            } else {
-                getTransactionRequest(account, page, coins);
             }
-        } catch (err) {
-            console.log('getTransactionRequest: catch: ', err);
-        }
+
+            return new Promise(resolve => {
+                resolve();
+            });
+        });
+
+        Promise.all(actions)
+            .then(() => {
+                recallGetTokenWallet();
+            })
+            .catch(e => {
+                console.log('getTokenWallet: ', e);
+
+                recallGetTokenWallet();
+            });
+    } catch (e) {
+        console.log('getTokenWallet: ', e);
+
+        recallGetTokenWallet();
+    }
+};
+
+const recallGetTokenWallet = () => {
+    setTimeout(() => {
+        getTokenWallet();
+    }, 5000);
+};
+
+/**
+ * Promise function to get COIN v1 balance
+ */
+const asyncCoinV1Multiple = (wallet, beneficiary, idx) => {
+    const url = `${ETHSCAN_URI}&action=tokenbalance&tag=latest&apikey=${ETHSCAN_API_KEY3}&address=${beneficiary}&contractaddress=${COINVEST_TOKEN_ADDRESS_V1}`;
+
+    return new Promise(resolve => {
+        // Add some delay for each request because of etherscan rate limit
+        setTimeout(() => {
+            request(url, (err, response) => {
+                if (err) {
+                    console.log('asyncCoinV1Multiple: ', err);
+                    resolve();
+                }
+
+                try {
+                    if (response.statusCode === 200) {
+                        const data = JSON.parse(response.body);
+                        wallet.quantity = data.result;
+                        wallet.save(err => {
+                            if (err) {
+                                console.log('asyncCoinV1Multiple - save: ', err);
+                            }
+                        });
+                        resolve();
+                    } else {
+                        resolve();
+                    }
+                } catch (e) {
+                    console.log('asyncCoinV1Multiple: ', err);
+                    resolve();
+                }
+            });
+        }, 100 * idx);
     });
 };
 
-const getEtherTransactions = () => {
-    Coins.findOne({ symbol: 'ETH' }, 'symbol', { lean: true }, (err, coin) => {
-        if (err) {
-            console.log('getEtherTransactions: Coins.findOne: ', err);
+const getCoinV1Wallet = async () => {
+    try {
+        const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
+        if (!accounts || accounts.length === 0) {
+            recallGetCoinV1Wallet();
             return;
         }
 
-        if (coin) {
-            Accounts.find({}, 'beneficiary', { lean: true }, (err, accounts) => {
+        const wallets = await CoinWallets.find({ version: 'v1' }).exec();
+        if (!wallets || wallets.length === 0) {
+            recallGetCoinV1Wallet();
+            return;
+        }
+
+        const actions = wallets.map((wallet, idx) => {
+            const accountIdx = accounts.findIndex(a => a._id == wallet.accountId);
+            if (accountIdx > -1) {
+                return asyncCoinV1Multiple(wallet, accounts[accountIdx].beneficiary, idx);
+            }
+
+            return new Promise(resolve => {
+                resolve();
+            });
+        });
+
+        Promise.all(actions)
+            .then(() => {
+                recallGetCoinV1Wallet();
+            })
+            .catch(e => {
+                console.log('getCoinV1Wallet: ', e);
+
+                recallGetCoinV1Wallet();
+            });
+    } catch (e) {
+        console.log('getCoinV1Wallet: ', e);
+
+        recallGetCoinV1Wallet();
+    }
+};
+
+const recallGetCoinV1Wallet = () => {
+    setTimeout(() => {
+        getCoinV1Wallet();
+    }, 5000);
+};
+
+/**
+ * Promise function to get COIN v3 balance
+ */
+const asyncCoinV3Multiple = (wallet, beneficiary, idx) => {
+    const url = `${ETHSCAN_URI}&action=tokenbalance&tag=latest&apikey=${ETHSCAN_API_KEY4}&address=${beneficiary}&contractaddress=${COINVEST_TOKEN_ADDRESS_V3}`;
+
+    return new Promise(resolve => {
+        // Add some delay for each request because of etherscan rate limit
+        setTimeout(() => {
+            request(url, (err, response) => {
                 if (err) {
-                    console.log('getEtherTransactions: Accounts.find: ', err);
+                    console.log('asyncCoinV3Multiple: ', err);
+                    resolve();
+                }
+
+                try {
+                    if (response.statusCode === 200) {
+                        const data = JSON.parse(response.body);
+                        wallet.quantity = data.result;
+                        wallet.save(err => {
+                            if (err) {
+                                console.log('asyncCoinV3Multiple - save: ', err);
+                            }
+                        });
+                        resolve();
+                    } else {
+                        resolve();
+                    }
+                } catch (e) {
+                    console.log('asyncCoinV3Multiple: ', err);
+                    resolve();
+                }
+            });
+        }, 100 * idx);
+    });
+};
+
+const getCoinV3Wallet = async () => {
+    try {
+        const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
+        if (!accounts || accounts.length === 0) {
+            recallGetCoinV3Wallet();
+            return;
+        }
+
+        const wallets = await CoinWallets.find({ version: 'v3' }).exec();
+        if (!wallets || wallets.length === 0) {
+            recallGetCoinV3Wallet();
+            return;
+        }
+
+        const actions = wallets.map((wallet, idx) => {
+            const accountIdx = accounts.findIndex(a => a._id == wallet.accountId);
+            if (accountIdx > -1) {
+                return asyncCoinV3Multiple(wallet, accounts[accountIdx].beneficiary, idx);
+            }
+
+            return new Promise(resolve => {
+                resolve();
+            });
+        });
+
+        Promise.all(actions)
+            .then(() => {
+                recallGetCoinV3Wallet();
+            })
+            .catch(e => {
+                console.log('getCoinV3Wallet: ', e);
+
+                recallGetCoinV3Wallet();
+            });
+    } catch (e) {
+        console.log('getCoinV3Wallet: ', e);
+
+        recallGetCoinV3Wallet();
+    }
+};
+
+const recallGetCoinV3Wallet = () => {
+    setTimeout(() => {
+        getCoinV3Wallet();
+    }, 5000);
+};
+
+/**
+ * Get token transactions
+ */
+const asyncTokenTransactionMultiple = (account, idx) => {
+    const url = `${ETHSCAN_URI}&action=tokentx&startblock=0&endblock=latest&sort=desc&apikey=${ETHSCAN_API_KEY5}&address=`;
+
+    return new Promise(resolve => {
+        // Add some delay for each request because of etherscan rate limit
+        setTimeout(() => {
+            request(`${url + account.beneficiary}`, async (err, response) => {
+                if (err) {
+                    console.log('asyncTokenTransactionMultiple: ', err);
+                    resolve(null);
                     return;
                 }
 
-                accounts.forEach(account => {
-                    getEtherTransactionsRequest(account, 1, coin);
-                });
+                try {
+                    if (response.statusCode === 200) {
+                        const data = JSON.parse(response.body);
+                        resolve({ txData: data.result, account });
+                    } else {
+                        resolve(null);
+                    }
+                } catch (err) {
+                    console.log('getTransactionRequest: catch: ', err);
+                    resolve(null);
+                }
             });
-        }
+        }, 100 * idx);
     });
 };
 
-const getEtherTransactionsRequest = (account, page, coin) => {
-    const url = `https://api-ropsten.etherscan.io/api?module=account&action=txlist&startblock=0&endblock=latest&offset=10000&sort=desc&apikey=${ApiKey}&address=`;
-    request(`${url + account.beneficiary}&page=${page}`, async (err, response) => {
-        if (err) {
-            console.log('getEtherTransactions: etherscan: ', err);
-            getEtherTransactionsRequest(account, page, coin);
+const getTokenTransactions = async () => {
+    try {
+        const coins = await Coins.find({}, 'symbol', { lean: true }).exec();
+        if (!coins || coins.length === 0) {
+            recallGetTokenTransactions();
             return;
         }
 
-        try {
-            if (response.statusCode === 200) {
-                const data = JSON.parse(response.body);
-                let allSaved = true;
+        const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
+        if (!accounts || accounts.length === 0) {
+            recallGetTokenTransactions();
+            return;
+        }
 
-                if (data.result && data.result.length > 0) {
-                    for (let i = 0; i < data.result.length; i++) {
-                        const tx = data.result[i];
+        const actions = accounts.map(asyncTokenTransactionMultiple);
 
+        Promise.all(actions)
+            .then(data => data.filter(item => !!item))
+            .then(data => {
+                data.forEach(dt => {
+                    dt.txData.forEach(tx => {
+                        let action = '';
+                        if (tx.from === dt.account.beneficiary) {
+                            action = 'send';
+                        } else if (tx.to === dt.account.beneficiary) {
+                            action = 'receive';
+                        }
+
+                        let symbol = tx.tokenSymbol;
+                        if (!symbol) {
+                            const tokenIdx = tokenList.findIndex(t => t.address.toLowerCase() === tx.contractAddress.toLowerCase());
+                            symbol = (tokenIdx > -1) ? tokenList[tokenIdx].symbol : symbol;
+                        }
+
+                        let version = null;
+                        if (tx.contractAddress.toLowerCase() === COINVEST_TOKEN_ADDRESS_V1.toLowerCase()) {
+                            symbol = 'COIN';
+                            version = 'v1';
+                        } else if (tx.contractAddress.toLowerCase() === COINVEST_TOKEN_ADDRESS.toLowerCase()) {
+                            symbol = 'COIN';
+                            version = 'v2';
+                        } else if (tx.contractAddress.toLowerCase() === COINVEST_TOKEN_ADDRESS_V3.toLowerCase()) {
+                            symbol = 'COIN';
+                            version = 'v3';
+                        }
+
+                        if (symbol) {
+                            const coinIndex = coins.findIndex(coin => coin.symbol === symbol);
+                            if (coinIndex > -1) {
+                                TokenTransactions.findOne({
+                                    accountId: dt.account._id,
+                                    coinId: coins[coinIndex]._id,
+                                    amount: tx.value,
+                                    txId: tx.hash,
+                                    version
+                                }, (err, tokenTransaction) => {
+                                    if (err) {
+                                        console.log('getTokenTransactions: ', err);
+                                        return;
+                                    }
+
+                                    if (!tokenTransaction) {
+                                        tokenTransaction = new TokenTransactions({
+                                            accountId: dt.account._id,
+                                            coinId: coins[coinIndex]._id,
+                                            amount: tx.value,
+                                            timestamp: parseInt(tx.timeStamp, 10),
+                                            txId: tx.hash,
+                                            from: tx.from,
+                                            to: tx.to,
+                                            action,
+                                            version
+                                        });
+
+                                        tokenTransaction.save(err => {
+                                            if (err) {
+                                                console.log('getTokenTransactions - save: ', err);
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                        }
+                    });
+                });
+
+                recallGetTokenTransactions();
+            })
+            .catch(e => {
+                console.log('getTokenTransactions: ', e);
+
+                recallGetTokenTransactions();
+            });
+    } catch (e) {
+        console.log('getTokenTransactions: ', e);
+
+        recallGetTokenTransactions();
+    }
+};
+
+const recallGetTokenTransactions = () => {
+    setTimeout(() => {
+        getTokenTransactions();
+    }, 30000);
+};
+
+/**
+ * Get Ether transactions
+ */
+const asyncEthTransactionMultiple = (account, idx) => {
+    const url = `${ETHSCAN_URI}&action=txlist&startblock=0&endblock=latest&sort=desc&apikey=${ETHSCAN_API_KEY6}&address=`;
+
+    return new Promise(resolve => {
+        // Add some delay for each request because of etherscan rate limit
+        setTimeout(() => {
+            request(`${url + account.beneficiary}`, async (err, response) => {
+                if (err) {
+                    console.log('asyncEthTransactionMultiple: ', err);
+                    resolve(null);
+                    return;
+                }
+
+                try {
+                    if (response.statusCode === 200) {
+                        const data = JSON.parse(response.body);
+                        resolve({ txData: data.result, account });
+                    } else {
+                        resolve(null);
+                    }
+                } catch (err) {
+                    console.log('asyncEthTransactionMultiple: catch: ', err);
+                    resolve(null);
+                }
+            });
+        }, 100 * idx);
+    });
+};
+
+const getEtherTransactions = async () => {
+    try {
+        const coin = await Coins.findOne({ symbol: 'ETH' }, 'symbol', { lean: true }).exec();
+        if (!coin) {
+            recallGetEtherTransactions();
+            return;
+        }
+
+        const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
+        if (!accounts || accounts.length === 0) {
+            recallGetEtherTransactions();
+            return;
+        }
+
+        const actions = accounts.map(asyncEthTransactionMultiple);
+
+        Promise.all(actions)
+            .then(data => data.filter(item => !!item))
+            .then(data => {
+                data.forEach(dt => {
+                    dt.txData.forEach(tx => {
                         if (tx.txreceipt_status !== '' && tx.value !== '0') {
                             let action = '';
-                            if (tx.from === account.beneficiary) {
+                            if (tx.from === dt.account.beneficiary) {
                                 action = 'send';
-                            } else if (tx.to === account.beneficiary) {
+                            } else if (tx.to === dt.account.beneficiary) {
                                 action = 'receive';
                             }
 
                             try {
-                                let tokenTransaction = await TokenTransactions.findOne({
-                                    accountId: account._id, coinId: coin._id, amount: tx.value, txId: tx.hash
-                                }).exec();
-                                if (!tokenTransaction) {
-                                    tokenTransaction = new TokenTransactions({
-                                        accountId: account._id,
-                                        coinId: coin._id,
-                                        amount: tx.value,
-                                        timestamp: parseInt(tx.timeStamp, 10),
-                                        txId: tx.hash,
-                                        from: tx.from,
-                                        to: tx.to,
-                                        action,
-                                        status: tx.txreceipt_status === '1' ? 'Success' : 'Fail'
-                                    });
+                                TokenTransactions.findOne({
+                                    accountId: dt.account._id,
+                                    coinId: coin._id,
+                                    amount: tx.value,
+                                    txId: tx.hash
+                                }, (err, tokenTransaction) => {
+                                    if (err) {
+                                        console.log('getEtherTransactions: ', err);
+                                        return;
+                                    }
 
-                                    tokenTransaction.save(err => {
-                                        if (err) {
-                                            console.log('getEtherTransactions: save: ', err);
-                                        }
-                                    });
+                                    if (!tokenTransaction) {
+                                        tokenTransaction = new TokenTransactions({
+                                            accountId: dt.account._id,
+                                            coinId: coin._id,
+                                            amount: tx.value,
+                                            timestamp: parseInt(tx.timeStamp, 10),
+                                            txId: tx.hash,
+                                            from: tx.from,
+                                            to: tx.to,
+                                            action,
+                                            status: tx.txreceipt_status === '1' ? 'Success' : 'Fail'
+                                        });
 
-                                    allSaved = false;
-                                }
+                                        tokenTransaction.save(err => {
+                                            if (err) {
+                                                console.log('getEtherTransactions - save: ', err);
+                                            }
+                                        });
+                                    }
+                                });
                             } catch (err) {
-                                console.log('getEtherTransactions: find: ', err);
+                                console.log('getEtherTransactions: ', err);
                             }
                         }
-                    }
+                    });
+                });
 
-                    getEtherTransactionsRequest(account, page + 1, coin);
-                }
-            } else {
-                getEtherTransactionsRequest(account, page, coin);
-            }
-        } catch (err) {
-            console.log('getEtherTransactionsRequest: catch: ', err);
-        }
-    });
+                recallGetEtherTransactions();
+            })
+            .catch(e => {
+                console.log('getEtherTransactions: ', e);
+
+                recallGetEtherTransactions();
+            });
+    } catch (e) {
+        console.log('getEtherTransactions: ', e);
+
+        recallGetEtherTransactions();
+    }
+};
+
+const recallGetEtherTransactions = () => {
+    setTimeout(() => {
+        getEtherTransactions();
+    }, 30000);
+};
+
+exports.walletSchedule = () => {
+    getEthWallet();
+
+    setTimeout(getTokenWallet, 1000);
+
+    setTimeout(getCoinV1Wallet, 2000);
+
+    setTimeout(getCoinV3Wallet, 3000);
+
+    setTimeout(getTokenTransactions, 4000);
+
+    setTimeout(getEtherTransactions, 5000);
 };
