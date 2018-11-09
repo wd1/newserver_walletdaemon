@@ -26,7 +26,7 @@ const app = express();
  * Connect to MongoDB.
  */
 mongoose.connect(process.env.MONGODB_URI);
-mongoose.connection.on('error', (err) => {
+mongoose.connection.on('error', err => {
     console.error(err);
     console.log('%s MongoDB connection error. Please make sure MongoDB is running.', chalk.red('✗'));
 
@@ -65,12 +65,10 @@ app.listen(app.get('port'), () => {
 
 const { coinSchedule } = require('./controllers/coin');
 const { walletSchedule } = require('./controllers/wallet');
-const { tradeSchedule } = require('./controllers/trade');
-// const { portfolioSchedule } = require('./controllers/portfolio');
+// const { tradeSchedule } = require('./controllers/trade');
 
 coinSchedule();
 walletSchedule();
-tradeSchedule();
-// portfolioSchedule();
+// tradeSchedule();
 
 module.exports = app;

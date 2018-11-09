@@ -646,32 +646,39 @@ const eventsManager = async () => {
                             console.log('Starting ==================================');
                             processing = true;
 
-                            const ords = await Orders.find({ txId: { $ne: null } }, 'txId', { lean: true }).exec();
                             const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
                             const assets = await Assets.find({}).exec();
                             const indexes = await Indexes.find({}).exec();
                             const idxContains = await IndexContains.find({}, null, { lean: true }).exec();
 
                             await asyncForEach(orders, async order => {
-                                console.log('Start order: ', order._id);
+                                // console.log('Start order: ', order._id);
 
                                 try {
-                                    // const now = Math.round((new Date()).getTime() / 1000);
-                                    // if (now - order.receipt.timestamp > 3600) {
-                                    //     order.status = 'Failed';
-                                    //     order.save(err => {
-                                    //         if (err) {
-                                    //             console.log('eventsManager: order.save: ', err);
-                                    //         }
-                                    //     });
-                                    //     return;
-                                    // }
+                                    // Expire order if the main transaction is not detected in 30mins
+                                    if (new Date().getTime() - new Date(order.updatedAt).getTime() > 1800000) {
+                                        order.status = 'Failed';
+                                        order.save(err => {
+                                            if (err) {
+                                                console.log('eventsManager: order.save: ', err);
+                                            }
+                                        });
+                                        return;
+                                    }
 
+                                    const ords = await Orders.find({ txId: { $ne: null } }, 'txId', { lean: true }).exec();
                                     for (let i = 0; i < events.length; i++) {
                                         const e = events[i];
-                                        if (e.data && e.transactionHash) {
-                                            if (ords && ords.length > 0) {
-                                                const oIdx = ords.findIndex(ord => ord.txId === e.transactionHash);
+                                        if (e.data && e.transactionHash && e.blockNumber >= order.receipt.blockNumber) {
+                                            if (
+                                                (order.action === 'Buy' && e.topics[0] === '0x6a75660680cd3a8f7f34c5df6451086e3222c8a9e16e568b6e698098e8fd970b')
+                                                || (order.action === 'Sell' && e.topics[0] === '0x5e1656ea49c37d58c071f8ec59918a4e2380766f4956535b3724476daad4c4fd')
+                                            ) {
+                                                let oIdx = -1;
+                                                if (ords && ords.length > 0) {
+                                                    oIdx = ords.findIndex(ord => ord.txId === e.transactionHash);
+                                                }
+
                                                 if (oIdx === -1) {
                                                     const accountIdx = accounts.findIndex(account => account.beneficiary === `0x${e.topics[1].substring(26)}`);
                                                     if (accountIdx > -1 && accounts[accountIdx]._id == order.accountId) {
@@ -783,6 +790,9 @@ const eventsManager = async () => {
                                                                         // console.log('Prices: ', prices.join(','));
                                                                         // console.log('\n');
 
+                                                                        // Remove already detected event
+                                                                        events.splice(i, 1);
+
                                                                         break;
                                                                     }
                                                                 }
@@ -870,6 +880,9 @@ const eventsManager = async () => {
                                                                                 // console.log('Prices: ', prices.join(','));
                                                                                 // console.log('\n');
 
+                                                                                // Remove already detected event
+                                                                                events.splice(i, 1);
+
                                                                                 break;
                                                                             }
                                                                         }
@@ -881,19 +894,24 @@ const eventsManager = async () => {
                                                 }
                                             }
                                         }
+
+                                        // Update blocknumber in case the latest event does not have block number
+                                        if (e.blockNumber) {
+                                            fromBlock = Math.max(e.blockNumber, fromBlock);
+                                        }
                                     }
                                 } catch (err) {
                                     console.log('eventsManager asyncForEach: ', err);
                                 }
 
-                                console.log('End order: ', order._id);
+                                // console.log('End order: ', order._id);
                             });
 
                             if (prev) {
-                                prev.number = Math.max(prevBlock, events[events.length - 1].blockNumber);
+                                prev.number = fromBlock;
                             } else {
                                 prev = new Blocks({
-                                    number: Math.max(prevBlock, events[events.length - 1].blockNumber)
+                                    number: fromBlock
                                 });
                             }
                             prev.save(err => {
