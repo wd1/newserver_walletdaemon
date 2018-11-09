@@ -752,8 +752,6 @@ const getEtherTransactions = async () => {
         Promise.all(actions)
             .then(data => data.filter(item => !!item))
             .then(data => {
-                console.log(data.length);
-
                 data.forEach(dt => {
                     dt.txData.forEach(tx => {
                         if (tx.txreceipt_status !== '' && tx.value !== '0') {
