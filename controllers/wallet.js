@@ -179,33 +179,53 @@ const {
 /**
  * Promise function to get Eth balance
  */
-const asyncEthMultiple = (address, idx) => {
-    const url = `${ETHSCAN_URI}&action=balancemulti&tag=latest&apikey=${ETHSCAN_API_KEY1}&address=`;
+// const asyncEthMultiple = (address, idx) => {
+//     const url = `${ETHSCAN_URI}&action=balancemulti&tag=latest&apikey=${ETHSCAN_API_KEY1}&address=`;
+//
+//     return new Promise(resolve => {
+//         // Add some delay for each request because of etherscan rate limit
+//         setTimeout(() => {
+//             request(`${url}${address.toString()}`, (err, response) => {
+//                 if (err) {
+//                     console.log('asyncEthMultiple: ', err);
+//                     resolve(null);
+//                 }
+//
+//                 try {
+//                     if (response.statusCode === 200) {
+//                         const data = JSON.parse(response.body);
+//                         resolve(data.result);
+//                     } else {
+//                         resolve(null);
+//                     }
+//                 } catch (e) {
+//                     console.log('asyncEthMultiple: ', err);
+//                     resolve(null);
+//                 }
+//             });
+//         }, 100 * idx);
+//     });
+// };
 
-    return new Promise(resolve => {
-        // Add some delay for each request because of etherscan rate limit
-        setTimeout(() => {
-            request(`${url}${address.toString()}`, (err, response) => {
-                if (err) {
-                    console.log('asyncEthMultiple: ', err);
-                    resolve(null);
-                }
-
-                try {
-                    if (response.statusCode === 200) {
-                        const data = JSON.parse(response.body);
-                        resolve(data.result);
-                    } else {
-                        resolve(null);
+const asyncEthMultiple = (wallet, beneficiary, idx) => new Promise(resolve => {
+    setTimeout(() => {
+        Web3Service.getBalance(beneficiary)
+            .then(balance => {
+                wallet.quantity = balance;
+                wallet.latest = new Date().toUTCString();
+                wallet.save(err => {
+                    if (err) {
+                        console.log('asyncEthMultiple - save: ', err);
                     }
-                } catch (e) {
-                    console.log('asyncEthMultiple: ', err);
-                    resolve(null);
-                }
+                });
+                resolve();
+            })
+            .catch(err => {
+                console.log('asyncEthMultiple: ', err);
+                resolve();
             });
-        }, 100 * idx);
-    });
-};
+    }, 100 * idx);
+});
 
 const getEthWallet = async () => {
     try {
@@ -233,37 +253,19 @@ const getEthWallet = async () => {
             return;
         }
 
-        const addresses = [];
-        for (let i = 0; i < accounts.length; i++) {
-            if (i % 20 === 0) {
-                addresses.push([accounts[i].beneficiary]);
-            } else {
-                addresses[addresses.length - 1].push(accounts[i].beneficiary);
+        const actions = wallets.map((wallet, idx) => {
+            const accountIdx = accounts.findIndex(a => a._id == wallet.accountId);
+            if (accountIdx > -1) {
+                return asyncEthMultiple(wallet, accounts[accountIdx].beneficiary, idx);
             }
-        }
 
-        const actions = addresses.map(asyncEthMultiple);
+            return new Promise(resolve => {
+                resolve();
+            });
+        });
 
         Promise.all(actions)
-            .then(data => data.filter(item => !!item))
-            .then(data => {
-                data.forEach(dt => {
-                    dt.forEach(d => {
-                        const accountIdx = accounts.findIndex(a => a.beneficiary === d.account);
-                        if (accountIdx > -1) {
-                            const walletIdx = wallets.findIndex(w => w.accountId == accounts[accountIdx]._id);
-                            if (walletIdx > -1) {
-                                wallets[walletIdx].quantity = d.balance;
-                                wallets[walletIdx].save(err => {
-                                    if (err) {
-                                        console.log('getEthWallet - save: ', err);
-                                    }
-                                });
-                            }
-                        }
-                    });
-                });
-
+            .then(() => {
                 recallGetEthWallet();
             })
             .catch(e => {
@@ -287,39 +289,60 @@ const recallGetEthWallet = () => {
 /**
  * Promise function to get Token balance
  */
-const asyncTokenMultiple = (wallet, beneficiary, contractAddress, idx) => {
-    const url = `${ETHSCAN_URI}&action=tokenbalance&tag=latest&apikey=${ETHSCAN_API_KEY2}&address=${beneficiary}&contractaddress=${contractAddress}`;
+// const asyncTokenMultiple = (wallet, beneficiary, contractAddress, idx) => {
+//     const url = `${ETHSCAN_URI}&action=tokenbalance&tag=latest&apikey=${ETHSCAN_API_KEY2}&address=${beneficiary}&contractaddress=${contractAddress}`;
+//
+//     return new Promise(resolve => {
+//         // Add some delay for each request because of etherscan rate limit
+//         setTimeout(() => {
+//             request(url, (err, response) => {
+//                 if (err) {
+//                     console.log('asyncTokenMultiple: ', err);
+//                     resolve();
+//                 }
+//
+//                 try {
+//                     if (response.statusCode === 200) {
+//                         const data = JSON.parse(response.body);
+//                         wallet.quantity = data.result;
+//                         wallet.latest = new Date().toUTCString();
+//                         wallet.save(err => {
+//                             if (err) {
+//                                 console.log('asyncTokenMultiple - save: ', err);
+//                             }
+//                         });
+//                         resolve();
+//                     } else {
+//                         resolve();
+//                     }
+//                 } catch (e) {
+//                     console.log('asyncTokenMultiple: ', err);
+//                     resolve();
+//                 }
+//             });
+//         }, 100 * idx);
+//     });
+// };
 
-    return new Promise(resolve => {
-        // Add some delay for each request because of etherscan rate limit
-        setTimeout(() => {
-            request(url, (err, response) => {
-                if (err) {
-                    console.log('asyncTokenMultiple: ', err);
-                    resolve();
-                }
-
-                try {
-                    if (response.statusCode === 200) {
-                        const data = JSON.parse(response.body);
-                        wallet.quantity = data.result;
-                        wallet.save(err => {
-                            if (err) {
-                                console.log('asyncTokenMultiple - save: ', err);
-                            }
-                        });
-                        resolve();
-                    } else {
-                        resolve();
+const asyncTokenMultiple = (wallet, beneficiary, contractAddress, idx) => new Promise(resolve => {
+    setTimeout(() => {
+        TruffleService.coinBalanceOther(beneficiary, contractAddress)
+            .then(balance => {
+                wallet.quantity = balance;
+                wallet.latest = new Date().toUTCString();
+                wallet.save(err => {
+                    if (err) {
+                        console.log('asyncTokenMultiple - save: ', err);
                     }
-                } catch (e) {
-                    console.log('asyncTokenMultiple: ', err);
-                    resolve();
-                }
+                });
+                resolve();
+            })
+            .catch(err => {
+                console.log('asyncTokenMultiple: ', err);
+                resolve();
             });
-        }, 100 * idx);
-    });
-};
+    }, 100 * idx);
+});
 
 const getTokenWallet = async () => {
     try {
@@ -398,39 +421,60 @@ const recallGetTokenWallet = () => {
 /**
  * Promise function to get COIN v1 balance
  */
-const asyncCoinV1Multiple = (wallet, beneficiary, idx) => {
-    const url = `${ETHSCAN_URI}&action=tokenbalance&tag=latest&apikey=${ETHSCAN_API_KEY3}&address=${beneficiary}&contractaddress=${COINVEST_TOKEN_ADDRESS_V1}`;
+// const asyncCoinV1Multiple = (wallet, beneficiary, idx) => {
+//     const url = `${ETHSCAN_URI}&action=tokenbalance&tag=latest&apikey=${ETHSCAN_API_KEY3}&address=${beneficiary}&contractaddress=${COINVEST_TOKEN_ADDRESS_V1}`;
+//
+//     return new Promise(resolve => {
+//         // Add some delay for each request because of etherscan rate limit
+//         setTimeout(() => {
+//             request(url, (err, response) => {
+//                 if (err) {
+//                     console.log('asyncCoinV1Multiple: ', err);
+//                     resolve();
+//                 }
+//
+//                 try {
+//                     if (response.statusCode === 200) {
+//                         const data = JSON.parse(response.body);
+//                         wallet.quantity = data.result;
+//                         wallet.latest = new Date().toUTCString();
+//                         wallet.save(err => {
+//                             if (err) {
+//                                 console.log('asyncCoinV1Multiple - save: ', err);
+//                             }
+//                         });
+//                         resolve();
+//                     } else {
+//                         resolve();
+//                     }
+//                 } catch (e) {
+//                     console.log('asyncCoinV1Multiple: ', err);
+//                     resolve();
+//                 }
+//             });
+//         }, 100 * idx);
+//     });
+// };
 
-    return new Promise(resolve => {
-        // Add some delay for each request because of etherscan rate limit
-        setTimeout(() => {
-            request(url, (err, response) => {
-                if (err) {
-                    console.log('asyncCoinV1Multiple: ', err);
-                    resolve();
-                }
-
-                try {
-                    if (response.statusCode === 200) {
-                        const data = JSON.parse(response.body);
-                        wallet.quantity = data.result;
-                        wallet.save(err => {
-                            if (err) {
-                                console.log('asyncCoinV1Multiple - save: ', err);
-                            }
-                        });
-                        resolve();
-                    } else {
-                        resolve();
+const asyncCoinV1Multiple = (wallet, beneficiary, idx) => new Promise(resolve => {
+    setTimeout(() => {
+        TruffleService.coinBalanceOther(beneficiary, COINVEST_TOKEN_ADDRESS_V1)
+            .then(balance => {
+                wallet.quantity = balance;
+                wallet.latest = new Date().toUTCString();
+                wallet.save(err => {
+                    if (err) {
+                        console.log('asyncCoinV1Multiple - save: ', err);
                     }
-                } catch (e) {
-                    console.log('asyncCoinV1Multiple: ', err);
-                    resolve();
-                }
+                });
+                resolve();
+            })
+            .catch(err => {
+                console.log('asyncCoinV1Multiple: ', err);
+                resolve();
             });
-        }, 100 * idx);
-    });
-};
+    }, 100 * idx);
+});
 
 const getCoinV1Wallet = async () => {
     try {
@@ -482,39 +526,60 @@ const recallGetCoinV1Wallet = () => {
 /**
  * Promise function to get COIN v3 balance
  */
-const asyncCoinV3Multiple = (wallet, beneficiary, idx) => {
-    const url = `${ETHSCAN_URI}&action=tokenbalance&tag=latest&apikey=${ETHSCAN_API_KEY4}&address=${beneficiary}&contractaddress=${COINVEST_TOKEN_ADDRESS_V3}`;
+// const asyncCoinV3Multiple = (wallet, beneficiary, idx) => {
+//     const url = `${ETHSCAN_URI}&action=tokenbalance&tag=latest&apikey=${ETHSCAN_API_KEY4}&address=${beneficiary}&contractaddress=${COINVEST_TOKEN_ADDRESS_V3}`;
+//
+//     return new Promise(resolve => {
+//         // Add some delay for each request because of etherscan rate limit
+//         setTimeout(() => {
+//             request(url, (err, response) => {
+//                 if (err) {
+//                     console.log('asyncCoinV3Multiple: ', err);
+//                     resolve();
+//                 }
+//
+//                 try {
+//                     if (response.statusCode === 200) {
+//                         const data = JSON.parse(response.body);
+//                         wallet.quantity = data.result;
+//                         wallet.latest = new Date().toUTCString();
+//                         wallet.save(err => {
+//                             if (err) {
+//                                 console.log('asyncCoinV3Multiple - save: ', err);
+//                             }
+//                         });
+//                         resolve();
+//                     } else {
+//                         resolve();
+//                     }
+//                 } catch (e) {
+//                     console.log('asyncCoinV3Multiple: ', err);
+//                     resolve();
+//                 }
+//             });
+//         }, 100 * idx);
+//     });
+// };
 
-    return new Promise(resolve => {
-        // Add some delay for each request because of etherscan rate limit
-        setTimeout(() => {
-            request(url, (err, response) => {
-                if (err) {
-                    console.log('asyncCoinV3Multiple: ', err);
-                    resolve();
-                }
-
-                try {
-                    if (response.statusCode === 200) {
-                        const data = JSON.parse(response.body);
-                        wallet.quantity = data.result;
-                        wallet.save(err => {
-                            if (err) {
-                                console.log('asyncCoinV3Multiple - save: ', err);
-                            }
-                        });
-                        resolve();
-                    } else {
-                        resolve();
+const asyncCoinV3Multiple = (wallet, beneficiary, idx) => new Promise(resolve => {
+    setTimeout(() => {
+        TruffleService.coinBalanceOther(beneficiary, COINVEST_TOKEN_ADDRESS_V3)
+            .then(balance => {
+                wallet.quantity = balance;
+                wallet.latest = new Date().toUTCString();
+                wallet.save(err => {
+                    if (err) {
+                        console.log('asyncCoinV3Multiple - save: ', err);
                     }
-                } catch (e) {
-                    console.log('asyncCoinV3Multiple: ', err);
-                    resolve();
-                }
+                });
+                resolve();
+            })
+            .catch(err => {
+                console.log('asyncCoinV3Multiple: ', err);
+                resolve();
             });
-        }, 100 * idx);
-    });
-};
+    }, 100 * idx);
+});
 
 const getCoinV3Wallet = async () => {
     try {
