@@ -44,6 +44,8 @@
     "no-restricted-globals": "warn",
     "array-callback-return": "warn",
     "quotes": "warn",
-    "quote-props": "warn"
+    "quote-props": "warn",
+    "prefer-spread": "warn",
+    "prefer-rest-params": "warn"
   }
 }

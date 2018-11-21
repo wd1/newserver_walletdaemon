@@ -3,7 +3,8 @@ const mongoose = require('mongoose');
 const walletsSchema = new mongoose.Schema({
     accountId: String,
     coinId: String,
-    quantity: String
+    quantity: String,
+    latest: String
 }, { timestamps: true });
 
 const Wallets = mongoose.model('Wallets', walletsSchema);
