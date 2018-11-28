@@ -1,16 +1,13 @@
-/**
- * Module dependencies.
- */
-const express = require('express');
-const compression = require('compression');
-const bodyParser = require('body-parser');
-const logger = require('morgan');
-const chalk = require('chalk');
-const errorHandler = require('errorhandler');
-const lusca = require('lusca');
-const dotenv = require('dotenv');
-const path = require('path');
-const mongoose = require('mongoose');
+import express from 'express';
+import compression from 'compression';
+import bodyParser from 'body-parser';
+import logger from 'morgan';
+import chalk from 'chalk';
+import errorHandler from 'errorhandler';
+import lusca from 'lusca';
+import dotenv from 'dotenv';
+import path from 'path';
+import mongoose from 'mongoose';
 
 /**
  * Load environment variables from .env file, where API keys and passwords are configured.
@@ -63,12 +60,21 @@ app.listen(app.get('port'), () => {
     console.log('  Press CTRL-C to stop\n');
 });
 
-const { coinSchedule } = require('./controllers/coin');
-const { walletSchedule } = require('./controllers/wallet');
-const { tradeSchedule } = require('./controllers/trade');
+import { coinSchedule } from './controllers/coin_bak';
+import { walletSchedule } from './controllers/wallet_bak';
+import { tradeSchedule } from './controllers/trade_bak';
+import { handleIncomingChainData } from './controllers/transaction';
+import { fetchBalances } from './controllers/balance';
+import { getAddressesBalances } from './services/balanceChecker';
+import { fetchCoinPrices, fetchPricesFromCryptoCompare } from './controllers/coin';
 
-coinSchedule();
-walletSchedule();
-tradeSchedule();
+// coinSchedule();
+// walletSchedule();
+// tradeSchedule();
+// handleIncomingChainData();
+// fetchBalances();
+// getAddressesBalances(['0x7c4029e848b7854f8ac1466158e55873ae8cc562'], ['0x4a7b684d1a875183753f88d433008cfc16065be5']);
+// fetchCoinPrices();
+fetchPricesFromCryptoCompare();
 
 module.exports = app;

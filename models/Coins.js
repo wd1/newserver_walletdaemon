@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const coinsSchema = new mongoose.Schema({
+    address: { type: String, unique: true },
     name: { type: String, unique: true },
     symbol: { type: String, unique: true },
     totalSupply: { type: Number, default: 0.0 },

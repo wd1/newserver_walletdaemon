@@ -1,241 +1,98 @@
-const request = require('request');
-const schedule = require('node-schedule');
+import rp from 'request-promise';
+import redisClient from '../redis';
+import Coins from '../models/Coins';
+import { cryptoIdToSymbol, CMC_API_SECRET } from '../services/Config';
 
-const Coins = require('../models/Coins');
-const { cryptoIdToSymbol } = require('../services/Config');
+export const fetchCoinPrices = async () => {
+    console.log(`------------- Fetching Token Prices from CoinMarketCap ------------`);
 
-let updateAsset;
-let updateCryptoCompareId;
-let updateCoinPrices;
+    const batchSize = 30;
+    const batches = [];
+    let symbols = [];
 
-const getAssets = () => {
-    request('https://api.coinmarketcap.com/v2/listings', (err, response) => {
-        if (err) {
-            console.log('getAssets: coinmarketcap-listings: ', err);
-            return;
+    const requestOptions = {
+        method: 'GET',
+        uri: 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest',
+        headers: {
+            'X-CMC_PRO_API_KEY': CMC_API_SECRET
+        },
+        json: true,
+        gzip: true
+    };
+
+    const coins = await Coins.find({}, 'symbol', {lean: true});
+    if (coins.length > 30) {
+        for (let i = 0; i < coins.length / batchSize; i++) {
+            batches.push(coins.slice(i * batchSize, (i + 1) * batchSize - 1));
         }
+    } else {
+        batches.push(coins);
+    }
 
-        try {
-            if (response.statusCode === 200) {
-                const body = JSON.parse(response.body);
+    try {
+        await Promise.all(batches.map(async batch => {
+            symbols = batch.map(coin => coin.symbol);
+            symbols = symbols.join(',');
+            requestOptions.qs = {symbol: symbols};
 
-                if (body.metadata.num_cryptocurrencies) {
-                    const limit = Math.floor(body.metadata.num_cryptocurrencies / 100);
+            try {
+                setTimeout(async () => {
+                    const response = await rp(requestOptions);
+                    if (!response.status.error_code) {
+                        return await Promise.all(Object.keys(response.data || {}).map(async symbol => {
+                            const coin = await Coins.findOne({symbol});
+                            if (coin) {
+                                coin.set({
+                                    price: response.data[symbol].quote.USD.price
+                                });
 
-                    for (let i = 0; i <= limit; i++) {
-                        let url = 'https://api.coinmarketcap.com/v2/ticker/?structure=array';
-                        if (i !== 0) {
-                            url += `&start=${i * 100 + 1}`;
-                        }
-
-                        request(url, (err, response) => {
-                            if (err) {
-                                console.log('getAssets: coinmarketcap-ticker: ', err);
-                                return;
+                                return coin.save();
                             }
-
-                            try {
-                                if (response.statusCode === 200) {
-                                    const res = JSON.parse(response.body);
-
-                                    if (res.data) {
-                                        res.data.forEach(dt => {
-                                            Coins.findOne({ symbol: dt.symbol }, (err, coin) => {
-                                                if (err) {
-                                                    console.log('getAssets: findOne: ', err);
-                                                    return;
-                                                }
-
-                                                if (coin) {
-                                                    coin.set({
-                                                        name: dt.name,
-                                                        totalSupply: dt.total_supply,
-                                                        circulatingSupply: dt.circulating_supply,
-                                                        maxSupply: dt.max_supply,
-                                                        price: dt.quotes.USD.price,
-                                                        marketCap: dt.quotes.USD.market_cap,
-                                                        volume24h: dt.quotes.USD.volume_24h,
-                                                        percentageChange1h: dt.quotes.USD.percent_change_1h,
-                                                        percentageChange24h: dt.quotes.USD.percent_change_24h,
-                                                        percentageChange7d: dt.quotes.USD.percent_change_7d,
-                                                        lastUpdated: dt.last_updated
-                                                    });
-
-                                                    coin.save(err => {
-                                                        if (err) {
-                                                            console.log('getAssets: save: ', err);
-                                                        }
-                                                    });
-                                                } else {
-                                                    Coins.findOne({ name: dt.name }, (err, co) => {
-                                                        if (err) {
-                                                            console.log('getAssets: Coins.findOne: ', err);
-                                                            return;
-                                                        }
-
-                                                        if (co) {
-                                                            co.set({
-                                                                symbol: dt.symbol,
-                                                                totalSupply: dt.total_supply,
-                                                                circulatingSupply: dt.circulating_supply,
-                                                                maxSupply: dt.max_supply,
-                                                                price: dt.quotes.USD.price,
-                                                                marketCap: dt.quotes.USD.market_cap,
-                                                                volume24h: dt.quotes.USD.volume_24h,
-                                                                percentageChange1h: dt.quotes.USD.percent_change_1h,
-                                                                percentageChange24h: dt.quotes.USD.percent_change_24h,
-                                                                percentageChange7d: dt.quotes.USD.percent_change_7d,
-                                                                lastUpdated: dt.last_updated
-                                                            });
-
-                                                            co.save(err => {
-                                                                if (err) {
-                                                                    console.log('getAssets: co.save: ', err);
-                                                                }
-                                                            });
-                                                        } else {
-                                                            coin = new Coins({
-                                                                name: dt.name,
-                                                                symbol: dt.symbol,
-                                                                totalSupply: dt.total_supply,
-                                                                circulatingSupply: dt.circulating_supply,
-                                                                maxSupply: dt.max_supply,
-                                                                price: dt.quotes.USD.price,
-                                                                marketCap: dt.quotes.USD.market_cap,
-                                                                volume24h: dt.quotes.USD.volume_24h,
-                                                                percentageChange1h: dt.quotes.USD.percent_change_1h,
-                                                                percentageChange24h: dt.quotes.USD.percent_change_24h,
-                                                                percentageChange7d: dt.quotes.USD.percent_change_7d,
-                                                                limit: 18,
-                                                                lastUpdated: dt.last_updated,
-                                                                coinMarketCapId: dt.id
-                                                            });
-
-                                                            coin.save(err => {
-                                                                if (err) {
-                                                                    console.log('getAssets: coin.save: ', err);
-                                                                }
-                                                            });
-                                                        }
-                                                    });
-                                                }
-                                            });
-                                        });
-                                    }
-                                }
-                            } catch (err) {
-                                console.log('getAssets: ticker: ', err);
-                            }
-                        });
+                        }));
                     }
-                }
+                }, 30000);
+            } catch (e) {
+                console.log(`[CoinDaemon] Error fetching coin quotes from CoinMarketCap: ${e}`);
             }
-        } catch (err) {
-            console.log('getAssets: listing: ', err);
-        }
-    });
+        }));
+    } catch (e) {
+        console.log(`[CoinDaemon] Error updating coin quotes: ${e}`);
+    }
+
+    setTimeout(fetchCoinPrices, 30000);
 };
 
-const getCryptoCompareId = () => {
-    Coins.find((err, coins) => {
-        if (err) {
-            console.log('getCryptoCompareId: find: ', err);
-            return;
-        }
+export const fetchPricesFromCryptoCompare = async () => {
+    console.log(`------------- Fetching Supported Token Prices from CryptoCompare ------------`);
 
-        const array = [];
-        coins.forEach(coin => {
-            if (!coin.cryptoCompareId || !coin.image) {
-                array.push(coin);
+    const symbols = cryptoIdToSymbol.map(crypto => crypto.symbol);
+    const requestOptions = {
+        method: 'GET',
+        uri: 'https://min-api.cryptocompare.com/data/pricemulti',
+        qs: {
+            tsyms: 'USD,EUR',
+            fsyms: symbols.join(',')
+        },
+        json: true,
+        gzip: true
+    };
+
+    try {
+        const response = await rp(requestOptions);
+        await Promise.all(Object.keys(response).map(async symbol => {
+            let coin = await Coins.findOne({symbol});
+            if (!coin) {
+                coin = new Coins({
+                    symbol
+                });
             }
-        });
 
-        if (array.length > 0) {
-            request('https://min-api.cryptocompare.com/data/all/coinlist', (err, response) => {
-                if (err) {
-                    console.log('getCryptoCompareId: cryptocompare: ', err);
-                    return;
-                }
-
-                try {
-                    const body = JSON.parse(response.body);
-
-                    array.forEach(coin => {
-                        if (body.Data[coin.symbol]) {
-                            coin.cryptoCompareId = body.Data[coin.symbol].Id;
-                            coin.image = body.Data[coin.symbol].ImageUrl;
-
-                            coin.save(err => {
-                                if (err) {
-                                    console.log('getCryptoCompareId: save: ', err);
-                                }
-                            });
-                        }
-                    });
-                } catch (err) {
-                    console.log('getCryptoCompareId: coinlist: ', err);
-                }
-            });
-        }
-    });
-};
-
-const getPricesFromCryptoCompare = () => {
-    const coinSymbols = cryptoIdToSymbol.map(crypto => crypto.symbol);
-    Coins.find({ symbol: coinSymbols }, (err, coins) => {
-        if (err) {
-            console.log('getPricesFromCryptoCompare Coins.find: ', err);
-            return;
-        }
-
-        if (coins && coins.length > 0) {
-            const symbols = coins.map(coin => coin.symbol).join(',');
-
-            request(`https://min-api.cryptocompare.com/data/pricemulti?tsyms=USD,EUR&fsyms=${symbols}`, (err, response) => {
-                if (err) {
-                    console.log('getPricesFromCryptoCompare: ', err);
-                    return;
-                }
-
-                try {
-                    const body = JSON.parse(response.body);
-
-                    coins.forEach(coin => {
-                        coin.price = body[coin.symbol].USD;
-                        coin.save(err => {
-                            if (err) {
-                                console.log('getPricesFromCryptoCompare: save: ', err);
-                            }
-                        });
-                    });
-                } catch (err) {
-                    console.log('getPricesFromCryptoCompare: pricemulti: ', err);
-                }
-            });
-        }
-    });
-};
-
-exports.coinSchedule = () => {
-    updateAsset = schedule.scheduleJob('*/1 * * * *', getAssets);
-    updateCryptoCompareId = schedule.scheduleJob('*/1 * * * *', getCryptoCompareId);
-    updateCoinPrices = schedule.scheduleJob('*/10 * * * * *', getPricesFromCryptoCompare);
-};
-
-exports.cancelAssetSchedule = () => {
-    if (updateAsset) {
-        updateAsset.cancel();
+            coin.price = response[symbol].USD;
+            return coin.save();
+        }));
+    } catch (e) {
+        console.log(`[CoinDaemon] Error fetching coin prices from CryptoCompare: ${e}`);
     }
-};
 
-exports.cancelCryptoCompareSchedule = () => {
-    if (updateCryptoCompareId) {
-        updateCryptoCompareId.cancel();
-    }
-};
-
-exports.cancelPriceSchedule = () => {
-    if (updateCoinPrices) {
-        updateCoinPrices.cancel();
-    }
+    setTimeout(fetchPricesFromCryptoCompare, 10000);
 };
