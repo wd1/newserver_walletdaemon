@@ -67,14 +67,16 @@ import { handleIncomingChainData } from './controllers/transaction';
 import { fetchBalances } from './controllers/balance';
 import { getAddressesBalances } from './services/balanceChecker';
 import { fetchCoinPrices, fetchPricesFromCryptoCompare } from './controllers/coin';
+import { handleIncomingTradeEvents } from './controllers/trade';
 
 // coinSchedule();
 // walletSchedule();
 // tradeSchedule();
-// handleIncomingChainData();
+handleIncomingChainData();
 // fetchBalances();
 // getAddressesBalances(['0x7c4029e848b7854f8ac1466158e55873ae8cc562'], ['0x4a7b684d1a875183753f88d433008cfc16065be5']);
 // fetchCoinPrices();
-fetchPricesFromCryptoCompare();
+// fetchPricesFromCryptoCompare();
+handleIncomingTradeEvents();
 
 module.exports = app;
