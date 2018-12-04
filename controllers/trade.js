@@ -9,7 +9,6 @@ const Coins = require('../models/Coins');
 const Orders = require('../models/Orders');
 const Transactions = require('../models/Transactions');
 const Pending = require('../models/Pending');
-const IndexContains = require('../models/IndexContains');
 const Blocks = require('../models/Blocks');
 
 const { cryptoIdToSymbol } = require('../services/Config');
@@ -17,113 +16,76 @@ const { hexToDec } = require('../services/hex2dec');
 const Web3Service = require('../services/Web3Service');
 const TruffleService = require('../services/TruffleService');
 
-let updateOrder;
 let eventsMg;
 let processing = false;
 
-exports.tradeSchedule = () => {
-    updateOrder = schedule.scheduleJob('*/2 * * * *', runOrder);
-    eventsMg = schedule.scheduleJob('*/30 * * * * *', eventsManager);
-};
+const runOrder = async () => {
+    try {
+        const coins = await Coins.find({}, 'symbol price', { lean: true }).exec();
+        if (coins && coins.length > 0) {
+            const coIndex = coins.findIndex(coin => coin.symbol === 'COIN');
+            if (coIndex > -1) {
+                const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
+                const wallets = await Wallets.find({ coinId: coins[coIndex]._id }, 'accountId quantity', { lean: true }).exec();
+                const openOrders = await Orders.find({ status: 'Open', 'receipt.transactionHash': null }).exec();
+                const pendings = await Pending.find({}).exec();
 
-exports.cancelTradeSchedule = () => {
-    if (updateOrder) {
-        updateOrder.cancel();
-    }
-};
+                if (
+                    accounts && accounts.length > 0 &&
+                    wallets && wallets.length > 0 &&
+                    openOrders && openOrders.length > 0
+                ) {
+                    accounts.forEach(account => {
+                        const walletIdx = wallets.findIndex(w => w.accountId == account._id);
+                        if (walletIdx === -1) return;
 
-exports.cancelEventsSchedule = () => {
-    if (eventsMg) {
-        eventsMg.cancel();
-    }
-};
+                        if (!wallets[walletIdx] || wallets[walletIdx].quantity * coins[coIndex].price < 5) return;
 
-const runOrder = () => {
-    Coins.find({}, 'symbol price', { lean: true }, (err, coins) => {
-        if (err) {
-            console.log('runOrder: Coins.findOne: ', err);
-            return;
-        }
-
-        if (!coins || coins.length === 0) {
-            console.log('runOrder: Coins.findOne: no coins');
-            return;
-        }
-
-        const coIndex = coins.findIndex(coin => coin.symbol === 'COIN');
-        if (coIndex === -1) {
-            console.log('*** COIN does not exist in database. ***');
-            return;
-        }
-
-        Accounts.find({}, 'beneficiary', { lean: true }, (err, accounts) => {
-            if (err) {
-                console.log('runOrder: Accounts.find: ', err);
-                return;
-            }
-
-            accounts.forEach(account => {
-                Wallets.findOne({ accountId: account._id, coinId: coins[coIndex]._id }, 'quantity', { lean: true }, (err, wallet) => {
-                    if (err) {
-                        console.log('runOrder: Wallets.findOne: ', err);
-                        return;
-                    }
-
-                    if (!wallet || wallet.quantity * coins[coIndex].price < 5) return;
-
-                    Orders.find({ accountId: account._id, status: 'Open', 'receipt.transactionHash': null }, (err, orders) => {
-                        if (err) {
-                            console.log('runOrder: Orders.find: ', err);
-                            return;
-                        }
-
-                        if (orders && orders.length > 0) {
-                            orders.forEach(order => {
-                                if (order.type === 'limit' && order.timing === 'day') {
-                                    const current = Math.round((new Date()).getTime() / 1000);
-                                    if (current - order.timestamp > 86400) {
-                                        order.status = 'Cancelled';
-                                        order.save(err => {
-                                            if (err) {
-                                                console.log('runOrder: order.save: ', err);
-                                            }
-                                        });
-
-                                        return;
-                                    }
-                                }
-
-                                Pending.findOne({ orderId: order._id }, (err, pending) => {
-                                    if (err) {
-                                        console.log('runOrder: Pending.findOne: ', err);
-                                        return;
-                                    }
-
-                                    if (pending) {
-                                        switch (pending.type) {
-                                        case 'purchaseAsset':
-                                            purchaseAsset(account, order, pending, coins, coIndex, wallet);
-                                            break;
-                                        case 'purchaseIndex':
-                                            purchaseIndex(account, order, pending, coins, coIndex, wallet);
-                                            break;
-                                        case 'sellAsset':
-                                            sellAsset(account, order, pending, coins, coIndex);
-                                            break;
-                                        case 'sellIndex':
-                                            sellIndex(account, order, pending, coins, coIndex);
-                                            break;
-                                        default: break;
+                        const orders = openOrders.filter(o => o.accountId == account._id);
+                        orders.forEach(order => {
+                            if (order.type === 'limit' && order.timing === 'day') {
+                                const current = Math.round((new Date()).getTime() / 1000);
+                                if (current - order.timestamp > 86400) {
+                                    order.status = 'Cancelled';
+                                    order.save(err => {
+                                        if (err) {
+                                            console.log('runOrder: order.save: ', err);
                                         }
-                                    }
-                                });
-                            });
-                        }
+                                    });
+
+                                    return;
+                                }
+                            }
+
+                            const pendingIdx = pendings.findIndex(p => p.orderId == order._id);
+                            if (pendingIdx > -1) {
+                                switch (pendings[pendingIdx].type) {
+                                case 'purchaseAsset':
+                                    purchaseAsset(account, order, pendings[pendingIdx], coins, coIndex, wallets[walletIdx]);
+                                    break;
+                                case 'purchaseIndex':
+                                    purchaseIndex(account, order, pendings[pendingIdx], coins, coIndex, wallets[walletIdx]);
+                                    break;
+                                case 'sellAsset':
+                                    sellAsset(account, order, pendings[pendingIdx], coins, coIndex);
+                                    break;
+                                case 'sellIndex':
+                                    sellIndex(account, order, pendings[pendingIdx], coins, coIndex);
+                                    break;
+                                default:
+                                    break;
+                                }
+                            }
+                        });
                     });
-                });
-            });
-        });
-    });
+                }
+            }
+        }
+    } catch (e) {
+        console.log('runOrder: ', e);
+    }
+
+    setTimeout(runOrder, 120000);
 };
 
 const purchaseAsset = (account, order, pending, coins, coIndex, wallet) => {
@@ -160,12 +122,12 @@ const purchaseAsset = (account, order, pending, coins, coIndex, wallet) => {
             return;
         }
 
-        let sendAmount = amount;
+        let sendAmount = amount + 4.99;
         orders.forEach(o => {
             sendAmount += o.amount + 4.99;
         });
 
-        const sendAmountInWei = Web3Service.toWei((sendAmount + 4.99) / coins[coIndex].price);
+        const sendAmountInWei = Web3Service.toWei(sendAmount * 1.01 / coins[coIndex].price);
 
         const approveAndCallSig = Web3Service.encodeFunctionSignature({
             inputs: [
@@ -302,12 +264,12 @@ const purchaseIndex = (account, order, pending, coins, coIndex, wallet) => {
                 return;
             }
 
-            let sendAmount = realAmount;
+            let sendAmount = realAmount + 4.99;
             orders.forEach(o => {
                 sendAmount += o.amount + 4.99;
             });
 
-            const sendAmountInWei = Web3Service.toWei((sendAmount + 4.99) / coins[coIndex].price);
+            const sendAmountInWei = Web3Service.toWei(sendAmount * 1.01 / coins[coIndex].price);
 
             const approveAndCallSig = Web3Service.encodeFunctionSignature({
                 inputs: [
@@ -372,19 +334,16 @@ const purchaseIndex = (account, order, pending, coins, coIndex, wallet) => {
                                         return;
                                     }
 
-                                    pending.assets.forEach((asset, idx) => {
-                                        const indexContains = new IndexContains({
-                                            indexId: index._id,
-                                            coinId: coinList[idx]._id,
-                                            percentage: asset.percent,
-                                            quantity: quantities[idx],
-                                            amount: amounts[idx]
-                                        });
-                                        indexContains.save(err => {
-                                            if (err) {
-                                                console.log('purchaseIndex: indexContains.save: ', err);
-                                            }
-                                        });
+                                    index.assets = pending.assets.map((asset, idx) => ({
+                                        coinId: coinList[idx]._id,
+                                        percentage: asset.percent,
+                                        quantity: quantities[idx],
+                                        amount: amounts[idx]
+                                    }));
+                                    index.save(err => {
+                                        if (err) {
+                                            console.log('purchaseIndex - save indexAssets: ', err);
+                                        }
                                     });
                                 });
                             } else {
@@ -511,22 +470,19 @@ const sellIndex = (account, order, pending, coins, coIndex) => {
         const cryptoIds = [];
         const quantitiesInWei = [];
         let amount = 0;
-        try {
-            const indexContains = await IndexContains.find({ indexId: index._id }, null, { lean: true }).exec();
-            for (let i = 0; i < indexContains.length; i++) {
-                const coinIndex = coins.findIndex(coin => coin._id === indexContains[i].coinId);
+
+        if (index.assets && index.assets.length > 0) {
+            for (let i = 0; i < index.assets.length; i++) {
+                const coinIndex = coins.findIndex(coin => coin._id === index.assets[i].coinId);
                 if (coinIndex > -1) {
                     const cryptoId = cryptoIdToSymbol.findIndex(crypto => crypto.symbol === coins[coinIndex].symbol);
                     if (cryptoId === -1) return;
 
                     cryptoIds.push(cryptoId);
-                    quantitiesInWei.push(Web3Service.toWei(indexContains[i].quantity));
-                    amount += coins[coinIndex].price * indexContains[i].quantity;
+                    quantitiesInWei.push(Web3Service.toWei(index.assets[i].quantity));
+                    amount += coins[coinIndex].price * index.assets[i].quantity;
                 }
             }
-        } catch (err) {
-            console.log('sellIndex: IndexContains: ', err);
-            return;
         }
 
         const amountInWei = Web3Service.toWei((amount + 4.99) / coins[coIndex].price);
@@ -638,7 +594,7 @@ const eventsManager = async () => {
                     fromBlock = Math.min(fromBlock, or.receipt.blockNumber);
                 });
                 fromBlock = Math.max(prevBlock, fromBlock);
-                console.log('fromBlock: ', fromBlock);
+                // console.log('fromBlock: ', fromBlock);
 
                 TruffleService.eventsWatch(fromBlock)
                     .then(async events => {
@@ -649,7 +605,6 @@ const eventsManager = async () => {
                             const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
                             const assets = await Assets.find({}).exec();
                             const indexes = await Indexes.find({}).exec();
-                            const idxContains = await IndexContains.find({}, null, { lean: true }).exec();
 
                             await asyncForEach(orders, async order => {
                                 // console.log('Start order: ', order._id);
@@ -805,16 +760,14 @@ const eventsManager = async () => {
 
                                                                     if (indexId > -1) {
                                                                         const index = indexes[indexId];
-
-                                                                        const indexContains = idxContains.filter(idxC => idxC.indexId == index._id);
-                                                                        if (indexContains && indexContains.length === cryptoCount) {
+                                                                        if (indexes[indexId].assets && indexes[indexId].assets.length === cryptoCount) {
                                                                             let match = true;
                                                                             for (let j = 0; j < cryptoIds.length; j++) {
                                                                                 const coinIdx = coins.findIndex(coin => coin.symbol === cryptoIdToSymbol[cryptoIds[j]].symbol);
                                                                                 if (coinIdx > -1) {
-                                                                                    const indexContainIdx = indexContains.findIndex(ic => ic.coinId == coins[coinIdx]._id &&
+                                                                                    const assetIdx = indexes[indexId].assets.findIndex(ic => ic.coinId == coins[coinIdx]._id &&
                                                                                         parseFloat(ic.quantity).toFixed(8) === parseFloat(quantities[j]).toFixed(8));
-                                                                                    if (indexContainIdx === -1) {
+                                                                                    if (assetIdx === -1) {
                                                                                         match = false;
                                                                                         break;
                                                                                     }
@@ -934,4 +887,11 @@ const eventsManager = async () => {
     } catch (err) {
         console.log('eventsManager: ', err);
     }
+};
+
+
+exports.tradeSchedule = () => {
+    runOrder();
+
+    eventsMg = schedule.scheduleJob('*/30 * * * * *', eventsManager);
 };

@@ -1,8 +1,10 @@
 const mongoose = require('mongoose');
 
 const coinsSchema = new mongoose.Schema({
-    name: { type: String, unique: true },
+    address: { type: String },
     symbol: { type: String, unique: true },
+    name: { type: String },
+    decimal: { type: Number, default: 18 },
     totalSupply: { type: Number, default: 0.0 },
     circulatingSupply: { type: Number, default: 0.0 },
     maxSupply: { type: Number, default: 0.0 },
@@ -12,12 +14,10 @@ const coinsSchema = new mongoose.Schema({
     percentageChange1h: { type: Number, default: 0.0 },
     percentageChange24h: { type: Number, default: 0.0 },
     percentageChange7d: { type: Number, default: 0.0 },
-    limit: { type: Number, default: 0 },
-    created: Number,
-    lastUpdated: Number,
-    coinMarketCapId: Number,
-    cryptoCompareId: Number,
-    image: String
+    created: { type: String },
+    lastUpdated: { type: String },
+    cryptoCompareId: { type: Number },
+    image: { type: String }
 }, { timestamps: true });
 
 const Coins = mongoose.model('Coins', coinsSchema);
