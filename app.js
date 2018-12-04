@@ -48,6 +48,6 @@ const { tradeSchedule } = require('./controllers/trade');
 coinSchedule();
 // balanceSchedule();
 walletSchedule();
-// tradeSchedule();
+tradeSchedule();
 
 module.exports = app;
