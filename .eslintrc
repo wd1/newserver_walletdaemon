@@ -21,7 +21,7 @@
     "no-console": 0,
     "no-plusplus": 0,
     "no-unused-expressions": 0,
-    "chai-friendly/no-unused-expressions": 2,
+    "chai-friendly/no-unused-expressions": 0,
     "max-len": [
       "error",
       {
@@ -46,6 +46,7 @@
     "quotes": "warn",
     "quote-props": "warn",
     "prefer-spread": "warn",
-    "prefer-rest-params": "warn"
+    "prefer-rest-params": "warn",
+    "no-irregular-whitespace": "warn"
   }
 }
