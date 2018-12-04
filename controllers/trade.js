@@ -1,4 +1,5 @@
 const schedule = require('node-schedule');
+const fetch = require('node-fetch');
 const BigNumber = require('bignumber.js');
 
 const Accounts = require('../models/Accounts');
@@ -11,7 +12,7 @@ const Transactions = require('../models/Transactions');
 const Pending = require('../models/Pending');
 const Blocks = require('../models/Blocks');
 
-const { cryptoIdToSymbol } = require('../services/Config');
+const { cryptoIdToSymbol, VERIFY_URI } = require('../services/Config');
 const { hexToDec } = require('../services/hex2dec');
 const Web3Service = require('../services/Web3Service');
 const TruffleService = require('../services/TruffleService');
@@ -88,44 +89,50 @@ const runOrder = async () => {
     setTimeout(runOrder, 120000);
 };
 
-const purchaseAsset = (account, order, pending, coins, coIndex, wallet) => {
-    const coinIndex = coins.findIndex(coin => coin._id == order.coinId);
-    if (coinIndex === -1) {
-        console.log('purchaseAsset: no coin found');
-        return;
-    }
-
-    const cryptoId = cryptoIdToSymbol.findIndex(crypto => crypto.symbol === coins[coinIndex].symbol);
-    if (cryptoId === -1) return;
-
-    if (order.type === 'limit' && order.price < coins[coinIndex].price) return;
-
-    const amount = coins[coinIndex].price * order.quantity;
-    const amountInWei = Web3Service.toWei((amount + 4.99) / coins[coIndex].price);
-
-    // Get quantity in Wei
-    const quantityInWei = Web3Service.toWei(order.quantity);
-
-    if ((new BigNumber(amountInWei)).isGreaterThan(new BigNumber(wallet.quantity))) return;
-
-    // Get nonce
-    const nonce = new Date().getTime();
-
-    Orders.find({
-        accountId: account._id,
-        action: 'Buy',
-        status: 'Open',
-        txId: null
-    }, 'amount', { lean: true }, (err, orders) => {
-        if (err) {
-            console.log('purchaseAsset: Orders.find: ', err);
+const purchaseAsset = async (account, order, pending, coins, coIndex, wallet) => {
+    try {
+        const coinIndex = coins.findIndex(coin => coin._id == order.coinId);
+        if (coinIndex === -1) {
+            console.log('purchaseAsset: no coin found');
             return;
         }
 
+        // const response = await fetch(`${VERIFY_URI}?cryptos=${coins[coinIndex].symbol}&amounts=${order.quantity}`);
+        // const json = await response.json();
+        // if (parseFloat(json[coins[coinIndex].symbol].amount) < order.quantity) {
+        //     console.log('purchaseAsset - verify: Amount verify failed.');
+        //     return;
+        // }
+
+        const cryptoId = cryptoIdToSymbol.findIndex(crypto => crypto.symbol === coins[coinIndex].symbol);
+        if (cryptoId === -1) return;
+
+        if (order.type === 'limit' && order.price < coins[coinIndex].price) return;
+
+        const amount = coins[coinIndex].price * order.quantity;
+        const amountInWei = Web3Service.toWei((amount + 4.99) / coins[coIndex].price);
+
+        // Get quantity in Wei
+        const quantityInWei = Web3Service.toWei(order.quantity);
+
+        if ((new BigNumber(amountInWei)).isGreaterThan(new BigNumber(wallet.quantity))) return;
+
+        // Get nonce
+        const nonce = new Date().getTime();
+
+        const orders = await Orders.find({
+            accountId: account._id,
+            action: 'Buy',
+            status: 'Open',
+            txId: null
+        }, 'amount', { lean: true }).exec();
+
         let sendAmount = amount + 4.99;
-        orders.forEach(o => {
-            sendAmount += o.amount + 4.99;
-        });
+        if (orders && orders.length > 0) {
+            orders.forEach(o => {
+                sendAmount += o.amount + 4.99;
+            });
+        }
 
         const sendAmountInWei = Web3Service.toWei(sendAmount * 1.01 / coins[coIndex].price);
 
@@ -193,16 +200,14 @@ const purchaseAsset = (account, order, pending, coins, coIndex, wallet) => {
             .catch(err => {
                 console.log('purchaseAsset: ', err);
             });
-    });
+    } catch (e) {
+        console.log('purchaseAsset: ', e);
+    }
 };
 
-const purchaseIndex = (account, order, pending, coins, coIndex, wallet) => {
-    Indexes.findOne({ accountId: account._id, _id: order.indexId }, async (err, index) => {
-        if (err) {
-            console.log('purchaseIndex: findOne: ', err);
-            return;
-        }
-
+const purchaseIndex = async (account, order, pending, coins, coIndex, wallet) => {
+    try {
+        const index = await Indexes.findOne({ accountId: account._id, _id: order.indexId }).exec();
         if (!index) return;
 
         const cryptoIds = [];
@@ -234,6 +239,16 @@ const purchaseIndex = (account, order, pending, coins, coIndex, wallet) => {
             }
         }
 
+        // const coinSymbols = pending.assets.map(asset => asset.symbol);
+        // const response = await fetch(`${VERIFY_URI}?cryptos=${coinSymbols.toString()}&amounts=${quantities.toString()}`);
+        // const json = await response.json();
+        // for (let i = 0; i < coinSymbols.length; i++) {
+        //     if (parseFloat(json[coinSymbols[i]].amount) < quantities[i]) {
+        //         console.log('purchaseIndex - verify: Amount verify failed.');
+        //         return;
+        //     }
+        // }
+
         const amountInWei = Web3Service.toWei((realAmount + 4.99) / coins[coIndex].price);
         if ((new BigNumber(amountInWei)).isGreaterThan(new BigNumber(wallet.quantity))) return;
 
@@ -253,112 +268,111 @@ const purchaseIndex = (account, order, pending, coins, coIndex, wallet) => {
         // Get nonce
         const nonce = new Date().getTime();
 
-        Orders.find({
+        const orders = Orders.find({
             accountId: account._id,
             action: 'Buy',
             status: 'Open',
             txId: null
-        }, 'amount', { lean: true }, (err, orders) => {
-            if (err) {
-                console.log('purchaseIndex: Orders.find: ', err);
-                return;
-            }
+        }, 'amount', { lean: true }).exec();
 
-            let sendAmount = realAmount + 4.99;
+        let sendAmount = realAmount + 4.99;
+        if (orders && orders.length > 0) {
             orders.forEach(o => {
                 sendAmount += o.amount + 4.99;
             });
+        }
 
-            const sendAmountInWei = Web3Service.toWei(sendAmount * 1.01 / coins[coIndex].price);
+        const sendAmountInWei = Web3Service.toWei(sendAmount * 1.01 / coins[coIndex].price);
 
-            const approveAndCallSig = Web3Service.encodeFunctionSignature({
-                inputs: [
-                    {
-                        name: '_spender',
-                        type: 'address'
-                    },
-                    {
-                        name: '_amount',
-                        type: 'uint256'
-                    },
-                    {
-                        name: '_data',
-                        type: 'bytes'
-                    }
-                ],
-                name: 'approveAndCall',
-                type: 'function'
-            });
-            const extraData = Web3Service.encodeFunctionCall({
-                inputs: [
-                    {
-                        name: '_beneficiary',
-                        type: 'address'
-                    },
-                    {
-                        name: '_cryptoIds',
-                        type: 'uint256[]'
-                    },
-                    {
-                        name: '_amounts',
-                        type: 'uint256[]'
-                    }
-                ],
-                name: 'buy',
-                type: 'function'
-            }, [account.beneficiary, cryptoIds, quantitiesInWei]);
+        const approveAndCallSig = Web3Service.encodeFunctionSignature({
+            inputs: [
+                {
+                    name: '_spender',
+                    type: 'address'
+                },
+                {
+                    name: '_amount',
+                    type: 'uint256'
+                },
+                {
+                    name: '_data',
+                    type: 'bytes'
+                }
+            ],
+            name: 'approveAndCall',
+            type: 'function'
+        });
+        const extraData = Web3Service.encodeFunctionCall({
+            inputs: [
+                {
+                    name: '_beneficiary',
+                    type: 'address'
+                },
+                {
+                    name: '_cryptoIds',
+                    type: 'uint256[]'
+                },
+                {
+                    name: '_amounts',
+                    type: 'uint256[]'
+                }
+            ],
+            name: 'buy',
+            type: 'function'
+        }, [account.beneficiary, cryptoIds, quantitiesInWei]);
 
-            TruffleService.getPreSignedHash(approveAndCallSig, sendAmountInWei, extraData, 40000000000, nonce)
-                .then(txHash => {
-                    const signed = Web3Service.sign(txHash, account.beneficiary, pending.input);
-                    const tempSign = signed.signature.substr(0, signed.signature.length - 2) + (signed.v === '0x1b' ? '00' : '01');
+        TruffleService.getPreSignedHash(approveAndCallSig, sendAmountInWei, extraData, 40000000000, nonce)
+            .then(txHash => {
+                const signed = Web3Service.sign(txHash, account.beneficiary, pending.input);
+                const tempSign = signed.signature.substr(0, signed.signature.length - 2) + (signed.v === '0x1b' ? '00' : '01');
 
-                    TruffleService.approveAndCallPreSigned(tempSign, sendAmountInWei, extraData, 40000000000, nonce)
-                        .then(tx => {
-                            if (tx.receipt && tx.receipt.transactionHash) {
-                                // Update order
-                                order.receipt = {
-                                    ...tx.receipt,
-                                    timestamp: Math.round((new Date()).getTime() / 1000)
-                                };
-                                order.save(err => {
-                                    if (err) {
-                                        console.log('purchaseIndex: order.save: ', err);
-                                    }
-                                });
+                TruffleService.approveAndCallPreSigned(tempSign, sendAmountInWei, extraData, 40000000000, nonce)
+                    .then(tx => {
+                        if (tx.receipt && tx.receipt.transactionHash) {
+                            // Update order
+                            order.receipt = {
+                                ...tx.receipt,
+                                timestamp: Math.round((new Date()).getTime() / 1000)
+                            };
+                            order.save(err => {
+                                if (err) {
+                                    console.log('purchaseIndex: order.save: ', err);
+                                }
+                            });
 
-                                index.amount = realAmount;
+                            index.amount = realAmount;
+                            index.save(err => {
+                                if (err) {
+                                    console.log('purchaseIndex: index.save: ', err);
+                                    return;
+                                }
+
+                                index.assets = pending.assets.map((asset, idx) => ({
+                                    coinId: coinList[idx]._id,
+                                    percentage: asset.percent,
+                                    quantity: quantities[idx],
+                                    amount: amounts[idx]
+                                }));
                                 index.save(err => {
                                     if (err) {
-                                        console.log('purchaseIndex: index.save: ', err);
-                                        return;
+                                        console.log('purchaseIndex - save indexAssets: ', err);
                                     }
-
-                                    index.assets = pending.assets.map((asset, idx) => ({
-                                        coinId: coinList[idx]._id,
-                                        percentage: asset.percent,
-                                        quantity: quantities[idx],
-                                        amount: amounts[idx]
-                                    }));
-                                    index.save(err => {
-                                        if (err) {
-                                            console.log('purchaseIndex - save indexAssets: ', err);
-                                        }
-                                    });
                                 });
-                            } else {
-                                console.log('Error receipt: ', tx.receipt);
-                            }
-                        })
-                        .catch(err => {
-                            throw (err);
-                        });
-                })
-                .catch(err => {
-                    console.log('purchaseIndex: ', err);
-                });
-        });
-    });
+                            });
+                        } else {
+                            console.log('Error receipt: ', tx.receipt);
+                        }
+                    })
+                    .catch(err => {
+                        throw (err);
+                    });
+            })
+            .catch(err => {
+                console.log('purchaseIndex: ', err);
+            });
+    } catch (e) {
+        console.log('purchaseIndex: ', e);
+    }
 };
 
 const sellAsset = (account, order, pending, coins, coIndex) => {
