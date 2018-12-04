@@ -116,15 +116,15 @@ export const syncTransactionTask = async () => {
     try {
         const coin = await Coins.findOne({ symbol: 'ETH' }, 'symbol', { lean: true }).exec();
         const coins = await Coins.find({}, 'symbol', { lean: true }).exec();
-        const accounts = await Accounts.find({txSynced: false}, 'beneficiary', { lean: true }).exec();
+        const accounts = await Accounts.find({txSynced: false}).exec();
         let ethTxData = await Promise.all(accounts.map(fetchEthTx));
         let tokenTxData = await Promise.all(accounts.map(fetchTokenTx));
 
         ethTxData = ethTxData.filter(item => !!item);
         tokenTxData = tokenTxData.filter(item => !!item);
 
-        ethTxData.concat(tokenTxData).forEach(item => {
-            item.txData.forEach(async tx => {
+        await Promise.all(ethTxData.concat(tokenTxData).map(async item => {
+            await Promise.all(item.txData.map(async tx => {
                 let action = '';
                 const symbol = '';
                 const version = null;
@@ -191,8 +191,11 @@ export const syncTransactionTask = async () => {
                         tokenTx.save();  // don't need to await
                     }
                 }
-            });
-        });
+            }));
+
+            item.account.txSynced = true;
+            return item.account.save();
+        }));
     } catch (e) {
         console.log(`[WalletDaemon] Error fetching etherscan`);
     }
