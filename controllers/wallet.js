@@ -108,38 +108,40 @@ const getTokenWallet = async () => {
             const coinEthIdx = coins.findIndex(coin => coin.symbol === 'ETH');
             if (coinEthIdx > -1) {
                 const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
-                if (accounts && accounts.length > 0) {
-                    const wallets = await Wallets.find({ coinId: { $ne: coins[coinEthIdx]._id } }).exec();
-                    if (wallets && wallets.length > 0) {
-                        const actions = wallets.map((wallet, idx) => {
-                            const accountIdx = accounts.findIndex(a => a._id == wallet.accountId);
-                            if (accountIdx > -1) {
-                                const coinIdx = coins.findIndex(c => c._id == wallet.coinId);
-                                if (coinIdx > -1) {
-                                    let contractAddress = coins[coinIdx].address;
-                                    if (coins[coinIdx].symbol === 'COIN') {
-                                        if (coins[coinIdx].version === 'v1') {
-                                            contractAddress = COINVEST_TOKEN_ADDRESS_V1;
-                                        } else if (coins[coinIdx].version === 'v2') {
-                                            contractAddress = COINVEST_TOKEN_ADDRESS_V2;
-                                        } else if (coins[coinIdx].version === 'v3') {
-                                            contractAddress = COINVEST_TOKEN_ADDRESS_V3;
-                                        }
-                                    }
+                const wallets = await Wallets.find({ coinId: { $ne: coins[coinEthIdx]._id } }).exec();
 
-                                    if (contractAddress) {
-                                        return asyncTokenMultiple(wallet, accounts[accountIdx].beneficiary, contractAddress, idx);
+                if (
+                    accounts && accounts.length > 0 &&
+                    wallets && wallets.length > 0
+                ) {
+                    const actions = wallets.map((wallet, idx) => {
+                        const accountIdx = accounts.findIndex(a => a._id == wallet.accountId);
+                        if (accountIdx > -1) {
+                            const coinIdx = coins.findIndex(c => c._id == wallet.coinId);
+                            if (coinIdx > -1) {
+                                let contractAddress = coins[coinIdx].address;
+                                if (coins[coinIdx].symbol === 'COIN') {
+                                    if (wallet.version === 'v1') {
+                                        contractAddress = COINVEST_TOKEN_ADDRESS_V1;
+                                    } else if (wallet.version === 'v2') {
+                                        contractAddress = COINVEST_TOKEN_ADDRESS_V2;
+                                    } else if (wallet.version === 'v3') {
+                                        contractAddress = COINVEST_TOKEN_ADDRESS_V3;
                                     }
                                 }
+
+                                if (contractAddress) {
+                                    return asyncTokenMultiple(wallet, accounts[accountIdx].beneficiary, contractAddress, idx);
+                                }
                             }
+                        }
 
-                            return new Promise(resolve => {
-                                resolve();
-                            });
+                        return new Promise(resolve => {
+                            resolve();
                         });
+                    });
 
-                        await Promise.all(actions);
-                    }
+                    await Promise.all(actions);
                 }
             }
         }
