@@ -32,9 +32,7 @@ export const handleIncomingTradeEvents = async () => {
                     const tradeAddress = `0x${event.topics[1].substring(26)}`;
                     const params = event.data.substring(2).match(/.{1,64}/g);
                     const filledOrder = filledOrders && filledOrders.length ? filledOrders.findIndex(order => order.txId === event.transactionHash) : -1;
-                    const accountId = accounts.findIndex(account => account.beneficiary === tradeAddress) > -1
-                        ? accounts[accounts.findIndex(account => account.beneficiary === tradeAddress)]._id
-                        : null;
+                    const accountId = accounts.find(account => account.beneficiary === tradeAddress);
                     const cryptoIds = [];
                     const quantities = [];
                     const prices = [];
@@ -61,16 +59,132 @@ export const handleIncomingTradeEvents = async () => {
                             }
 
                             if (tradeType === 'asset') {
-                                const coinId = coins.findIndex(coin => coin.symbol === cryptoIdToSymbol[cryptoIds[0]].symbol)
-                                    ? coins[coins.findIndex(coin => coin.symbol === cryptoIdToSymbol[cryptoIds[0]].symbol)]._id
-                                    : null;
-
+                                const coinId = coins.find(coin => coin.symbol === cryptoIdToSymbol[cryptoIds[0]].symbol);
                                 if (coinId) {
+                                    const order = openOrders.find(order =>
+                                        order.coinId === coinId &&
+                                        order.accountId === accountId &&
+                                        parseFloat(order.quantity).toFixed(8) === parseFloat(quantities[0]).toFixed(8) &&
+                                        ((order.action === 'Buy' && event.topics[0] === '0x6a75660680cd3a8f7f34c5df6451086e3222c8a9e16e568b6e698098e8fd970b')
+                                        || (order.action === 'Sell' && event.topics[0] === '0x5e1656ea49c37d58c071f8ec59918a4e2380766f4956535b3724476daad4c4fd'))
+                                    );
 
+                                    order.txId = event.transactionHash;
+                                    order.status = 'Filled';
+                                    await order.save();
 
+                                    if (order.action === 'Buy') {
+                                        const asset = new Assets({
+                                            accountId: order.accountId,
+                                            coinId: order.coinId,
+                                            quantity: order.quantity,
+                                            amount: order.amount,
+                                            orderType: order.type,
+                                            txId: [e.transactionHash],
+                                            timestamp: Math.round((new Date()).getTime() / 1000)
+                                        });
+
+                                        await asset.save();
+                                    } else if (assets && assets.length > 0) {
+                                        const existAsset = assets.find(a => (a._id == order.assetId && a.accountId == order.accountId));
+                                        if (existAsset) {
+                                            // Delete asset in case of selling whole amount of asset
+                                            if (existAsset.quantity === order.quantity) {
+                                                await existAsset.remove();
+                                            } else {
+                                                // Update asset amount and quantity
+                                                existAsset.quantity -= order.quantity;
+                                                existAsset.amount -= order.amount;
+                                                existAsset.txId.push(event.transactionHash);
+                                                existAsset.orderType = order.type;
+                                                await existAsset.save();
+                                            }
+                                        }
+                                    }
+
+                                    // Create transaction
+                                    const transaction = new Transactions({
+                                        orderId: order._id,
+                                        blockHash: event.blockHash,
+                                        blockNumber: event.blockNumber,
+                                        contractAddress: order.receipt.contractAddress,
+                                        cumulativeGasUsed: order.receipt.cumulativeGasUsed,
+                                        gasUsed: order.receipt.gasUsed,
+                                        from: order.receipt.from,
+                                        to: order.receipt.to,
+                                        status: order.receipt.status,
+                                        transactionHash: event.transactionHash,
+                                        transactionIndex: event.transactionIndex
+                                    });
+
+                                    await Pending.deleteOne({orderId: order._id});
+                                    return transaction.save();
                                 }
                             } else if (tradeType === 'index') {
-                                // todo handle index orders
+                                const matchedOrder = openOrders.find(order => {
+                                    if (!order.indexId) return false;
+                                    const index = indexes.find(idx =>
+                                        idx._id === order.indexId &&
+                                        idx.accountId === order.account &&
+                                        idx.confirmed === (order.action !== 'Buy'));
+
+                                    if (index) {
+                                        const indexContains = idxContains.filter(indexContain => indexContain.indexId === index._id);
+                                        if (indexContains && indexContains.length === cryptoCount) {
+                                            let match = true;
+                                            for (let i = 0; i < cryptoIds.length; i++) {
+                                                const coin = coins.find(coin => coin.symbol === cryptoIdToSymbol[cryptoIds[i]].symbol);
+                                                if (coin) {
+                                                    const idxContain = indexContains.find(ic => ic.coinId == coin._id && parseFloat(ic.quantity).toFixed(8) === parseFloat(quantities[j]).toFixed(8));
+                                                    match = !!idxContain;
+                                                    if (!idxContain) break;
+                                                }
+                                            }
+
+                                            return match;
+                                        }
+                                    }
+                                    return false;
+                                });
+
+                                if (matchedOrder) {
+                                    const matchedIndex = indexes.find(idx =>
+                                        idx._id === matchedOrder.indexId &&
+                                        idx.accountId === matchedOrder.account &&
+                                        idx.confirmed === (matchedOrder.action !== 'Buy'));
+
+                                    matchedOrder.txId = event.transactionHash;
+                                    matchedOrder.status = 'Filled';
+                                    await matchedOrder.save();
+
+                                    if (matchedOrder.action === 'Buy') {
+                                        matchedIndex.txId = [event.transactionHash];
+                                        matchedIndex.confirmed = true;
+                                    } else {
+                                        matchedIndex.txId.push(event.transactionHash);
+                                        matchedIndex.confirmed = true;
+                                    }
+
+                                    await matchedIndex.save();
+
+                                    // create transaction
+                                    const transaction = new Transactions({
+                                        orderId: matchedOrder._id,
+                                        blockHash: event.blockHash,
+                                        blockNumber: event.blockNumber,
+                                        contractAddress: matchedOrder.receipt.contractAddress,
+                                        cumulativeGasUsed: matchedOrder.receipt.cumulativeGasUsed,
+                                        gasUsed: matchedOrder.receipt.gasUsed,
+                                        from: matchedOrder.receipt.from,
+                                        to: matchedOrder.receipt.to,
+                                        status: matchedOrder.receipt.status,
+                                        transactionHash: event.transactionHash,
+                                        transactionIndex: event.transactionIndex
+                                    });
+
+                                    await Pending.deleteOne({orderId: matchedOrder._id});
+                                    return transaction.save();
+                                }
                             }
                         }
                     }
