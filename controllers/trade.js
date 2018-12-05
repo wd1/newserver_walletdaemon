@@ -97,12 +97,12 @@ const purchaseAsset = async (account, order, pending, coins, coIndex, wallet) =>
             return;
         }
 
-        // const response = await fetch(`${VERIFY_URI}?cryptos=${coins[coinIndex].symbol}&amounts=${order.quantity}`);
-        // const json = await response.json();
-        // if (parseFloat(json[coins[coinIndex].symbol].amount) < order.quantity) {
-        //     console.log('purchaseAsset - verify: Amount verify failed.');
-        //     return;
-        // }
+        const response = await fetch(`${VERIFY_URI}?cryptos=${coins[coinIndex].symbol}&amounts=${order.quantity}`);
+        const json = await response.json();
+        if (parseFloat(json[coins[coinIndex].symbol].amount) < order.quantity) {
+            console.log('purchaseAsset - verify: Amount verify failed.');
+            return;
+        }
 
         const cryptoId = cryptoIdToSymbol.findIndex(crypto => crypto.symbol === coins[coinIndex].symbol);
         if (cryptoId === -1) return;
@@ -239,15 +239,15 @@ const purchaseIndex = async (account, order, pending, coins, coIndex, wallet) =>
             }
         }
 
-        // const coinSymbols = pending.assets.map(asset => asset.symbol);
-        // const response = await fetch(`${VERIFY_URI}?cryptos=${coinSymbols.toString()}&amounts=${quantities.toString()}`);
-        // const json = await response.json();
-        // for (let i = 0; i < coinSymbols.length; i++) {
-        //     if (parseFloat(json[coinSymbols[i]].amount) < quantities[i]) {
-        //         console.log('purchaseIndex - verify: Amount verify failed.');
-        //         return;
-        //     }
-        // }
+        const coinSymbols = pending.assets.map(asset => asset.symbol);
+        const response = await fetch(`${VERIFY_URI}?cryptos=${coinSymbols.toString()}&amounts=${quantities.toString()}`);
+        const json = await response.json();
+        for (let i = 0; i < coinSymbols.length; i++) {
+            if (parseFloat(json[coinSymbols[i]].amount) < quantities[i]) {
+                console.log('purchaseIndex - verify: Amount verify failed.');
+                return;
+            }
+        }
 
         const amountInWei = Web3Service.toWei((realAmount + 4.99) / coins[coIndex].price);
         if ((new BigNumber(amountInWei)).isGreaterThan(new BigNumber(wallet.quantity))) return;
