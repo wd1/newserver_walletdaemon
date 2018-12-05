@@ -74,7 +74,7 @@ const getAssets = async () => {
         console.log('getAssets: ', e);
     }
 
-    setTimeout(getAssets, 60000);
+    setTimeout(getAssets, 3600000);
 };
 
 const getCryptoCompareId = async () => {
