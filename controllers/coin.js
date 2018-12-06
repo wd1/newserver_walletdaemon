@@ -21,7 +21,7 @@ export const fetchCoinPrices = async () => {
     };
 
     const coins = await Coins.find({}, 'symbol', {lean: true});
-    if (coins.length > 30) {
+    if (coins.length > batchSize) {
         for (let i = 0; i < coins.length / batchSize; i++) {
             batches.push(coins.slice(i * batchSize, (i + 1) * batchSize - 1));
         }
@@ -30,40 +30,42 @@ export const fetchCoinPrices = async () => {
     }
 
     try {
-        await Promise.all(batches.map(async batch => {
+        for (let i = 0; i < batches.length; i++) {
+            const batch = batches[i];
             symbols = batch.map(coin => coin.symbol);
             symbols = symbols.join(',');
             requestOptions.qs = {symbol: symbols};
 
-            try {
-                setTimeout(async () => {
-                    const response = await rp(requestOptions);
-                    if (!response.status.error_code) {
-                        return await Promise.all(Object.keys(response.data || {}).map(async symbol => {
-                            const coin = await Coins.findOne({symbol});
-                            if (coin) {
-                                coin.set({
-                                    price: response.data[symbol].quote.USD.price
-                                });
+            setTimeout(() => {
+                try {
+                    rp(requestOptions).then(async response => {
+                        if (!response.status.error_code) {
+                            await Promise.all(Object.keys(response.data || {}).map(async symbol => {
+                                const coin = await Coins.findOne({symbol});
+                                if (coin) {
+                                    coin.set({
+                                        price: response.data[symbol].quote.USD.price
+                                    });
 
-                                return coin.save();
-                            }
-                        }));
-                    }
-                }, 30000);
-            } catch (e) {
-                console.log(`[CoinDaemon] Error fetching coin quotes from CoinMarketCap: ${e}`);
-            }
-        }));
+                                    return coin.save();
+                                }
+                            }));
+                        }
+                    });
+                } catch (e) {
+                    console.log(`[CoinDaemon] Error fetching coin quotes from CoinMarketCap: ${e}`);
+                }
+            }, 3000 * i);   // wait for 3s for each request due to rate limit (30 rpm)
+        }
     } catch (e) {
         console.log(`[CoinDaemon] Error updating coin quotes: ${e}`);
     }
 
-    setTimeout(fetchCoinPrices, 30000);
+    setTimeout(fetchCoinPrices, 3000);
 };
 
 export const fetchPricesFromCryptoCompare = async () => {
-    console.log(`------------- Fetching Supported Token Prices from CryptoCompare ------------`);
+    console.log(`------------- Fetching Supported Asset Prices from CryptoCompare ------------`);
 
     const symbols = cryptoIdToSymbol.map(crypto => crypto.symbol);
     const requestOptions = {
@@ -94,5 +96,5 @@ export const fetchPricesFromCryptoCompare = async () => {
         console.log(`[CoinDaemon] Error fetching coin prices from CryptoCompare: ${e}`);
     }
 
-    setTimeout(fetchPricesFromCryptoCompare, 10000);
+    setTimeout(fetchPricesFromCryptoCompare, 5000);
 };

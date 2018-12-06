@@ -63,7 +63,7 @@ app.listen(app.get('port'), () => {
 import { coinSchedule } from './controllers/coin_bak';
 import { walletSchedule } from './controllers/wallet_bak';
 import { tradeSchedule } from './controllers/trade_bak';
-import { handleIncomingChainData } from './controllers/transaction';
+import { syncTransactionTask, handleIncomingChainData } from './controllers/transaction';
 import { fetchBalances } from './controllers/balance';
 import { getAddressesBalances } from './services/balanceChecker';
 import { fetchCoinPrices, fetchPricesFromCryptoCompare } from './controllers/coin';
@@ -76,7 +76,8 @@ handleIncomingChainData();
 // fetchBalances();
 // getAddressesBalances(['0x7c4029e848b7854f8ac1466158e55873ae8cc562'], ['0x4a7b684d1a875183753f88d433008cfc16065be5']);
 // fetchCoinPrices();
+// syncTransactionTask();
 // fetchPricesFromCryptoCompare();
-handleIncomingTradeEvents();
+// handleIncomingTradeEvents();
 
 module.exports = app;

@@ -10,8 +10,8 @@
   "license": "MIT",
   "scripts": {
     "start": "babel-node app.js --presets es2015,stage-2",
-    "lint": "eslint **/*.js",
-    "dev": "node app.js"
+    "dev": "nodemon app.js --exec babel-node --presets es2015,stage-2",
+    "lint": "eslint **/*.js"
   },
   "dependencies": {
     "@octokit/rest": "^15.4.0",

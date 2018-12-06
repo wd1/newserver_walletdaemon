@@ -13,6 +13,8 @@ import Blocks from '../models/Blocks';
 
 import { cryptoIdToSymbol } from '../services/Config';
 import { hexToDec } from '../services/hex2dec';
+import Web3Service from '../services/Web3Service';
+import TruffleService from '../services/TruffleService';
 
 const purchaseAsset = (account, order, pending, coins, coIndex, wallet) => new Promise((resolve, reject) => {
     const coinIndex = coins.findIndex(coin => coin._id == order.coinId);

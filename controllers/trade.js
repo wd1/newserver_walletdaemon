@@ -188,7 +188,6 @@ export const handleIncomingTradeEvents = async () => {
                             }
                         }
                     }
-
                 } catch (error) {
                     console.log(`[TradeDaemon] Error handling Trade events: ${error}`);
                 }
