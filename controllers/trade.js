@@ -27,7 +27,7 @@ const runOrder = async () => {
             const coIndex = coins.findIndex(coin => coin.symbol === 'COIN');
             if (coIndex > -1) {
                 const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
-                const wallets = await Wallets.find({ coinId: coins[coIndex]._id }, 'accountId quantity', { lean: true }).exec();
+                const wallets = await Wallets.find({ coinId: coins[coIndex]._id, version: 'v3' }, 'accountId quantity', { lean: true }).exec();
                 const openOrders = await Orders.find({ status: 'Open', 'receipt.transactionHash': null }).exec();
                 const pendings = await Pending.find({}).exec();
 
