@@ -596,8 +596,8 @@ const eventsManager = async () => {
         if (prev) {
             prevBlock = prev.number;
         }
-        console.log('');
-        console.log('prevBlock: ', prevBlock);
+        // console.log('');
+        // console.log('prevBlock: ', prevBlock);
 
         const coins = await Coins.find({}, null, { lean: true }).exec();
         if (coins && coins.length > 0) {
