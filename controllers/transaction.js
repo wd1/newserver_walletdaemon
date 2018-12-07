@@ -42,7 +42,6 @@ export const syncTransactionTask = async () => {
         const accounts = await Accounts.find({txSynced: {$ne: true}, beneficiary: {$exists: true}}).exec();
 
         for (const account of accounts) {
-            console.log(account);
             try {
                 requestOptions.uri = `${ETHSCAN_URI}&action=txlist&startblock=0&endblock=latest&sort=desc&apikey=${ETHSCAN_API_KEY5}&address=${account.beneficiary}`;
                 const ethResponse = await rp(requestOptions);
@@ -171,84 +170,146 @@ export const handleIncomingChainData = async () => {
     const ethCoin = await Coins.findOne({ symbol: 'ETH' }, 'symbol', { lean: true }).exec();
 
     startSyncingBlocks(async (block, transactions) => {
-        const coins = await Coins.find({}, 'symbol', { lean: true }).exec();
+        const coins = await Coins.find({}, 'symbol address', {lean: true}).exec();
         const accounts = await Accounts.find({txSynced: true}, 'beneficiary', { lean: true }).exec();
 
         transactions.forEach(async tx => {
-            let action = '';
-            let account = null;
-            let symbol = null;
-            let version = null;
+            const txReceipt = await web3.eth.getTransactionReceipt(tx.hash);
 
-            if (_.find(accounts, {beneficiary: tx.to})) {
-                account = _.find(accounts, {beneficiary: tx.to});
-                action = 'receive';
-            } else if (_.find(accounts, {beneficiary: tx.from})) {
-                account = _.find(accounts, {beneficiary: tx.from});
-                action = 'send';
+            try {
+                // handle smart contract transactions
+                if (txReceipt.logs.length > 0) {
+                    // filter out only "Transfer" event logs
+                    const transferEvents = txReceipt.logs.filter(log => log.topics.length > 0 && log.topics[0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef');
 
-                // check if it is token transfer()
-                if (tx.value === '0') {
-                    const tokenIdx = tokenList.findIndex(t => t.address.toLowerCase() === tx.to.toLowerCase());
-                    symbol = (tokenIdx > -1) ? tokenList[tokenIdx].symbol : symbol;
-                    version = (tokenIdx > -1 && tokenList[tokenIdx].version) ? tokenList[tokenIdx].version : null;
-                }
-            }
+                    transferEvents.forEach(async log => {
+                        const matchedToken = coins.find(coin => coin.address && coin.address.toLowerCase() === log.address.toLowerCase());
+                        // check if contract address is matched
+                        if (!!matchedToken) {
+                            const fromAddr = `0x${log.topics[1].slice(26)}`;
+                            const toAddr = `0x${log.topics[2].slice(26)}`;
+                            const fromAccount = accounts.find(account => account.beneficiary.toLowerCase() === fromAddr.toLowerCase());
+                            const toAccount = accounts.find(account => account.beneficiary.toLowerCase() === toAddr.toLowerCase());
 
-            if (!!action) {
-                const coinIndex = symbol ? coins.findIndex(coin => coin.symbol === symbol) : ethCoin._id;
-                let tokenTx = await TokenTransactions.findOne({
-                    accountId: account._id,
-                    coinId: coinIndex,
-                    amount: tx.value,
-                    txId: tx.hash
-                });
 
-                if (!tokenTx) {
-                    const txReceipt = await web3.eth.getTransactionReceipt(tx.hash);
-
-                    if (tx.value !== '0') { // eth transaction
-                        tokenTx = new TokenTransactions({
-                            accountId: account._id,
-                            coinId: coinIndex,
-                            amount: tx.value,
-                            timestamp: parseInt(block.timestamp, 10),
-                            txId: tx.hash,
-                            from: tx.from,
-                            to: tx.to,
-                            action,
-                            version,
-                            status: txReceipt.status === true ? 'Success' : 'Fail'
-                        });
-
-                        tokenTx.save();
-                    } else if (tx.value === '0' && symbol) {
-                        // check if it is transfer function; topics[0] === '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
-                        const transferEvents = _.filter(txReceipt.logs, log => log.topics.length > 0 && log.topics[0] === '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef');
-
-                        transferEvents.forEach(log => {
                             // check if 'from' address is same as current account
-                            if (log.topics[1].slice(26) === account.beneficiary.slice(2)) {
+                            if (!!fromAccount) {
                                 const value = web3.utils.hexToNumber(log.data);
-                                const toAddr = `0x${log.topics[2].slice(26)}`;
-                                tokenTx = new TokenTransactions({
-                                    accountId: account._id,
-                                    coinId: coinIndex,
-                                    amount: value,
-                                    timestamp: parseInt(block.timestamp, 10),
-                                    txId: tx.hash,
-                                    from: tx.from,
-                                    to: toAddr,
-                                    action,
-                                    version,
-                                    status: txReceipt.status === true ? 'Success' : 'Fail'
+
+                                let tokenTx = await TokenTransactions.findOne({
+                                    accountId: fromAccount._id,
+                                    coinId: matchedToken._id,
+                                    txId: tx.hash
                                 });
 
-                                tokenTx.save();
+                                if (!tokenTx) {
+                                    tokenTx = new TokenTransactions({
+                                        accountId: fromAccount._id,
+                                        coinId: matchedToken._id,
+                                        amount: value,
+                                        timestamp: parseInt(block.timestamp, 10),
+                                        txId: tx.hash,
+                                        from: fromAddr,
+                                        to: toAddr,
+                                        action: 'send',
+                                        version: matchedToken.version,
+                                        status: txReceipt.status === true ? 'Success' : 'Fail'
+                                    });
+
+                                    tokenTx.save();
+                                }
                             }
+
+                            // check if 'to' address is same as current account
+                            if (!!toAccount) {
+                                const value = web3.utils.hexToNumber(log.data);
+
+                                let tokenTx = await TokenTransactions.findOne({
+                                    accountId: toAccount._id,
+                                    coinId: matchedToken._id,
+                                    txId: tx.hash
+                                });
+
+                                if (!tokenTx) {
+                                    tokenTx = new TokenTransactions({
+                                        accountId: toAccount._id,
+                                        coinId: matchedToken._id,
+                                        amount: value,
+                                        timestamp: parseInt(block.timestamp, 10),
+                                        txId: tx.hash,
+                                        from: fromAddr,
+                                        to: toAddr,
+                                        action: 'send',
+                                        version: matchedToken.version,
+                                        status: txReceipt.status === true ? 'Success' : 'Fail'
+                                    });
+
+                                    tokenTx.save();
+                                }
+                            }
+                        }
+                    });
+                } else if (tx.input === '0x' && tx.value !== '0') {
+                    // handle Ether transactions
+                    const toAccount = accounts.find(account => account.beneficiary.toLowerCase() === tx.to.toLowerCase());
+                    const fromAccount = accounts.find(account => account.beneficiary.toLowerCase() === tx.from.toLowerCase());
+
+                    // receiving transaction
+                    if (!!toAccount) {
+                        let transaction = await TokenTransactions.findOne({
+                            accountId: toAccount._id,
+                            coinId: ethCoin._id,
+                            amount: tx.value,
+                            txId: tx.hash
                         });
+
+                        if (!transaction) {
+                            transaction = new TokenTransactions({
+                                accountId: toAccount._id,
+                                coinId: ethCoin._id,
+                                amount: tx.value,
+                                timestamp: parseInt(block.timestamp, 10),
+                                txId: tx.hash,
+                                from: tx.from,
+                                to: tx.to,
+                                action: 'receive',
+                                version: null,
+                                status: txReceipt.status === true ? 'Success' : 'Fail'
+                            });
+
+                            transaction.save();
+                        }
+                    }
+
+                    // sending transaction : we need to save same transaction for both account in case 'from' and 'to' both matched
+                    if (!!fromAccount) {
+                        let transaction = await TokenTransactions.findOne({
+                            accountId: fromAccount._id,
+                            coinId: ethCoin._id,
+                            amount: tx.value,
+                            txId: tx.hash
+                        });
+
+                        if (!transaction) {
+                            transaction = new TokenTransactions({
+                                accountId: fromAccount._id,
+                                coinId: ethCoin._id,
+                                amount: tx.value,
+                                timestamp: parseInt(block.timestamp, 10),
+                                txId: tx.hash,
+                                from: tx.from,
+                                to: tx.to,
+                                action: 'send',
+                                version: null,
+                                status: txReceipt.status === true ? 'Success' : 'Fail'
+                            });
+
+                            transaction.save();
+                        }
                     }
                 }
+            } catch (e) {
+                console.log(`[TransactionsSubscriber] Error processing new transactions\n ${e}`);
             }
         });
     });
