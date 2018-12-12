@@ -100,22 +100,19 @@ const getCryptoCompareId = async () => {
             };
 
             const response = await rp(requestOptions);
-            if (response.status.error_code === 0 && !response.status.error_message) {
-                array.forEach(coin => {
-                    if (response.Data[coin.symbol]) {
-                        coin.cryptoCompareId = response.Data[coin.symbol].Id;
-                        coin.image = response.Data[coin.symbol].ImageUrl;
 
-                        coin.save(err => {
-                            if (err) {
-                                console.log('getCryptoCompareId: save: ', err);
-                            }
-                        });
-                    }
-                });
-            } else {
-                console.log('getCryptoCompareId: ', response.status.error_message);
-            }
+            array.forEach(coin => {
+                if (response.Data[coin.symbol]) {
+                    coin.cryptoCompareId = response.Data[coin.symbol].Id;
+                    coin.image = response.Data[coin.symbol].ImageUrl;
+
+                    coin.save(err => {
+                        if (err) {
+                            console.log('getCryptoCompareId: save: ', err);
+                        }
+                    });
+                }
+            });
         }
     } catch (e) {
         console.log('getCryptoCompareId: ', e);
@@ -147,18 +144,15 @@ const getPricesFromCryptoCompare = async () => {
             };
 
             const response = await rp(requestOptions);
-            if (response.status.error_code === 0 && !response.status.error_message) {
-                coins.forEach(coin => {
-                    coin.price = response[coin.symbol].USD;
-                    coin.save(err => {
-                        if (err) {
-                            console.log('getPricesFromCryptoCompare: save: ', err);
-                        }
-                    });
+
+            coins.forEach(coin => {
+                coin.price = response[coin.symbol].USD;
+                coin.save(err => {
+                    if (err) {
+                        console.log('getPricesFromCryptoCompare: save: ', err);
+                    }
                 });
-            } else {
-                console.log('getPricesFromCryptoCompare: ', response.status.error_message);
-            }
+            });
         }
     } catch (e) {
         console.log('getPricesFromCryptoCompare: ', e);
