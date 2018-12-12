@@ -114,9 +114,17 @@ const purchaseAsset = async (account, order, pending, coins, coIndex, wallet) =>
         const amount = coins[coinIndex].price * order.quantity;
         const amountInWei = Web3Service.toWei((amount + 4.99) / coins[coIndex].price);
 
+        if (amount < 5) {
+            console.log('purchaseAsset: Invalid request. Purchase Asset value should be greater than fee.');
+            console.log('Account: ', account._id);
+            console.log('Symbol: ', coins[coinIndex].symbol);
+            console.log('Quantity: ', order.quantity);
+            console.log('Price: ', coins[coinIndex].price);
+            return;
+        }
+
         // Get quantity in Wei
         const quantityInWei = Web3Service.toWei(order.quantity);
-
         if ((new BigNumber(amountInWei)).isGreaterThan(new BigNumber(wallet.quantity))) return;
 
         // Get nonce
@@ -249,6 +257,14 @@ const purchaseIndex = async (account, order, pending, coins, coIndex, wallet) =>
                 console.log('purchaseIndex - verify: Amount verify failed.');
                 return;
             }
+        }
+
+        if (realAmount < 5) {
+            console.log('purchaseAsset: Invalid request. Purchase Index value should be greater than fee.');
+            console.log('Account: ', account._id);
+            console.log('Assets: ', pending.assets);
+            console.log('Prices: ', prices);
+            return;
         }
 
         const amountInWei = Web3Service.toWei((realAmount + 4.99) / coins[coIndex].price);
@@ -389,7 +405,7 @@ const sellAsset = (account, order, pending, coins, coIndex) => {
 
     if (order.type === 'limit' && order.price < coins[coinIndex].price) return;
 
-    Assets.findOne({ _id: pending.assetId, accountId: account._id }, (err, asset) => {
+    Assets.findOne({ _id: order.assetId, accountId: account._id }, (err, asset) => {
         if (err) {
             console.log('sellAsset: Assets.findOne: ', err);
             return;
@@ -398,8 +414,15 @@ const sellAsset = (account, order, pending, coins, coIndex) => {
         if (!asset || asset.quantity < order.quantity) return;
 
         const amount = coins[coinIndex].price * order.quantity;
-        const amountInWei = Web3Service.toWei((amount + 4.99) * 1.01 / coins[coIndex].price);
+        const amountInWei = Web3Service.toWei(amount * 1.01 / coins[coIndex].price);
         const quantityInWei = Web3Service.toWei(order.quantity);
+
+        if (amount < 5) {
+            console.log('sellAsset: Invalid request. Asset value should be greater than fee.');
+            console.log('Account: ', account._id);
+            console.log('Asset Id: ', order.assetId);
+            return;
+        }
 
         // Get nonce
         const nonce = new Date().getTime();
@@ -501,7 +524,14 @@ const sellIndex = (account, order, pending, coins, coIndex) => {
             }
         }
 
-        const amountInWei = Web3Service.toWei((amount + 4.99) * 1.01 / coins[coIndex].price);
+        if (amount < 5) {
+            console.log('sellIndex: Invalid request. Index value should be greater than fee.');
+            console.log('Account: ', account._id);
+            console.log('Index Id: ', order.indexId);
+            return;
+        }
+
+        const amountInWei = Web3Service.toWei(amount * 1.01 / coins[coIndex].price);
         const approveAndCallSig = Web3Service.encodeFunctionSignature({
             inputs: [
                 {
