@@ -634,6 +634,8 @@ const eventsManager = async () => {
                                                 console.log('eventsManager: order.save: ', err);
                                             }
                                         });
+
+                                        removePending(order._id);
                                         return;
                                     }
 
