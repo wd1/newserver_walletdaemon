@@ -615,7 +615,7 @@ const eventsManager = async () => {
                 TruffleService.eventsWatch(fromBlock)
                     .then(async events => {
                         try {
-                            console.log('Starting ==================================');
+                            // console.log('Starting ==================================');
                             processing = true;
 
                             const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
@@ -892,7 +892,7 @@ const eventsManager = async () => {
                             });
 
                             processing = false;
-                            console.log('Finished ==================================');
+                            // console.log('Finished ==================================');
                         } catch (err) {
                             console.log('eventsManager eventsWatch: ', err);
                         }
