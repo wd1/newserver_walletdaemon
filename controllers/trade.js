@@ -54,6 +54,8 @@ const runOrder = async () => {
                                         }
                                     });
 
+                                    removePending(order._id);
+
                                     return;
                                 }
                             }
