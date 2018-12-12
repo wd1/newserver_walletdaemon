@@ -398,7 +398,7 @@ const sellAsset = (account, order, pending, coins, coIndex) => {
         if (!asset || asset.quantity < order.quantity) return;
 
         const amount = coins[coinIndex].price * order.quantity;
-        const amountInWei = Web3Service.toWei((amount + 4.99) / coins[coIndex].price);
+        const amountInWei = Web3Service.toWei((amount + 4.99) * 1.01 / coins[coIndex].price);
         const quantityInWei = Web3Service.toWei(order.quantity);
 
         // Get nonce
@@ -501,7 +501,7 @@ const sellIndex = (account, order, pending, coins, coIndex) => {
             }
         }
 
-        const amountInWei = Web3Service.toWei((amount + 4.99) / coins[coIndex].price);
+        const amountInWei = Web3Service.toWei((amount + 4.99) * 1.01 / coins[coIndex].price);
         const approveAndCallSig = Web3Service.encodeFunctionSignature({
             inputs: [
                 {
