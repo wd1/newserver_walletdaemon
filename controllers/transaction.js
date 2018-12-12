@@ -1,18 +1,15 @@
-import _ from 'lodash';
 import rp from 'request-promise';
-import dotenv from 'dotenv';
 import Accounts from '../models/Accounts';
 import Wallets from '../models/Wallets';
 import Coins from '../models/Coins';
 import TokenTransactions from '../models/TokenTransactions';
 import { web3, startSyncingBlocks } from '../services/web3Socket';
+import { handleTradeEvents } from './trade';
 import {
     CMC_API_SECRET, COINVEST_TOKEN_ADDRESS,
     COINVEST_TOKEN_ADDRESS_V1,
     COINVEST_TOKEN_ADDRESS_V3, tokenList
 } from '../services/Config';
-
-dotenv.config();
 
 const {
     ETHSCAN_URI,
@@ -23,7 +20,7 @@ const {
 const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
- * Daemons that synchronize user transaction history from etherscan
+ * Daemon that synchronize user transaction history from etherscan
  *
  * @returns {Promise<void>}
  */
@@ -181,6 +178,12 @@ export const handleIncomingChainData = async () => {
                 if (txReceipt.logs.length > 0) {
                     // filter out only "Transfer" event logs
                     const transferEvents = txReceipt.logs.filter(log => log.topics.length > 0 && log.topics[0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef');
+                    const tradeEvents = txReceipt.logs.filter(log => log.topics.length > 0 &&
+                        (log.topics[0] == '0x6a75660680cd3a8f7f34c5df6451086e3222c8a9e16e568b6e698098e8fd970b' ||
+                            log.topics[0] == '0x5e1656ea49c37d58c071f8ec59918a4e2380766f4956535b3724476daad4c4fd'));
+
+                    // handles all trade "Buy" and "Sell" events
+                    if (tradeEvents.length > 0) handleTradeEvents(tradeEvents);
 
                     transferEvents.forEach(async log => {
                         const matchedToken = coins.find(coin => coin.address && coin.address.toLowerCase() === log.address.toLowerCase());

@@ -8,6 +8,10 @@ import lusca from 'lusca';
 import dotenv from 'dotenv';
 import path from 'path';
 import mongoose from 'mongoose';
+import { syncTransactionTask, handleIncomingChainData } from './controllers/transaction';
+import { fetchBalances } from './controllers/balance';
+import { fetchCoinPrices, fetchPricesFromCryptoCompare } from './controllers/coin';
+import { handleTradeEvents } from './controllers/trade';
 
 /**
  * Load environment variables from .env file, where API keys and passwords are configured.
@@ -60,24 +64,11 @@ app.listen(app.get('port'), () => {
     console.log('  Press CTRL-C to stop\n');
 });
 
-import { coinSchedule } from './controllers/coin_bak';
-import { walletSchedule } from './controllers/wallet_bak';
-import { tradeSchedule } from './controllers/trade_bak';
-import { syncTransactionTask, handleIncomingChainData } from './controllers/transaction';
-import { fetchBalances } from './controllers/balance';
-import { getAddressesBalances } from './services/balanceChecker';
-import { fetchCoinPrices, fetchPricesFromCryptoCompare } from './controllers/coin';
-import { handleIncomingTradeEvents } from './controllers/trade';
-
-// coinSchedule();
-// walletSchedule();
-// tradeSchedule();
+fetchCoinPrices();
+fetchPricesFromCryptoCompare();
+syncTransactionTask();
+fetchBalances();
 handleIncomingChainData();
-// fetchBalances();
-// getAddressesBalances(['0x7c4029e848b7854f8ac1466158e55873ae8cc562'], ['0x4a7b684d1a875183753f88d433008cfc16065be5']);
-// fetchCoinPrices();
-// syncTransactionTask();
-// fetchPricesFromCryptoCompare();
-// handleIncomingTradeEvents();
+handleTradeEvents();
 
 module.exports = app;
