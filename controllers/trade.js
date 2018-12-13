@@ -332,7 +332,7 @@ const sellAsset = (account, order, pending, coins, coIndex) => {
     const cryptoId = cryptoIdToSymbol.findIndex(crypto => crypto.symbol === coins[coinIndex].symbol);
     if (cryptoId === -1) return;
 
-    if (order.type === 'limit' && order.price < coins[coinIndex].price) return;
+    if (order.type === 'limit' && order.price > coins[coinIndex].price) return;
 
     Assets.findOne({ _id: order.assetId, accountId: account._id }, (err, asset) => {
         if (err) {
@@ -350,6 +350,9 @@ const sellAsset = (account, order, pending, coins, coIndex) => {
             console.log('sellAsset: Invalid request. Sell Asset value should be greater than fee.');
             console.log('Account: ', account._id);
             console.log('Asset Id: ', order.assetId);
+            console.log('Symbol: ', coins[coinIndex].symbol);
+            console.log('Quantity: ', order.quantity);
+            console.log('Price: ', coins[coinIndex].price);
             return;
         }
 
