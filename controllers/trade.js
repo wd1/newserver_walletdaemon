@@ -30,6 +30,10 @@ const purchaseAsset = async (account, order, pending, coins, coIndex, wallet) =>
 
         const response = await fetch(`${VERIFY_URI}?cryptos=${coins[coinIndex].symbol}&amounts=${order.quantity}`);
         const json = await response.json();
+        if (json.status === 500) {
+            console.log('purchaseAsset - verify: ', json.detail);
+            return;
+        }
         if (parseFloat(json[coins[coinIndex].symbol].amount) < order.quantity) {
             console.log('purchaseAsset - verify: Amount verify failed.');
             return;
@@ -181,6 +185,10 @@ const purchaseIndex = async (account, order, pending, coins, coIndex, wallet) =>
         const coinSymbols = pending.assets.map(asset => asset.symbol);
         const response = await fetch(`${VERIFY_URI}?cryptos=${coinSymbols.toString()}&amounts=${quantities.toString()}`);
         const json = await response.json();
+        if (json.status === 500) {
+            console.log('purchaseIndex - verify: ', json.detail);
+            return;
+        }
         for (let i = 0; i < coinSymbols.length; i++) {
             if (parseFloat(json[coinSymbols[i]].amount) < quantities[i]) {
                 console.log('purchaseIndex - verify: Amount verify failed.');
@@ -189,7 +197,7 @@ const purchaseIndex = async (account, order, pending, coins, coIndex, wallet) =>
         }
 
         if (realAmount < 5) {
-            console.log('purchaseAsset: Invalid request. Purchase Index value should be greater than fee.');
+            console.log('purchaseIndex: Invalid request. Purchase Index value should be greater than fee.');
             console.log('Account: ', account._id);
             console.log('Assets: ', pending.assets);
             console.log('Prices: ', prices);
