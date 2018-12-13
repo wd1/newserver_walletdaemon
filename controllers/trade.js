@@ -20,77 +20,6 @@ const TruffleService = require('../services/TruffleService');
 let eventsMg;
 let processing = false;
 
-const runOrder = async () => {
-    try {
-        const coins = await Coins.find({}, 'symbol price', { lean: true }).exec();
-        if (coins && coins.length > 0) {
-            const coIndex = coins.findIndex(coin => coin.symbol === 'COIN');
-            if (coIndex > -1) {
-                const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
-                const wallets = await Wallets.find({ coinId: coins[coIndex]._id, version: 'v3' }, 'accountId quantity', { lean: true }).exec();
-                const openOrders = await Orders.find({ status: 'Open', 'receipt.transactionHash': null }).exec();
-                const pendings = await Pending.find({}).exec();
-
-                if (
-                    accounts && accounts.length > 0 &&
-                    wallets && wallets.length > 0 &&
-                    openOrders && openOrders.length > 0
-                ) {
-                    accounts.forEach(account => {
-                        const walletIdx = wallets.findIndex(w => w.accountId == account._id);
-                        if (walletIdx === -1) return;
-
-                        if (!wallets[walletIdx] || wallets[walletIdx].quantity * coins[coIndex].price < 5) return;
-
-                        const orders = openOrders.filter(o => o.accountId == account._id);
-                        orders.forEach(order => {
-                            if (order.type === 'limit' && order.timing === 'day') {
-                                const current = Math.round((new Date()).getTime() / 1000);
-                                if (current - order.timestamp > 86400) {
-                                    order.status = 'Cancelled';
-                                    order.save(err => {
-                                        if (err) {
-                                            console.log('runOrder: order.save: ', err);
-                                        }
-                                    });
-
-                                    removePending(order._id);
-
-                                    return;
-                                }
-                            }
-
-                            const pendingIdx = pendings.findIndex(p => p.orderId == order._id);
-                            if (pendingIdx > -1) {
-                                switch (pendings[pendingIdx].type) {
-                                case 'purchaseAsset':
-                                    purchaseAsset(account, order, pendings[pendingIdx], coins, coIndex, wallets[walletIdx]);
-                                    break;
-                                case 'purchaseIndex':
-                                    purchaseIndex(account, order, pendings[pendingIdx], coins, coIndex, wallets[walletIdx]);
-                                    break;
-                                case 'sellAsset':
-                                    sellAsset(account, order, pendings[pendingIdx], coins, coIndex);
-                                    break;
-                                case 'sellIndex':
-                                    sellIndex(account, order, pendings[pendingIdx], coins, coIndex);
-                                    break;
-                                default:
-                                    break;
-                                }
-                            }
-                        });
-                    });
-                }
-            }
-        }
-    } catch (e) {
-        console.log('runOrder: ', e);
-    }
-
-    setTimeout(runOrder, 120000);
-};
-
 const purchaseAsset = async (account, order, pending, coins, coIndex, wallet) => {
     try {
         const coinIndex = coins.findIndex(coin => coin._id == order.coinId);
@@ -608,6 +537,77 @@ const removePending = orderId => {
             console.log('removePending: ', err);
         }
     });
+};
+
+const runOrder = async () => {
+    try {
+        const coins = await Coins.find({}, 'symbol price', { lean: true }).exec();
+        if (coins && coins.length > 0) {
+            const coIndex = coins.findIndex(coin => coin.symbol === 'COIN');
+            if (coIndex > -1) {
+                const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
+                const wallets = await Wallets.find({ coinId: coins[coIndex]._id, version: 'v3' }, 'accountId quantity', { lean: true }).exec();
+                const openOrders = await Orders.find({ status: 'Open', 'receipt.transactionHash': null }).exec();
+                const pendings = await Pending.find({}).exec();
+
+                if (
+                    accounts && accounts.length > 0 &&
+                    wallets && wallets.length > 0 &&
+                    openOrders && openOrders.length > 0
+                ) {
+                    accounts.forEach(account => {
+                        const walletIdx = wallets.findIndex(w => w.accountId == account._id);
+                        if (walletIdx === -1) return;
+
+                        if (!wallets[walletIdx] || wallets[walletIdx].quantity * coins[coIndex].price < 5) return;
+
+                        const orders = openOrders.filter(o => o.accountId == account._id);
+                        orders.forEach(order => {
+                            if (order.type === 'limit' && order.timing === 'day') {
+                                const current = Math.round((new Date()).getTime() / 1000);
+                                if (current - order.timestamp > 86400) {
+                                    order.status = 'Cancelled';
+                                    order.save(err => {
+                                        if (err) {
+                                            console.log('runOrder: order.save: ', err);
+                                        }
+                                    });
+
+                                    removePending(order._id);
+
+                                    return;
+                                }
+                            }
+
+                            const pendingIdx = pendings.findIndex(p => p.orderId == order._id);
+                            if (pendingIdx > -1) {
+                                switch (pendings[pendingIdx].type) {
+                                case 'purchaseAsset':
+                                    purchaseAsset(account, order, pendings[pendingIdx], coins, coIndex, wallets[walletIdx]);
+                                    break;
+                                case 'purchaseIndex':
+                                    purchaseIndex(account, order, pendings[pendingIdx], coins, coIndex, wallets[walletIdx]);
+                                    break;
+                                case 'sellAsset':
+                                    sellAsset(account, order, pendings[pendingIdx], coins, coIndex);
+                                    break;
+                                case 'sellIndex':
+                                    sellIndex(account, order, pendings[pendingIdx], coins, coIndex);
+                                    break;
+                                default:
+                                    break;
+                                }
+                            }
+                        });
+                    });
+                }
+            }
+        }
+    } catch (e) {
+        console.log('runOrder: ', e);
+    }
+
+    setTimeout(runOrder, 120000);
 };
 
 async function asyncForEach(array, callback) {
