@@ -418,7 +418,7 @@ const sellAsset = (account, order, pending, coins, coIndex) => {
         const quantityInWei = Web3Service.toWei(order.quantity);
 
         if (amount < 5) {
-            console.log('sellAsset: Invalid request. Asset value should be greater than fee.');
+            console.log('sellAsset: Invalid request. Sell Asset value should be greater than fee.');
             console.log('Account: ', account._id);
             console.log('Asset Id: ', order.assetId);
             return;
@@ -525,7 +525,7 @@ const sellIndex = (account, order, pending, coins, coIndex) => {
         }
 
         if (amount < 5) {
-            console.log('sellIndex: Invalid request. Index value should be greater than fee.');
+            console.log('sellIndex: Invalid request. Sell Index value should be greater than fee.');
             console.log('Account: ', account._id);
             console.log('Index Id: ', order.indexId);
             return;
