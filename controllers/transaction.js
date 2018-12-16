@@ -179,8 +179,8 @@ export const handleIncomingChainData = async () => {
                     // filter out only "Transfer" event logs
                     const transferEvents = txReceipt.logs.filter(log => log.topics.length > 0 && log.topics[0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef');
                     const tradeEvents = txReceipt.logs.filter(log => log.topics.length > 0 &&
-                        (log.topics[0] == '0x6a75660680cd3a8f7f34c5df6451086e3222c8a9e16e568b6e698098e8fd970b' ||
-                            log.topics[0] == '0x5e1656ea49c37d58c071f8ec59918a4e2380766f4956535b3724476daad4c4fd'));
+                        (log.topics[0] == '0xc3c453ebab7c6d8207cc1e5359910b016ee5fa74282e0d385824e6595ae13aab' ||
+                            log.topics[0] == '0x934e9fcb0e8bcba1ad2d44addbc61ca08e7a4c6d7aa069c11f62e72ddc81b2d3'));
 
                     // handles all trade "Buy" and "Sell" events
                     if (tradeEvents.length > 0) handleTradeEvents(tradeEvents);

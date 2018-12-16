@@ -8,10 +8,9 @@ import Coins from '../models/Coins';
 import Orders from '../models/Orders';
 import Transactions from '../models/Transactions';
 import Pending from '../models/Pending';
-import IndexContains from '../models/IndexContains';
 import Blocks from '../models/Blocks';
 
-import { cryptoIdToSymbol } from '../services/Config';
+import { cryptoIdToSymbol, VERIFY_URI } from '../services/Config';
 import { hexToDec } from '../services/hex2dec';
 import Web3Service from '../services/Web3Service';
 import TruffleService from '../services/TruffleService';
@@ -361,27 +360,18 @@ const purchaseIndex = (account, order, pending, coins, coIndex, wallet) => new P
                                 });
 
                                 index.amount = realAmount;
+                                index.assets = pending.assets.map((asset, idx) => ({
+                                    coinId: coinList[idx]._id,
+                                    percentage: asset.percent,
+                                    quantity: quantities[idx],
+                                    amount: amounts[idx]
+                                }));
+
                                 index.save(err => {
                                     if (err) {
                                         console.log('purchaseIndex: index.save: ', err);
                                         resolve(false);
                                     }
-
-                                    pending.assets.forEach((asset, idx) => {
-                                        const indexContains = new IndexContains({
-                                            indexId: index._id,
-                                            coinId: coinList[idx]._id,
-                                            percentage: asset.percent,
-                                            quantity: quantities[idx],
-                                            amount: amounts[idx]
-                                        });
-                                        indexContains.save(err => {
-                                            if (err) {
-                                                console.log('purchaseIndex: indexContains.save: ', err);
-                                                resolve(false);
-                                            }
-                                        });
-                                    });
 
                                     resolve(true);
                                 });
@@ -417,22 +407,19 @@ const sellIndex = (account, order, pending, coins, coIndex) => new Promise((reso
         const cryptoIds = [];
         const quantitiesInWei = [];
         let amount = 0;
-        try {
-            const indexContains = await IndexContains.find({ indexId: index._id }, null, { lean: true }).exec();
-            for (let i = 0; i < indexContains.length; i++) {
-                const coinIndex = coins.findIndex(coin => coin._id === indexContains[i].coinId);
+
+        if (index.assets && index.assets.length > 0) {
+            for (let i = 0; i < index.assets.length; i++) {
+                const coinIndex = coins.findIndex(coin => coin._id === index.assets[i].coinId);
                 if (coinIndex > -1) {
                     const cryptoId = cryptoIdToSymbol.findIndex(crypto => crypto.symbol === coins[coinIndex].symbol);
-                    if (cryptoId === -1) resolve(false);
+                    if (cryptoId === -1) return;
 
                     cryptoIds.push(cryptoId);
-                    quantitiesInWei.push(Web3Service.toWei(indexContains[i].quantity));
-                    amount += coins[coinIndex].price * indexContains[i].quantity;
+                    quantitiesInWei.push(Web3Service.toWei(index.assets[i].quantity));
+                    amount += coins[coinIndex].price * index.assets[i].quantity;
                 }
             }
-        } catch (err) {
-            console.log('sellIndex: IndexContains: ', err);
-            resolve(false);
         }
 
         const amountInWei = Web3Service.toWei((amount + 4.99) / coins[coIndex].price);
@@ -530,6 +517,7 @@ export const runPendingOrdersTask = async () => {
                 if (current - order.timestamp > 86400) {
                     order.status = 'Cancelled';
                     console.log(`[TradeDaemon] Expired an order: ${order._id}`);
+                    await Pending.deleteOne({orderId: order._id});
                     return order.save();
                 }
             }
