@@ -4,11 +4,9 @@ const standardAbi = require('human-standard-token-abi');
 const { bignumberToString } = require('./bignumber2string');
 
 const {
-    FAUCET_ADDRESS,
     INVESTMENT_CONTRACT_ADDRESS,
     COINVEST_TOKEN_ADDRESS,
     DEMO_MASTER_ADDRESS,
-    DEMO_MASTER_PASSPHRASE,
     Abi,
     FaucetAbi,
     CoinvestTokenAbi

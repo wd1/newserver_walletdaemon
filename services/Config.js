@@ -1,6 +1,6 @@
 exports.FAUCET_ADDRESS = process.env.FAUCET_ADDRESS;
 exports.INVESTMENT_CONTRACT_ADDRESS = process.env.INVESTMENT_CONTRACT_ADDRESS;
-exports.COINVEST_TOKEN_ADDRESS = process.env.COINVEST_TOKEN_ADDRESS_V2;
+exports.COINVEST_TOKEN_ADDRESS = process.env.COINVEST_TOKEN_ADDRESS_V3;
 exports.USER_DATA_ADDRESS = process.env.USER_DATA_ADDRESS;
 
 exports.COINVEST_TOKEN_ADDRESS_V1 = process.env.COINVEST_TOKEN_ADDRESS_V1;
@@ -11,6 +11,11 @@ exports.TOKEN_SWAP_ADDRESS = process.env.TOKEN_SWAP_ADDRESS;
 exports.FAUCET_DRIP_AMOUNT = 10000;
 exports.DEMO_MASTER_ADDRESS = process.env.DEMO_MASTER_ADDRESS;
 exports.DEMO_MASTER_PASSPHRASE = process.env.DEMO_MASTER_PASSPHRASE;
+
+exports.VERIFY_URI = process.env.VERIFY_URI;
+
+exports.BALANCE_CHECKER_ADDRESS = process.env.BALANCE_CHECKER_CONTRACT || '0x065ad510b10731ee87cf96aeb2f8c2984695c729';
+exports.GETH_SOCKET_URL = process.env.GETH_SOCKET;
 
 exports.Abi = [
     {
@@ -5438,5 +5443,59 @@ exports.tokenList = [
         symbol: 'WIT',
         decimal: 8,
         type: 'default'
+    }
+];
+
+exports.balanceCheckerAbi = [
+    {
+        "payable": true,
+        "stateMutability": "payable",
+        "type": "fallback"
+    },
+    {
+        "constant": true,
+        "inputs": [
+            {
+                "name": "users",
+                "type": "address[]"
+            },
+            {
+                "name": "tokens",
+                "type": "address[]"
+            }
+        ],
+        "name": "balances",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256[]"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [
+            {
+                "name": "user",
+                "type": "address"
+            },
+            {
+                "name": "token",
+                "type": "address"
+            }
+        ],
+        "name": "tokenBalance",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
     }
 ];

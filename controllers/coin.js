@@ -1,147 +1,85 @@
 const request = require('request');
-const schedule = require('node-schedule');
+const rp = require('request-promise');
 
 const Coins = require('../models/Coins');
 const { cryptoIdToSymbol } = require('../services/Config');
 
-let updateAsset;
-let updateCryptoCompareId;
-let updateCoinPrices;
+const cmcApiKey = process.env.CMC_API_KEY;
+const ccApiKey = process.env.CC_API_KEY;
 
-const getAssets = () => {
-    request('https://api.coinmarketcap.com/v2/listings', (err, response) => {
-        if (err) {
-            console.log('getAssets: coinmarketcap-listings: ', err);
-            return;
-        }
+const getAssets = async () => {
+    try {
+        const requestOptions = {
+            method: 'GET',
+            uri: 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest',
+            qs: {
+                start: 1,
+                limit: 5000,
+                convert: 'USD'
+            },
+            headers: {
+                'X-CMC_PRO_API_KEY': cmcApiKey
+            },
+            json: true,
+            gzip: true
+        };
 
-        try {
-            if (response.statusCode === 200) {
-                const body = JSON.parse(response.body);
-
-                if (body.metadata.num_cryptocurrencies) {
-                    const limit = Math.floor(body.metadata.num_cryptocurrencies / 100);
-
-                    for (let i = 0; i <= limit; i++) {
-                        let url = 'https://api.coinmarketcap.com/v2/ticker/?structure=array';
-                        if (i !== 0) {
-                            url += `&start=${i * 100 + 1}`;
-                        }
-
-                        request(url, (err, response) => {
-                            if (err) {
-                                console.log('getAssets: coinmarketcap-ticker: ', err);
-                                return;
-                            }
-
-                            try {
-                                if (response.statusCode === 200) {
-                                    const res = JSON.parse(response.body);
-
-                                    if (res.data) {
-                                        res.data.forEach(dt => {
-                                            Coins.findOne({ symbol: dt.symbol }, (err, coin) => {
-                                                if (err) {
-                                                    console.log('getAssets: findOne: ', err);
-                                                    return;
-                                                }
-
-                                                if (coin) {
-                                                    coin.set({
-                                                        name: dt.name,
-                                                        totalSupply: dt.total_supply,
-                                                        circulatingSupply: dt.circulating_supply,
-                                                        maxSupply: dt.max_supply,
-                                                        price: dt.quotes.USD.price,
-                                                        marketCap: dt.quotes.USD.market_cap,
-                                                        volume24h: dt.quotes.USD.volume_24h,
-                                                        percentageChange1h: dt.quotes.USD.percent_change_1h,
-                                                        percentageChange24h: dt.quotes.USD.percent_change_24h,
-                                                        percentageChange7d: dt.quotes.USD.percent_change_7d,
-                                                        lastUpdated: dt.last_updated
-                                                    });
-
-                                                    coin.save(err => {
-                                                        if (err) {
-                                                            console.log('getAssets: save: ', err);
-                                                        }
-                                                    });
-                                                } else {
-                                                    Coins.findOne({ name: dt.name }, (err, co) => {
-                                                        if (err) {
-                                                            console.log('getAssets: Coins.findOne: ', err);
-                                                            return;
-                                                        }
-
-                                                        if (co) {
-                                                            co.set({
-                                                                symbol: dt.symbol,
-                                                                totalSupply: dt.total_supply,
-                                                                circulatingSupply: dt.circulating_supply,
-                                                                maxSupply: dt.max_supply,
-                                                                price: dt.quotes.USD.price,
-                                                                marketCap: dt.quotes.USD.market_cap,
-                                                                volume24h: dt.quotes.USD.volume_24h,
-                                                                percentageChange1h: dt.quotes.USD.percent_change_1h,
-                                                                percentageChange24h: dt.quotes.USD.percent_change_24h,
-                                                                percentageChange7d: dt.quotes.USD.percent_change_7d,
-                                                                lastUpdated: dt.last_updated
-                                                            });
-
-                                                            co.save(err => {
-                                                                if (err) {
-                                                                    console.log('getAssets: co.save: ', err);
-                                                                }
-                                                            });
-                                                        } else {
-                                                            coin = new Coins({
-                                                                name: dt.name,
-                                                                symbol: dt.symbol,
-                                                                totalSupply: dt.total_supply,
-                                                                circulatingSupply: dt.circulating_supply,
-                                                                maxSupply: dt.max_supply,
-                                                                price: dt.quotes.USD.price,
-                                                                marketCap: dt.quotes.USD.market_cap,
-                                                                volume24h: dt.quotes.USD.volume_24h,
-                                                                percentageChange1h: dt.quotes.USD.percent_change_1h,
-                                                                percentageChange24h: dt.quotes.USD.percent_change_24h,
-                                                                percentageChange7d: dt.quotes.USD.percent_change_7d,
-                                                                limit: 18,
-                                                                lastUpdated: dt.last_updated,
-                                                                coinMarketCapId: dt.id
-                                                            });
-
-                                                            coin.save(err => {
-                                                                if (err) {
-                                                                    console.log('getAssets: coin.save: ', err);
-                                                                }
-                                                            });
-                                                        }
-                                                    });
-                                                }
-                                            });
-                                        });
-                                    }
-                                }
-                            } catch (err) {
-                                console.log('getAssets: ticker: ', err);
-                            }
-                        });
-                    }
+        const response = await rp(requestOptions);
+        if (response.status.error_code === 0 && !response.status.error_message) {
+            response.data.forEach(async dt => {
+                let coin = await Coins.findOne({ symbol: dt.symbol }).exec();
+                if (coin) {
+                    coin.set({
+                        name: dt.name,
+                        totalSupply: dt.total_supply,
+                        circulatingSupply: dt.circulating_supply,
+                        maxSupply: dt.max_supply,
+                        price: dt.quote.USD.price,
+                        marketCap: dt.quote.USD.market_cap,
+                        volume24h: dt.quote.USD.volume_24h,
+                        percentageChange1h: dt.quote.USD.percent_change_1h,
+                        percentageChange24h: dt.quote.USD.percent_change_24h,
+                        percentageChange7d: dt.quote.USD.percent_change_7d,
+                        lastUpdated: dt.last_updated,
+                        created: dt.date_added
+                    });
+                } else {
+                    coin = new Coins({
+                        name: dt.name,
+                        symbol: dt.symbol,
+                        totalSupply: dt.total_supply,
+                        circulatingSupply: dt.circulating_supply,
+                        maxSupply: dt.max_supply,
+                        price: dt.quote.USD.price,
+                        marketCap: dt.quote.USD.market_cap,
+                        volume24h: dt.quote.USD.volume_24h,
+                        percentageChange1h: dt.quote.USD.percent_change_1h,
+                        percentageChange24h: dt.quote.USD.percent_change_24h,
+                        percentageChange7d: dt.quote.USD.percent_change_7d,
+                        lastUpdated: dt.last_updated,
+                        created: dt.date_added
+                    });
                 }
-            }
-        } catch (err) {
-            console.log('getAssets: listing: ', err);
+
+                coin.save(err => {
+                    if (err) {
+                        console.log('getAssets: coin.save: ', err);
+                    }
+                });
+            });
+        } else {
+            console.log('getAssets: ', response.status.error_message);
         }
-    });
+    } catch (e) {
+        console.log('getAssets: ', e);
+    }
+
+    setTimeout(getAssets, 3600000);
 };
 
-const getCryptoCompareId = () => {
-    Coins.find((err, coins) => {
-        if (err) {
-            console.log('getCryptoCompareId: find: ', err);
-            return;
-        }
+const getCryptoCompareId = async () => {
+    try {
+        const coins = await Coins.find().exec();
 
         const array = [];
         coins.forEach(coin => {
@@ -151,91 +89,80 @@ const getCryptoCompareId = () => {
         });
 
         if (array.length > 0) {
-            request('https://min-api.cryptocompare.com/data/all/coinlist', (err, response) => {
-                if (err) {
-                    console.log('getCryptoCompareId: cryptocompare: ', err);
-                    return;
-                }
+            const requestOptions = {
+                method: 'GET',
+                uri: 'https://min-api.cryptocompare.com/data/all/coinlist',
+                headers: {
+                    authorization: `Apikey ${ccApiKey}`
+                },
+                json: true,
+                gzip: true
+            };
 
-                try {
-                    const body = JSON.parse(response.body);
+            const response = await rp(requestOptions);
 
-                    array.forEach(coin => {
-                        if (body.Data[coin.symbol]) {
-                            coin.cryptoCompareId = body.Data[coin.symbol].Id;
-                            coin.image = body.Data[coin.symbol].ImageUrl;
+            array.forEach(coin => {
+                if (response.Data[coin.symbol]) {
+                    coin.cryptoCompareId = response.Data[coin.symbol].Id;
+                    coin.image = response.Data[coin.symbol].ImageUrl;
 
-                            coin.save(err => {
-                                if (err) {
-                                    console.log('getCryptoCompareId: save: ', err);
-                                }
-                            });
+                    coin.save(err => {
+                        if (err) {
+                            console.log('getCryptoCompareId: save: ', err);
                         }
                     });
-                } catch (err) {
-                    console.log('getCryptoCompareId: coinlist: ', err);
                 }
             });
         }
-    });
+    } catch (e) {
+        console.log('getCryptoCompareId: ', e);
+    }
+
+    setTimeout(getCryptoCompareId, 60000);
 };
 
-const getPricesFromCryptoCompare = () => {
-    const coinSymbols = cryptoIdToSymbol.map(crypto => crypto.symbol);
-    Coins.find({ symbol: coinSymbols }, (err, coins) => {
-        if (err) {
-            console.log('getPricesFromCryptoCompare Coins.find: ', err);
-            return;
-        }
+const getPricesFromCryptoCompare = async () => {
+    try {
+        const coinSymbols = cryptoIdToSymbol.map(crypto => crypto.symbol);
 
+        const coins = await Coins.find({ symbol: coinSymbols }).exec();
         if (coins && coins.length > 0) {
             const symbols = coins.map(coin => coin.symbol).join(',');
 
-            request(`https://min-api.cryptocompare.com/data/pricemulti?tsyms=USD,EUR&fsyms=${symbols}`, (err, response) => {
-                if (err) {
-                    console.log('getPricesFromCryptoCompare: ', err);
-                    return;
-                }
+            const requestOptions = {
+                method: 'GET',
+                uri: 'https://min-api.cryptocompare.com/data/pricemulti',
+                qs: {
+                    fsyms: symbols,
+                    tsyms: 'USD'
+                },
+                headers: {
+                    authorization: `Apikey ${ccApiKey}`
+                },
+                json: true,
+                gzip: true
+            };
 
-                try {
-                    const body = JSON.parse(response.body);
+            const response = await rp(requestOptions);
 
-                    coins.forEach(coin => {
-                        coin.price = body[coin.symbol].USD;
-                        coin.save(err => {
-                            if (err) {
-                                console.log('getPricesFromCryptoCompare: save: ', err);
-                            }
-                        });
-                    });
-                } catch (err) {
-                    console.log('getPricesFromCryptoCompare: pricemulti: ', err);
-                }
+            coins.forEach(coin => {
+                coin.price = response[coin.symbol].USD;
+                coin.save(err => {
+                    if (err) {
+                        console.log('getPricesFromCryptoCompare: save: ', err);
+                    }
+                });
             });
         }
-    });
+    } catch (e) {
+        console.log('getPricesFromCryptoCompare: ', e);
+    }
+
+    setTimeout(getPricesFromCryptoCompare, 60000);
 };
 
 exports.coinSchedule = () => {
-    updateAsset = schedule.scheduleJob('*/1 * * * *', getAssets);
-    updateCryptoCompareId = schedule.scheduleJob('*/1 * * * *', getCryptoCompareId);
-    updateCoinPrices = schedule.scheduleJob('*/10 * * * * *', getPricesFromCryptoCompare);
-};
-
-exports.cancelAssetSchedule = () => {
-    if (updateAsset) {
-        updateAsset.cancel();
-    }
-};
-
-exports.cancelCryptoCompareSchedule = () => {
-    if (updateCryptoCompareId) {
-        updateCryptoCompareId.cancel();
-    }
-};
-
-exports.cancelPriceSchedule = () => {
-    if (updateCoinPrices) {
-        updateCoinPrices.cancel();
-    }
+    getAssets();
+    getCryptoCompareId();
+    getPricesFromCryptoCompare();
 };
