@@ -6,8 +6,14 @@ const web3 = new Web3(Web3.givenProvider || GETH_SOCKET_URL);
 
 const processBlock = async (blockHashOrId, opts) => {
     const block = await web3.eth.getBlock(blockHashOrId, true);
-    opts.onTransactions ? opts.onTransactions(block, block.transactions) : null;
-    opts.onBlock ? opts.onBlock(blockHashOrId) : null;
+
+    if (block) {
+        opts.onTransactions ? opts.onTransactions(block, block.transactions) : null;
+        opts.onBlock ? opts.onBlock(blockHashOrId) : null;
+    } else {
+        console.log(`Cannot fetch block: ${blockHashOrId}`);
+    }
+
     return block;
 };
 

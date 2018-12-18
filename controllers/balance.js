@@ -41,6 +41,7 @@ export const fetchBalances = async () => {
 
         await Promise.all(batches.map(async batch => {
             const balances = await getAddressesBalances(batch, tokenAddresses);
+            console.log(balances);
 
             return Promise.all(Object.keys(balances).map(address => {
                 const balancesForAddress = balances.address;
