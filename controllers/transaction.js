@@ -4,7 +4,7 @@ import Wallets from '../models/Wallets';
 import Coins from '../models/Coins';
 import TokenTransactions from '../models/TokenTransactions';
 import { web3, startSyncingBlocks } from '../services/web3Socket';
-import { handleTradeEvents } from './trade';
+import { handleNewOraclizeEvents, handleTradeEvents } from './trade';
 import {
     CMC_API_SECRET, COINVEST_TOKEN_ADDRESS,
     COINVEST_TOKEN_ADDRESS_V1,
@@ -181,10 +181,15 @@ export const handleIncomingChainData = async () => {
                     const tradeEvents = txReceipt.logs.filter(log => log.topics.length > 0 &&
                         (log.topics[0] == '0xc3c453ebab7c6d8207cc1e5359910b016ee5fa74282e0d385824e6595ae13aab' ||
                             log.topics[0] == '0x934e9fcb0e8bcba1ad2d44addbc61ca08e7a4c6d7aa069c11f62e72ddc81b2d3'));
+                    const newOraclizeQueryEvents = txReceipt.logs.filter(log => log.topics.length > 0 && log.topics[0] == '0x09133453398d2489082719969c4a67e418dbd5bdb4efbed1a73a32bc28dbc4ee');
+
+                    // handle "newOraclizeQuery" events
+                    if (newOraclizeQueryEvents.length > 0) handleNewOraclizeEvents(newOraclizeQueryEvents);
 
                     // handles all trade "Buy" and "Sell" events
                     if (tradeEvents.length > 0) handleTradeEvents(tradeEvents);
 
+                    // handle transfer events
                     transferEvents.forEach(async log => {
                         const matchedToken = coins.find(coin => coin.address && coin.address.toLowerCase() === log.address.toLowerCase());
                         // check if contract address is matched

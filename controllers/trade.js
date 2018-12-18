@@ -14,9 +14,30 @@ import { cryptoIdToSymbol } from '../services/Config';
 import { hexToDec } from '../services/hex2dec';
 import { web3 } from '../services/web3Socket';
 
+export const handleNewOraclizeEvents = async events => {
+    events.forEach(async event => {
+        const params = event.data.substring(2).match(/.{1,64}/g);
+        if (params.length > 3) {
+            const hash = `0x${params[1]}`;
+            const queryId = `0x${params[2]}`;
+
+            try {
+                const order = await Orders.findOne({ status: 'Open', inputHash: hash, queryId: undefined }).exec();
+                if (order) {
+                    order.queryId = queryId;
+                    await order.save();
+                }
+            } catch (error) {
+                console.log(`[TradeDaemon] Error updating order with queryId: ${error}`);
+            }
+        }
+    });
+};
+
+
 export const handleTradeEvents = async events => {
     events.forEach(async event => {
-        const queryId = `0x${event.topics[1].substring(26)}`;
+        const queryId = event.topics[1];
         const coins = await Coins.find({}, null, { lean: true }).exec();
         const order = await Orders.findOne({ status: 'Open', queryId }).exec();
         const assets = await Assets.find({}).exec();

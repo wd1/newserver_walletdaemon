@@ -11,7 +11,6 @@ import mongoose from 'mongoose';
 import { syncTransactionTask, handleIncomingChainData } from './controllers/transaction';
 import { fetchBalances } from './controllers/balance';
 import { fetchCoinPrices, fetchPricesFromCryptoCompare } from './controllers/coin';
-import { handleTradeEvents } from './controllers/trade';
 
 /**
  * Load environment variables from .env file, where API keys and passwords are configured.
@@ -64,11 +63,10 @@ app.listen(app.get('port'), () => {
     console.log('  Press CTRL-C to stop\n');
 });
 
-// fetchCoinPrices();
-// fetchPricesFromCryptoCompare();
-// syncTransactionTask();
-// fetchBalances();
-// handleIncomingChainData();
-// handleTradeEvents();
+fetchCoinPrices();
+fetchPricesFromCryptoCompare();
+syncTransactionTask();
+fetchBalances();
+handleIncomingChainData();
 
 module.exports = app;
