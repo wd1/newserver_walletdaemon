@@ -123,7 +123,7 @@ const getCryptoCompareId = async () => {
 
 const getPricesFromCryptoCompare = async () => {
     try {
-        const coinSymbols = cryptoIdToSymbol.map(crypto => crypto.symbol);
+        const coinSymbols = cryptoIdToSymbol.filter(crypto => crypto.symbol !== 'COIN').map(crypto => crypto.symbol);
 
         const coins = await Coins.find({ symbol: coinSymbols }).exec();
         if (coins && coins.length > 0) {
@@ -149,7 +149,7 @@ const getPricesFromCryptoCompare = async () => {
                 coin.price = response[coin.symbol].USD;
                 coin.save(err => {
                     if (err) {
-                        console.log('getPricesFromCryptoCompare: save: ', err);
+                        console.log('getPricesFromCryptoCompare - save: ', err);
                     }
                 });
             });
@@ -161,8 +161,39 @@ const getPricesFromCryptoCompare = async () => {
     setTimeout(getPricesFromCryptoCompare, 60000);
 };
 
+const getCOINPrice = async () => {
+    try {
+        const coin = await Coins.findOne({ symbol: 'COIN' }).exec();
+        if (coin) {
+            const requestOptions = {
+                method: 'GET',
+                uri: 'http://ec2-18-234-124-53.compute-1.amazonaws.com/api/priceApi',
+                qs: {
+                    cryptos: coin.symbol
+                },
+                json: true,
+                gzip: true
+            };
+
+            const response = await rp(requestOptions);
+
+            coin.price = response[coin.symbol].USD;
+            coin.save(err => {
+                if (err) {
+                    console.log('getCOINPrice - save: ', err);
+                }
+            });
+        }
+    } catch (e) {
+        console.log('getCOINPrice: ', e);
+    }
+
+    setTimeout(getCOINPrice, 60000);
+};
+
 exports.coinSchedule = () => {
     getAssets();
     getCryptoCompareId();
     getPricesFromCryptoCompare();
+    getCOINPrice();
 };
