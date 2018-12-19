@@ -64,9 +64,9 @@ app.listen(app.get('port'), () => {
 });
 
 fetchCoinPrices();
-// fetchPricesFromCryptoCompare();
-// syncTransactionTask();
-// fetchBalances();
-// handleIncomingChainData();
+fetchPricesFromCryptoCompare();
+syncTransactionTask();
+fetchBalances();
+handleIncomingChainData();
 
 module.exports = app;
