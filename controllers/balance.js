@@ -36,7 +36,7 @@ export const fetchBalances = async () => {
 
         const tokenAddresses = wallets.map(wallet => {
             const coin = _.find(coins, {_id: wallet.coinId});
-            if (coin.symbol === 'COIN') {
+            if (coin && coin.symbol === 'COIN') {
                 if (wallet.version === 'v1') {
                     return COINVEST_TOKEN_ADDRESS_V1;
                 } else if (wallet.version === 'v2') {
