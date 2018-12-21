@@ -38,90 +38,22 @@ export const syncTransactionTask = async () => {
         const coins = await Coins.find({}, 'symbol', { lean: true }).exec();
         const accounts = await Accounts.find({txSynced: {$ne: true}, beneficiary: {$exists: true}}).exec();
 
-        for (const account of accounts) {
+        console.log(`[TransactionTask] Count of non-synced accounts: ${accounts.length}`);
+        await Promise.all(accounts.map(async (account, index) => {
             try {
                 requestOptions.uri = `${ETHSCAN_URI}&action=txlist&startblock=0&endblock=latest&sort=desc&apikey=${ETHSCAN_API_KEY5}&address=${account.beneficiary}`;
                 const ethResponse = await rp(requestOptions);
 
-                if (ethResponse.status !== '1') {
-                    if (ethResponse.status === '0') {
-                        account.txSynced = true;
-                        await account.save();
-                    }
-                    return;
-                }
-                const ethTx = ethResponse.result;
+                if (ethResponse.status == '1') {
+                    const ethTx = ethResponse.result;
+                    await Promise.all(ethTx.map(async tx => {
+                        let action = '';
+                        if (tx.from === account.beneficiary) {
+                            action = 'send';
+                        } else if (tx.to === account.beneficiary) {
+                            action = 'receive';
+                        }
 
-                requestOptions.uri = `${ETHSCAN_URI}&action=tokentx&startblock=0&endblock=latest&sort=desc&apikey=${ETHSCAN_API_KEY6}&address=${account.beneficiary}`;
-                const tokenResponse = await rp(requestOptions);
-
-                if (tokenResponse.status !== '1') {
-                    if (tokenResponse.status === '0') {
-                        account.txSynced = true;
-                        await account.save();
-                    }
-                    return;
-                }
-                const tokenTx = tokenResponse.result;
-
-                ethTx.forEach(async tx => {
-                    let action = '';
-                    if (tx.from === account.beneficiary) {
-                        action = 'send';
-                    } else if (tx.to === account.beneficiary) {
-                        action = 'receive';
-                    }
-
-                    let tokenTx = await TokenTransactions.findOne({
-                        accountId: account._id,
-                        txId: tx.hash
-                    });
-
-                    if (!tokenTx) {
-                        tokenTx = new TokenTransactions({
-                            accountId: account._id,
-                            coinId: coin._id,
-                            amount: tx.value,
-                            timestamp: parseInt(tx.timeStamp, 10),
-                            txId: tx.hash,
-                            from: tx.from,
-                            to: tx.to,
-                            action,
-                            status: tx.txreceipt_status === '1' ? 'Success' : 'Fail'
-                        });
-
-                        await tokenTx.save();
-                    }
-                });
-
-                tokenTx.forEach(async tx => {
-                    let action = '';
-                    let symbol = '';
-                    let version = null;
-                    if (tx.from === account.beneficiary) {
-                        action = 'send';
-                    } else if (tx.to === account.beneficiary) {
-                        action = 'receive';
-                    }
-
-                    if (!symbol) {
-                        const tokenIdx = tokenList.findIndex(t => t.address.toLowerCase() === tx.contractAddress.toLowerCase());
-                        symbol = (tokenIdx > -1) ? tokenList[tokenIdx].symbol : symbol;
-                    }
-
-                    if (tx.contractAddress.toLowerCase() === COINVEST_TOKEN_ADDRESS_V1.toLowerCase()) {
-                        symbol = 'COIN';
-                        version = 'v1';
-                    } else if (tx.contractAddress.toLowerCase() === COINVEST_TOKEN_ADDRESS.toLowerCase()) {
-                        symbol = 'COIN';
-                        version = 'v2';
-                    } else if (tx.contractAddress.toLowerCase() === COINVEST_TOKEN_ADDRESS_V3.toLowerCase()) {
-                        symbol = 'COIN';
-                        version = 'v3';
-                    }
-
-                    const coinIdx = coins.findIndex(coin => coin.symbol === symbol);
-                    if (coinIdx > -1) {
                         let tokenTx = await TokenTransactions.findOne({
                             accountId: account._id,
                             txId: tx.hash
@@ -130,27 +62,88 @@ export const syncTransactionTask = async () => {
                         if (!tokenTx) {
                             tokenTx = new TokenTransactions({
                                 accountId: account._id,
-                                coinId: coins[coinIdx]._id,
+                                coinId: coin._id,
                                 amount: tx.value,
                                 timestamp: parseInt(tx.timeStamp, 10),
                                 txId: tx.hash,
                                 from: tx.from,
                                 to: tx.to,
                                 action,
-                                version
+                                status: tx.txreceipt_status === '1' ? 'Success' : 'Fail'
                             });
 
-                            await tokenTx.save();
+                            return tokenTx.save();
                         }
-                    }
-                });
+                    }));
+                }
 
+                requestOptions.uri = `${ETHSCAN_URI}&action=tokentx&startblock=0&endblock=latest&sort=desc&apikey=${ETHSCAN_API_KEY6}&address=${account.beneficiary}`;
+                const tokenResponse = await rp(requestOptions);
+
+                if (tokenResponse.status == '1') {
+
+                    const tokenTx = tokenResponse.result;
+                    await Promise.all(tokenTx.map(async tx => {
+                        let action = '';
+                        let symbol = '';
+                        let version = null;
+                        if (tx.from === account.beneficiary) {
+                            action = 'send';
+                        } else if (tx.to === account.beneficiary) {
+                            action = 'receive';
+                        }
+
+                        if (!symbol) {
+                            const tokenIdx = tokenList.findIndex(t => t.address.toLowerCase() === tx.contractAddress.toLowerCase());
+                            symbol = (tokenIdx > -1) ? tokenList[tokenIdx].symbol : symbol;
+                        }
+
+                        if (tx.contractAddress.toLowerCase() === COINVEST_TOKEN_ADDRESS_V1.toLowerCase()) {
+                            symbol = 'COIN';
+                            version = 'v1';
+                        } else if (tx.contractAddress.toLowerCase() === COINVEST_TOKEN_ADDRESS.toLowerCase()) {
+                            symbol = 'COIN';
+                            version = 'v2';
+                        } else if (tx.contractAddress.toLowerCase() === COINVEST_TOKEN_ADDRESS_V3.toLowerCase()) {
+                            symbol = 'COIN';
+                            version = 'v3';
+                        }
+
+                        const coinIdx = coins.findIndex(coin => coin.symbol === symbol);
+                        if (coinIdx > -1) {
+                            let tokenTx = await TokenTransactions.findOne({
+                                accountId: account._id,
+                                txId: tx.hash
+                            });
+
+                            if (!tokenTx) {
+                                tokenTx = new TokenTransactions({
+                                    accountId: account._id,
+                                    coinId: coins[coinIdx]._id,
+                                    amount: tx.value,
+                                    timestamp: parseInt(tx.timeStamp, 10),
+                                    txId: tx.hash,
+                                    from: tx.from,
+                                    to: tx.to,
+                                    action,
+                                    version
+                                });
+
+                                return tokenTx.save();
+                            }
+                        }
+                    }));
+                } else if (tokenResponse.status !== '0') {
+                    return;
+                }
+
+                timeout(index * 300);
                 account.txSynced = true;
-                await account.save();
+                return account.save();
             } catch (e) {
                 console.log(`[TransactionTask] Error fetching from Etherscan ${e}`);
             }
-        }
+        }));
     } catch (e) {
         console.log(`[TransactionTask] Error fetching etherscan`);
     }
