@@ -98,7 +98,6 @@ export const fetchPricesFromCryptoCompare = async () => {
             }
 
             coin.price = response[symbol].USD;
-            console.log(coin);
             return coin.save();
         }));
     } catch (e) {
