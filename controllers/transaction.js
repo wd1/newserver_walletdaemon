@@ -8,6 +8,7 @@ import { handleNewOraclizeEvents, handleTradeEvents } from './trade';
 import {
     CMC_API_SECRET, COINVEST_TOKEN_ADDRESS,
     COINVEST_TOKEN_ADDRESS_V1,
+    COINVEST_TOKEN_ADDRESS_V2,
     COINVEST_TOKEN_ADDRESS_V3, tokenList
 } from '../services/Config';
 
@@ -101,7 +102,7 @@ export const syncTransactionTask = async () => {
                         if (tx.contractAddress.toLowerCase() === COINVEST_TOKEN_ADDRESS_V1.toLowerCase()) {
                             symbol = 'COIN';
                             version = 'v1';
-                        } else if (tx.contractAddress.toLowerCase() === COINVEST_TOKEN_ADDRESS.toLowerCase()) {
+                        } else if (tx.contractAddress.toLowerCase() === COINVEST_TOKEN_ADDRESS_V2.toLowerCase()) {
                             symbol = 'COIN';
                             version = 'v2';
                         } else if (tx.contractAddress.toLowerCase() === COINVEST_TOKEN_ADDRESS_V3.toLowerCase()) {
@@ -184,7 +185,22 @@ export const handleIncomingChainData = async () => {
 
                     // handle transfer events
                     transferEvents.forEach(async log => {
-                        const matchedToken = coins.find(coin => coin.address && coin.address.toLowerCase() === log.address.toLowerCase());
+                        let matchedToken = null;
+                        let version = null;
+
+                        if (log.address.toLowerCase() === COINVEST_TOKEN_ADDRESS_V1.toLowerCase()) {
+                            matchedToken = coins.find(coin => coin.symbol === 'COIN');
+                            version = 'v1';
+                        } else if (log.address.toLowerCase() === COINVEST_TOKEN_ADDRESS_V2.toLowerCase()) {
+                            matchedToken = coins.find(coin => coin.symbol === 'COIN');
+                            version = 'v2';
+                        } else if (log.address.toLowerCase() === COINVEST_TOKEN_ADDRESS_V3.toLowerCase()) {
+                            matchedToken = coins.find(coin => coin.symbol === 'COIN');
+                            version = 'v3';
+                        } else {
+                            matchedToken = coins.find(coin => coin.address && coin.address.toLowerCase() === log.address.toLowerCase());
+                        }
+
                         // check if contract address is matched
                         if (!!matchedToken) {
                             const fromAddr = `0x${log.topics[1].slice(26)}`;
@@ -213,7 +229,7 @@ export const handleIncomingChainData = async () => {
                                         from: fromAddr,
                                         to: toAddr,
                                         action: 'send',
-                                        version: matchedToken.version,
+                                        version,
                                         status: txReceipt.status === true ? 'Success' : 'Fail'
                                     });
 
@@ -240,8 +256,8 @@ export const handleIncomingChainData = async () => {
                                         txId: tx.hash,
                                         from: fromAddr,
                                         to: toAddr,
-                                        action: 'send',
-                                        version: matchedToken.version,
+                                        action: 'receive',
+                                        version,
                                         status: txReceipt.status === true ? 'Success' : 'Fail'
                                     });
 
