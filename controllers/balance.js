@@ -35,7 +35,7 @@ export const fetchBalances = async () => {
         }
 
         const tokenAddresses = wallets.map(wallet => {
-            const coin = _.find(coins, {_id: wallet.coinId});
+            const coin = coins.find(coin => coin._id == wallet.coinId);
             if (coin && coin.symbol === 'COIN') {
                 if (wallet.version === 'v1') {
                     return COINVEST_TOKEN_ADDRESS_V1;
@@ -47,37 +47,36 @@ export const fetchBalances = async () => {
             }
 
             return coin ? coin.address : null;
-        }).filter(addr => !!addr);
+        }).filter((addr, pos, arr) => !!addr && arr.indexOf(addr) == pos);  // remove duplicates
         tokenAddresses.push('0x0'); // add ether
 
         await Promise.all(batches.map(async batch => {
             const balances = await getAddressesBalances(batch, tokenAddresses);
             console.log(balances);
 
-            return Promise.all(Object.keys(balances).map(address => {
-                const balancesForAddress = balances.address;
-                const account = accounts.find(item => item.beneficiary === address);
-                return Promise.all(Object.keys(balancesForAddress).map(async tokenAddr => {
+            return Promise.all(batch.map(address => {
+                const balancesForAddress = balances[address];
+                const account = accounts.find(item => item.beneficiary.toLowerCase() == address.toLowerCase());
+                return Promise.all(tokenAddresses.map(async tokenAddr => {
                     let coin;
                     let version = null;
 
                     if (tokenAddr === '0x0') {
                         coin = coins[coinEthIdx];
-                    } else if (tokenAddr === COINVEST_TOKEN_ADDRESS_V1) {
+                    } else if (tokenAddr.toLowerCase() == COINVEST_TOKEN_ADDRESS_V1.toLowerCase()) {
                         coin = coins.find(coin => coin.symbol === 'COIN');
                         version = 'v1';
-                    } else if (tokenAddr === COINVEST_TOKEN_ADDRESS_V2) {
+                    } else if (tokenAddr.toLowerCase() == COINVEST_TOKEN_ADDRESS_V2.toLowerCase()) {
                         coin = coins.find(coin => coin.symbol === 'COIN');
                         version = 'v2';
-                    } else if (tokenAddr === COINVEST_TOKEN_ADDRESS_V3) {
+                    } else if (tokenAddr.toLowerCase() == COINVEST_TOKEN_ADDRESS_V3.toLowerCase()) {
                         coin = coins.find(coin => coin.symbol === 'COIN');
                         version = 'v3';
                     } else {
                         coin = coins.find(coin => coin.address === tokenAddr);
                     }
 
-                    const coinIndex = (tokenAddr === '0x0') ? coinEthIdx : coins.findIndex(coin => coin.address === tokenAddr);
-                    if (coin && balances[tokenAddr]) {
+                    if (coin && balancesForAddress[tokenAddr]) {
                         let wallet = null;
                         if (version) {
                             wallet = await Wallets.findOne({accountId: account._id, coinId: coin._id, version});
@@ -89,12 +88,12 @@ export const fetchBalances = async () => {
                         if (!wallet && tokenAddr === '0x0') {
                             wallet = new Wallets({
                                 accountId: account._id,
-                                coinId: coins[coinIndex]._id
+                                coinId: coin._id
                             });
                         }
 
                         if (wallet) {
-                            wallet.amount = balances[tokenAddr];
+                            wallet.quantity = balancesForAddress[tokenAddr];
                             wallet.latest = new Date().toUTCString();
                             return wallet.save();
                         }
