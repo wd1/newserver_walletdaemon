@@ -15,6 +15,9 @@ import { hexToDec } from '../services/hex2dec';
 import { web3 } from '../services/web3Socket';
 
 export const handleNewOraclizeEvents = async events => {
+    // log
+    console.log(`\n[NewOraclizeEventSubscriber] NewOraclizeQuery Event Detected.`);
+
     events.forEach(async event => {
         const params = event.data.substring(2).match(/.{1,64}/g);
         if (params.length > 3) {
@@ -36,6 +39,9 @@ export const handleNewOraclizeEvents = async events => {
 
 
 export const handleTradeEvents = async events => {
+    // log
+    console.log(`\n[TradeEventSubscriber] New Trade Events Detected.`);
+
     events.forEach(async event => {
         const queryId = event.topics[1];
         const coins = await Coins.find({}, null, { lean: true }).exec();

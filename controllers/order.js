@@ -499,6 +499,9 @@ const sellIndex = (account, order, pending, coins, coIndex) => new Promise((reso
 });
 
 export const runPendingOrdersTask = async () => {
+    console.log(`\n------------- Processing Pending Orders ------------`);
+
+
     const coins = await Coins.find({}, 'symbol price', {lean: true});
     const coinIdx = coins.findIndex(coin => coin.symbol === 'COIN');
     const accounts = await Accounts.find({}, 'beneficiary', {lean: true});

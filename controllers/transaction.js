@@ -27,7 +27,7 @@ const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
  * @returns {Promise<void>}
  */
 export const syncTransactionTask = async () => {
-    console.log(`------------- Synchronizing Transactions from Etherscan ----------`);
+    console.log(`\n------------- Synchronizing Transactions from Etherscan ----------`);
 
     try {
         const requestOptions = {
@@ -171,7 +171,7 @@ export const handleIncomingChainData = async () => {
             try {
                 // handle smart contract transactions
                 if (txReceipt.logs.length > 0) {
-                    // filter out only "Transfer" event logs
+                    // filter out event logs into different types by topics[0]
                     const transferEvents = txReceipt.logs.filter(log => log.topics.length > 0 && log.topics[0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef');
                     const tradeEvents = txReceipt.logs.filter(log => log.topics.length > 0 &&
                         (log.topics[0] == '0xc3c453ebab7c6d8207cc1e5359910b016ee5fa74282e0d385824e6595ae13aab' ||

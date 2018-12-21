@@ -6,7 +6,7 @@ import { getAddressBalances, getAddressesBalances } from '../services/balanceChe
 import { COINVEST_TOKEN_ADDRESS_V1, COINVEST_TOKEN_ADDRESS_V2, COINVEST_TOKEN_ADDRESS_V3, COINVEST_TOKEN_ADDRESS } from '../services/Config';
 
 export const fetchBalances = async () => {
-    console.log(`------------- Synchronizing Eth/Token Balances ------------`);
+    console.log(`\n------------- Synchronizing Eth/Token Balances ------------`);
 
     try {
         const batchSize = 30;
@@ -49,6 +49,9 @@ export const fetchBalances = async () => {
             return coin ? coin.address : null;
         }).filter((addr, pos, arr) => !!addr && arr.indexOf(addr) == pos);  // remove duplicates
         tokenAddresses.push('0x0'); // add ether
+
+        // log
+        console.log(`\n[BalanceDaemon] Fetching Balances for ${accounts.length} accounts and ${tokenAddresses.length} Tokens`);
 
         await Promise.all(batches.map(async batch => {
             const balances = await getAddressesBalances(batch, tokenAddresses);

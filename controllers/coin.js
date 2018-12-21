@@ -4,7 +4,7 @@ import Coins from '../models/Coins';
 import { cryptoIdToSymbol, CMC_API_URL, CMC_API_SECRET, CC_API_URL, CC_API_KEY } from '../services/Config';
 
 export const fetchCoinPrices = async () => {
-    console.log(`------------- Fetching Token Prices from CoinMarketCap ------------`);
+    console.log(`\n------------- Fetching Token Prices from CoinMarketCap ------------`);
 
     const requestOptions = {
         method: 'GET',
@@ -70,7 +70,7 @@ export const fetchCoinPrices = async () => {
 };
 
 export const fetchPricesFromCryptoCompare = async () => {
-    console.log(`------------- Fetching Supported Asset Prices from CryptoCompare ------------`);
+    console.log(`\n------------- Fetching Supported Asset Prices from CryptoCompare ------------`);
 
     const symbols = cryptoIdToSymbol.map(crypto => crypto.symbol);
     const requestOptions = {
