@@ -4,6 +4,7 @@ import Wallets from '../models/Wallets';
 import Coins from '../models/Coins';
 import TokenTransactions from '../models/TokenTransactions';
 import { web3, startSyncingBlocks } from '../services/web3Socket';
+import { hexToDec } from '../services/hex2dec';
 import { handleNewOraclizeEvents, handleTradeEvents } from './trade';
 import {
     CMC_API_SECRET, COINVEST_TOKEN_ADDRESS,
@@ -208,10 +209,12 @@ export const handleIncomingChainData = async () => {
                             const fromAccount = accounts.find(account => account.beneficiary.toLowerCase() === fromAddr.toLowerCase());
                             const toAccount = accounts.find(account => account.beneficiary.toLowerCase() === toAddr.toLowerCase());
 
-
                             // check if 'from' address is same as current account
                             if (!!fromAccount) {
-                                const value = web3.utils.hexToNumber(log.data);
+                                const value = hexToDec(log.data);
+                                console.log(`[TransactionSubscriber] New Transfer Event`);
+                                console.log(`From: ${fromAddr}`);
+                                console.log(`Amount: ${value}`);
 
                                 let tokenTx = await TokenTransactions.findOne({
                                     accountId: fromAccount._id,
@@ -239,7 +242,10 @@ export const handleIncomingChainData = async () => {
 
                             // check if 'to' address is same as current account
                             if (!!toAccount) {
-                                const value = web3.utils.hexToNumber(log.data);
+                                const value = hexToDec(log.data);
+                                console.log(`[TransactionSubscriber] New Transfer Event`);
+                                console.log(`To: ${fromAddr}`);
+                                console.log(`Amount: ${value}`);
 
                                 let tokenTx = await TokenTransactions.findOne({
                                     accountId: toAccount._id,
@@ -273,6 +279,10 @@ export const handleIncomingChainData = async () => {
 
                     // receiving transaction
                     if (!!toAccount) {
+                        console.log(`[TransactionSubscriber] New Ether Transaction Found`);
+                        console.log(`To: ${tx.to}`);
+                        console.log(`Amount: ${tx.value}`);
+
                         let transaction = await TokenTransactions.findOne({
                             accountId: toAccount._id,
                             coinId: ethCoin._id,
@@ -300,6 +310,10 @@ export const handleIncomingChainData = async () => {
 
                     // sending transaction : we need to save same transaction for both account in case 'from' and 'to' both matched
                     if (!!fromAccount) {
+                        console.log(`[TransactionSubscriber] New Ether Transaction Found`);
+                        console.log(`From: ${tx.from}`);
+                        console.log(`Amount: ${tx.value}`);
+
                         let transaction = await TokenTransactions.findOne({
                             accountId: fromAccount._id,
                             coinId: ethCoin._id,
