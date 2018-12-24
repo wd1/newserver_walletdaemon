@@ -5,20 +5,25 @@ import { GETH_SOCKET_URL } from './Config';
 const web3 = new Web3(Web3.givenProvider || GETH_SOCKET_URL);
 
 const processBlock = async (blockHashOrId, opts) => {
-    const block = await web3.eth.getBlock(blockHashOrId, true);
+    try {
+        const block = await web3.eth.getBlock(blockHashOrId, true);
 
-    if (block) {
-        opts.onTransactions ? opts.onTransactions(block, block.transactions) : null;
-        opts.onBlock ? opts.onBlock(blockHashOrId) : null;
-    } else {
-        console.log(`Cannot fetch block: ${blockHashOrId}`);
+        if (block) {
+            opts.onTransactions ? opts.onTransactions(block, block.transactions) : null;
+            opts.onBlock ? opts.onBlock(blockHashOrId) : null;
+        } else {
+            console.log(`Cannot fetch block: ${blockHashOrId}`);
+        }
+
+        return block;
+    } catch (error) {
+        console.log(`Error fetching blocks from Geth: ${error}`);
+        return null;
     }
-
-    return block;
 };
 
 const syncToBlock = async (index, latest, opts) => {
-    if (index > latest) {
+    if (index >= latest) {
         return index;
     }
 
@@ -31,6 +36,7 @@ const syncBlocks = async (currentBlockNumber, opts) => {
     const latestBlockNumber = await web3.eth.getBlockNumber();
     const syncedBlockNumber = await syncToBlock(currentBlockNumber, latestBlockNumber, opts);
 
+    // this subscribes new incoming blocks after old blocks are synced
     web3.eth.subscribe('newBlockHeaders', (error, result) => error && console.log(error))
         .on('data', async blockHeader => {
             return await processBlock(blockHeader.number, opts);
@@ -40,12 +46,12 @@ const syncBlocks = async (currentBlockNumber, opts) => {
 };
 
 const updateBlockHead = async head => {
-    return await redisClient.setAsync('eth:last-block', head);
+    return await redisClient.setAsync('eth:last-block', head.toString());
 };
 
 const startSyncingBlocks = async handleTransactions => {
     let lastBlockNumber = await redisClient.getAsync('eth:last-block');
-    lastBlockNumber = lastBlockNumber || 0;
+    lastBlockNumber = parseInt(lastBlockNumber || 0, 10);
     syncBlocks(lastBlockNumber, {
         onBlock: (blockNumber) => {
             console.log(`BlockNumber: ${blockNumber}`);
