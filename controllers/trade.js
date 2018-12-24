@@ -18,11 +18,16 @@ export const handleNewOraclizeEvents = async events => {
     // log
     console.log(`\n[NewOraclizeEventSubscriber] NewOraclizeQuery Event Detected.`);
 
+    console.log(events);
     events.forEach(async event => {
-        const params = event.data.substring(2).match(/.{1,64}/g);
-        if (params.length > 3) {
-            const hash = `0x${params[1]}`;
-            const queryId = `0x${params[2]}`;
+        const decodedParams = web3.eth.abi.decodeParameters(['string', 'bytes32', 'bytes32'], event.data);
+        if (Object.keys(decodedParams).length > 2) {
+            const hash = decodedParams[1];
+            const queryId = decodedParams[2];
+
+            console.log(decodedParams);
+            console.log(`hash: ${hash}`);
+            console.log(`queryid: ${queryId}`);
 
             try {
                 const order = await Orders.findOne({ status: 'Open', inputHash: hash, queryId: undefined }).exec();
@@ -44,37 +49,32 @@ export const handleTradeEvents = async events => {
 
     events.forEach(async event => {
         const queryId = event.topics[1];
+        if (!queryId) return;
+        console.log(event);
+        console.log(`queryId: ${queryId}`);
+
         const coins = await Coins.find({}, null, { lean: true }).exec();
-        const order = await Orders.findOne({ status: 'Open', queryId }).exec();
+        const order = await Orders.findOne({ status: 'Open', queryId: queryId.toString() }).exec();
         const assets = await Assets.find({}).exec();
         const indexes = await Indexes.find({}).exec();
+
+        console.log(`matched order`);
+        console.log(order);
 
         try {
             let tradeType = 'asset';
             const tradeAddress = `0x${event.topics[2].substring(26)}`;
-            const params = event.data.substring(2).match(/.{1,64}/g);
-            const cryptoIds = [];
-            const quantities = [];
-            const prices = [];
+            const decodedParams = web3.eth.abi.decodeParameters(['uint256[]', 'uint256[]', 'uint256[]', 'bool'], event.data);
+            console.log(`*** decoded params ****`);
+            console.log(decodedParams);
 
-            if (order && params.length > 3) {
-                const cryptoCount = parseInt(hexToDec(params[3]), 10);
-                if (cryptoCount > 1) {
+            if (order && Object.keys(decodedParams).length > 3) {
+                console.log(`[TradeEventSubscriber] Found order, QueryId: ${queryId}`);
+
+                const cryptoIds = decodedParams[0].map(id => parseInt(id, 10));
+
+                if (cryptoIds.length > 1) {
                     tradeType = 'index';
-                }
-
-                for (let i = 4; i < 4 + cryptoCount; i++) {
-                    cryptoIds.push(parseInt(hexToDec(params[i]), 10));
-                }
-
-                const quantityCount = parseInt(hexToDec(params[4 + cryptoCount]), 10);
-                for (let i = 5 + cryptoCount; i < 5 + cryptoCount + quantityCount; i++) {
-                    quantities.push(web3.utils.fromWei(hexToDec(params[i])));
-                }
-
-                const priceCount = parseInt(hexToDec(params[5 + cryptoCount + quantityCount]), 10);
-                for (let i = 6 + cryptoCount + quantityCount; i < 6 + cryptoCount + quantityCount + priceCount; i++) {
-                    prices.push(web3.utils.fromWei(hexToDec(params[i])));
                 }
 
                 if (tradeType === 'asset') {
@@ -132,10 +132,10 @@ export const handleTradeEvents = async events => {
                         return transaction.save();
                     }
                 } else if (tradeType === 'index') {
-                    const matchedIndex = indexes.find(idx =>
-                        idx._id == order.indexId &&
-                        idx.accountId == order.account &&
-                        idx.confirmed === (order.action !== 'Buy'));
+                    const matchedIndex = indexes.find(idx => idx._id == order.indexId);
+
+                    console.log(`matchedIndex`);
+                    console.log(matchedIndex);
 
                     order.txId = event.transactionHash;
                     order.status = 'Filled';
@@ -171,7 +171,7 @@ export const handleTradeEvents = async events => {
                 }
             }
         } catch (error) {
-            console.log(`[TradeDaemon] Error handling Trade events: ${error}`);
+            console.log(`[TradeEventSubscriber] Error handling Trade events: ${error}`);
         }
     });
 };

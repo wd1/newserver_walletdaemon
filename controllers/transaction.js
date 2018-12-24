@@ -150,7 +150,8 @@ export const syncTransactionTask = async () => {
         console.log(`[TransactionTask] Error fetching etherscan`);
     }
 
-    setTimeout(syncTransactionTask, 10000);
+    // new blocks are mined avg 15 sec in Ethereum
+    setTimeout(syncTransactionTask, 20000);
 };
 
 /**
@@ -244,7 +245,7 @@ export const handleIncomingChainData = async () => {
                             if (!!toAccount) {
                                 const value = hexToDec(log.data);
                                 console.log(`[TransactionSubscriber] New Transfer Event`);
-                                console.log(`To: ${fromAddr}`);
+                                console.log(`To: ${toAddr}`);
                                 console.log(`Amount: ${value}`);
 
                                 let tokenTx = await TokenTransactions.findOne({

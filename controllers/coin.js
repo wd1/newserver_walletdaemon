@@ -66,7 +66,7 @@ export const fetchCoinPrices = async () => {
         console.log(`[CoinDaemon] Error updating coin quotes: ${e}`);
     }
 
-    setTimeout(fetchCoinPrices, 10000);
+    setTimeout(fetchCoinPrices, 3600000);
 };
 
 export const fetchPricesFromCryptoCompare = async () => {
@@ -104,5 +104,5 @@ export const fetchPricesFromCryptoCompare = async () => {
         console.log(`[CoinDaemon] Error fetching coin prices from CryptoCompare: ${e}`);
     }
 
-    setTimeout(fetchPricesFromCryptoCompare, 5000);
+    setTimeout(fetchPricesFromCryptoCompare, 60000);
 };
