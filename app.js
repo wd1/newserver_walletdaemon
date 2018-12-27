@@ -69,6 +69,6 @@ fetchPricesFromCryptoCompare();
 syncTransactionTask();
 fetchBalances();
 handleIncomingChainData();
-runPendingOrdersTask();
+// runPendingOrdersTask();
 
 module.exports = app;

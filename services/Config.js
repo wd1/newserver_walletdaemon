@@ -1534,16 +1534,17 @@ exports.UserDataAbi = [
 ];
 
 exports.cryptoIdToSymbol = [
-    { symbol: 'COIN', smallestUnitName: 'wei', limit: 18 },
-    { symbol: 'BTC', smallestUnitName: 'gwei', limit: 18 },
-    { symbol: 'ETH', smallestUnitName: 'wei', limit: 18 },
-    { symbol: 'XRP', smallestUnitName: 'szabo', limit: 18 },
-    { symbol: 'LTC', smallestUnitName: 'gwei', limit: 18 },
-    { symbol: 'DASH', smallestUnitName: 'gwei', limit: 18 },
-    { symbol: 'BCH', smallestUnitName: 'mwei', limit: 18 },
-    { symbol: 'XMR', smallestUnitName: 'mwei', limit: 18 },
-    { symbol: 'XEM', smallestUnitName: 'szabo', limit: 18 },
-    { symbol: 'EOS', smallestUnitName: 'wei', limit: 18 },
+    {id: 0, symbol: 'COIN', smallestUnitName: 'wei', limit: 18},
+    {id: 2, symbol: 'CASH', smallestUnitName: 'wei', limit: 18},
+    {id: 4, symbol: 'BTC', smallestUnitName: 'gwei', limit: 18},
+    {id: 6, symbol: 'ETH', smallestUnitName: 'wei', limit: 18},
+    {id: 8, symbol: 'XRP', smallestUnitName: 'szabo', limit: 18},
+    {id: 10, symbol: 'LTC', smallestUnitName: 'gwei', limit: 18},
+    {id: 12, symbol: 'DASH', smallestUnitName: 'gwei', limit: 18},
+    {id: 14, symbol: 'BCH', smallestUnitName: 'mwei', limit: 18},
+    {id: 16, symbol: 'XMR', smallestUnitName: 'mwei', limit: 18},
+    {id: 18, symbol: 'XEM', smallestUnitName: 'szabo', limit: 18},
+    {id: 20, symbol: 'EOS', smallestUnitName: 'wei', limit: 18},
     // { symbol: 'IBTC', smallestUnitName: 'gwei', limit: 8 }
 ];
 

@@ -72,7 +72,7 @@ export const fetchCoinPrices = async () => {
 export const fetchPricesFromCryptoCompare = async () => {
     console.log(`\n------------- Fetching Supported Asset Prices from CryptoCompare ------------`);
 
-    const symbols = cryptoIdToSymbol.map(crypto => crypto.symbol);
+    const symbols = cryptoIdToSymbol.map(crypto => crypto.symbol).filter(crypto => crypto.symbol !== 'CASH');
     const requestOptions = {
         method: 'GET',
         uri: `${CC_API_URL}/data/pricemulti`,

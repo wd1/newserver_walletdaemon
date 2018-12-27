@@ -78,7 +78,8 @@ export const handleTradeEvents = async events => {
                 }
 
                 if (tradeType === 'asset') {
-                    const coin = coins.find(coin => coin.symbol === cryptoIdToSymbol[cryptoIds[0]].symbol);
+                    const crypto = cryptoIdToSymbol.find(item => item.id === cryptoIds[0]);
+                    const coin = coins.find(coin => coin.symbol === crypto.symbol);
                     if (coin) {
                         order.txId = event.transactionHash;
                         order.status = 'Filled';
