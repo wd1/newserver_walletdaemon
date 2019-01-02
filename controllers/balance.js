@@ -2,8 +2,8 @@ import _ from 'lodash';
 import Accounts from '../models/Accounts';
 import Wallets from '../models/Wallets';
 import Coins from '../models/Coins';
-import { getAddressBalances, getAddressesBalances } from '../services/balanceChecker';
-import { COINVEST_TOKEN_ADDRESS_V1, COINVEST_TOKEN_ADDRESS_V2, COINVEST_TOKEN_ADDRESS_V3, COINVEST_TOKEN_ADDRESS } from '../services/Config';
+import { getAddressBalances, getAddressesBalances } from '../utils/balanceChecker';
+import { COINVEST_TOKEN_ADDRESS_V1, COINVEST_TOKEN_ADDRESS_V2, COINVEST_TOKEN_ADDRESS_V3, COINVEST_TOKEN_ADDRESS } from '../utils/Config';
 
 export const fetchBalances = async () => {
     console.log(`\n------------- Synchronizing Eth/Token Balances ------------`);

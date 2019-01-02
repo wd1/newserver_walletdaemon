@@ -1,7 +1,7 @@
 module.exports = {
     apps: [{
-        name: 'cwt-daemon-all',
-        script: './app.js',
+        name: 'cwt-coin-daemon',
+        script: './services/cryptoPrice.js',
         watch: true,
         exec_interpreter: 'babel-node',
         env: {

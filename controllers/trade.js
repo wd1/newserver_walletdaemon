@@ -10,9 +10,9 @@ import Transactions from '../models/Transactions';
 import Pending from '../models/Pending';
 import Blocks from '../models/Blocks';
 
-import { cryptoIdToSymbol } from '../services/Config';
-import { hexToDec } from '../services/hex2dec';
-import { web3 } from '../services/web3Socket';
+import { cryptoIdToSymbol } from '../utils/Config';
+import { hexToDec } from '../utils/hex2dec';
+import { web3 } from '../utils/web3Socket';
 
 export const handleNewOraclizeEvents = async events => {
     // log

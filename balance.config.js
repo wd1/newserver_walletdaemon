@@ -1,7 +1,7 @@
 module.exports = {
     apps: [{
-        name: 'cwt-daemon-all',
-        script: './app.js',
+        name: 'cwt-balance-daemon',
+        script: './services/ethTokenBalance.js',
         watch: true,
         exec_interpreter: 'babel-node',
         env: {

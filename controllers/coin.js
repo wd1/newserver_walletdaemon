@@ -1,7 +1,7 @@
 import rp from 'request-promise';
 import redisClient from '../redis';
 import Coins from '../models/Coins';
-import { cryptoIdToSymbol, CMC_API_URL, CMC_API_SECRET, CC_API_URL, CC_API_KEY } from '../services/Config';
+import { cryptoIdToSymbol, CMC_API_URL, CMC_API_SECRET, CC_API_URL, CC_API_KEY } from '../utils/Config';
 
 export const fetchCoinPrices = async () => {
     console.log(`\n------------- Fetching Token Prices from CoinMarketCap ------------`);

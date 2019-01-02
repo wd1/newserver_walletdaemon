@@ -10,10 +10,10 @@ import Transactions from '../models/Transactions';
 import Pending from '../models/Pending';
 import Blocks from '../models/Blocks';
 
-import { cryptoIdToSymbol, VERIFY_URI } from '../services/Config';
-import { hexToDec } from '../services/hex2dec';
-import Web3Service from '../services/Web3Service';
-import TruffleService from '../services/TruffleService';
+import { cryptoIdToSymbol, VERIFY_URI } from '../utils/Config';
+import { hexToDec } from '../utils/hex2dec';
+import Web3Service from '../utils/Web3Service';
+import TruffleService from '../utils/TruffleService';
 
 const purchaseAsset = (account, order, pending, coins, coIndex, wallet) => new Promise((resolve, reject) => {
     const coinIndex = coins.findIndex(coin => coin._id == order.coinId);

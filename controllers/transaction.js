@@ -3,15 +3,15 @@ import Accounts from '../models/Accounts';
 import Wallets from '../models/Wallets';
 import Coins from '../models/Coins';
 import TokenTransactions from '../models/TokenTransactions';
-import { web3, startSyncingBlocks } from '../services/web3Socket';
-import { hexToDec } from '../services/hex2dec';
+import { web3, startSyncingBlocks } from '../utils/web3Socket';
+import { hexToDec } from '../utils/hex2dec';
 import { handleNewOraclizeEvents, handleTradeEvents } from './trade';
 import {
     CMC_API_SECRET, COINVEST_TOKEN_ADDRESS,
     COINVEST_TOKEN_ADDRESS_V1,
     COINVEST_TOKEN_ADDRESS_V2,
     COINVEST_TOKEN_ADDRESS_V3, tokenList
-} from '../services/Config';
+} from '../utils/Config';
 
 const {
     ETHSCAN_URI,
