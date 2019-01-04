@@ -74,7 +74,7 @@ FaucetContract.setProvider(web3.currentProvider);
 FaucetContract.defaults({
     from: DEMO_MASTER_ADDRESS,
     gas: 1000000,
-    gasPrice: 40000000000
+    gasPrice: 10000000000
 });
 if (typeof FaucetContract.currentProvider.sendAsync !== 'function') {
     FaucetContract.currentProvider.sendAsync = function () {
