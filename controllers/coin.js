@@ -1,4 +1,3 @@
-const request = require('request');
 const rp = require('request-promise');
 
 const Coins = require('../models/Coins');

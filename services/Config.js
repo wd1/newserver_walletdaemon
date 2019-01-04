@@ -19,6 +19,52 @@ exports.GETH_SOCKET_URL = process.env.GETH_SOCKET;
 
 exports.Abi = [
     {
+        "constant": true,
+        "inputs": [],
+        "name": "CASH_ID",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "coinvest",
+        "outputs": [
+            {
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "_user",
+                "type": "address"
+            },
+            {
+                "name": "_status",
+                "type": "bool"
+            }
+        ],
+        "name": "alterAdmin",
+        "outputs": [],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
         "constant": false,
         "inputs": [
             {
@@ -59,142 +105,186 @@ exports.Abi = [
         "type": "function"
     },
     {
-        "constant": false,
+        "constant": true,
         "inputs": [
             {
-                "name": "_beneficiary",
+                "name": "",
                 "type": "address"
-            },
-            {
-                "name": "_cryptoIds",
-                "type": "uint256[]"
-            },
-            {
-                "name": "_amounts",
-                "type": "uint256[]"
             }
         ],
-        "name": "buy",
+        "name": "admins",
         "outputs": [
             {
-                "name": "success",
+                "name": "",
                 "type": "bool"
             }
         ],
         "payable": false,
-        "stateMutability": "nonpayable",
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "name": "cryptoSymbols",
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "customGasPrice",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "CASH_INV",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "coinToken",
+        "outputs": [
+            {
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "paused",
+        "outputs": [
+            {
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
         "type": "function"
     },
     {
         "constant": false,
         "inputs": [
             {
-                "name": "_newAdmin",
+                "name": "_tokenContract",
                 "type": "address"
             },
             {
-                "name": "_approved",
-                "type": "bool"
+                "name": "_amount",
+                "type": "uint256"
             }
         ],
-        "name": "changeAdmin",
+        "name": "tokenEscape",
         "outputs": [],
         "payable": false,
         "stateMutability": "nonpayable",
         "type": "function"
     },
     {
+        "constant": true,
+        "inputs": [],
+        "name": "bank",
+        "outputs": [
+            {
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
         "constant": false,
         "inputs": [
             {
-                "name": "_newGasLimit",
-                "type": "uint256"
+                "name": "_coinToken",
+                "type": "address"
+            },
+            {
+                "name": "_cashToken",
+                "type": "address"
+            },
+            {
+                "name": "_bank",
+                "type": "address"
+            },
+            {
+                "name": "_userData",
+                "type": "address"
+            },
+            {
+                "name": "_coinUrl",
+                "type": "string"
+            },
+            {
+                "name": "_cashUrl",
+                "type": "string"
             },
             {
                 "name": "_newGasPrice",
                 "type": "uint256"
-            }
-        ],
-        "name": "changeGas",
-        "outputs": [
+            },
             {
-                "name": "success",
+                "name": "_paused",
                 "type": "bool"
             }
         ],
+        "name": "changeContracts",
+        "outputs": [],
         "payable": false,
         "stateMutability": "nonpayable",
         "type": "function"
     },
     {
-        "constant": false,
-        "inputs": [
-            {
-                "name": "_beneficiary",
-                "type": "address"
-            },
-            {
-                "name": "_cryptos",
-                "type": "uint256[]"
-            },
-            {
-                "name": "_amounts",
-                "type": "uint256[]"
-            },
-            {
-                "name": "_buy",
-                "type": "bool"
-            }
-        ],
-        "name": "getPrices",
+        "constant": true,
+        "inputs": [],
+        "name": "owner",
         "outputs": [
             {
-                "name": "success",
-                "type": "bool"
+                "name": "",
+                "type": "address"
             }
         ],
         "payable": false,
-        "stateMutability": "nonpayable",
+        "stateMutability": "view",
         "type": "function"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "name": "description",
-                "type": "string"
-            }
-        ],
-        "name": "newOraclizeQuery",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "name": "buyer",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "name": "cryptoIds",
-                "type": "uint256[]"
-            },
-            {
-                "indexed": false,
-                "name": "amounts",
-                "type": "uint256[]"
-            },
-            {
-                "indexed": false,
-                "name": "prices",
-                "type": "uint256[17]"
-            }
-        ],
-        "name": "Buy",
-        "type": "event"
     },
     {
         "constant": false,
@@ -223,6 +313,130 @@ exports.Abi = [
         "type": "function"
     },
     {
+        "constant": true,
+        "inputs": [],
+        "name": "COIN_INV",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "_users",
+                "type": "address[]"
+            },
+            {
+                "name": "_trades",
+                "type": "uint256[]"
+            }
+        ],
+        "name": "addTrades",
+        "outputs": [],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [
+            {
+                "name": "_cryptos",
+                "type": "uint256[]"
+            },
+            {
+                "name": "_result",
+                "type": "string"
+            },
+            {
+                "name": "_isCoin",
+                "type": "bool"
+            }
+        ],
+        "name": "decodePrices",
+        "outputs": [
+            {
+                "name": "prices",
+                "type": "uint256[]"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "COIN_ID",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "cashToken",
+        "outputs": [
+            {
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [
+            {
+                "name": "_cryptos",
+                "type": "uint256[]"
+            },
+            {
+                "name": "_isCoin",
+                "type": "bool"
+            }
+        ],
+        "name": "craftUrl",
+        "outputs": [
+            {
+                "name": "url",
+                "type": "string"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "userData",
+        "outputs": [
+            {
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
         "constant": false,
         "inputs": [
             {
@@ -236,18 +450,217 @@ exports.Abi = [
             {
                 "name": "_amounts",
                 "type": "uint256[]"
-            }
-        ],
-        "name": "sell",
-        "outputs": [
+            },
             {
-                "name": "success",
+                "name": "_isCoin",
                 "type": "bool"
             }
         ],
+        "name": "buy",
+        "outputs": [],
+        "payable": true,
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "coinUrl",
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [
+            {
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "name": "freeTrades",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "_index",
+                "type": "uint256"
+            },
+            {
+                "name": "_symbol",
+                "type": "string"
+            },
+            {
+                "name": "_inverse",
+                "type": "bool"
+            }
+        ],
+        "name": "addCrypto",
+        "outputs": [],
         "payable": false,
         "stateMutability": "nonpayable",
         "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "cashUrl",
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "_newCoinvest",
+                "type": "address"
+            }
+        ],
+        "name": "transferCoinvest",
+        "outputs": [],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "_beneficiary",
+                "type": "address"
+            },
+            {
+                "name": "_cryptoIds",
+                "type": "uint256[]"
+            },
+            {
+                "name": "_amounts",
+                "type": "uint256[]"
+            },
+            {
+                "name": "_isCoin",
+                "type": "bool"
+            }
+        ],
+        "name": "sell",
+        "outputs": [],
+        "payable": true,
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "newOwner",
+                "type": "address"
+            }
+        ],
+        "name": "transferOwnership",
+        "outputs": [],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "_coinToken",
+                "type": "address"
+            },
+            {
+                "name": "_cashToken",
+                "type": "address"
+            },
+            {
+                "name": "_bank",
+                "type": "address"
+            },
+            {
+                "name": "_userData",
+                "type": "address"
+            }
+        ],
+        "payable": true,
+        "stateMutability": "payable",
+        "type": "constructor"
+    },
+    {
+        "payable": true,
+        "stateMutability": "payable",
+        "type": "fallback"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "name": "description",
+                "type": "string"
+            },
+            {
+                "indexed": false,
+                "name": "txHash",
+                "type": "bytes32"
+            },
+            {
+                "indexed": false,
+                "name": "queryId",
+                "type": "bytes32"
+            }
+        ],
+        "name": "newOraclizeQuery",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "name": "buyer",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "name": "cryptoIds",
+                "type": "uint256[]"
+            },
+            {
+                "indexed": false,
+                "name": "amounts",
+                "type": "uint256[]"
+            },
+            {
+                "indexed": false,
+                "name": "prices",
+                "type": "uint256[]"
+            }
+        ],
+        "name": "Buy",
+        "type": "event"
     },
     {
         "anonymous": false,
@@ -270,7 +683,7 @@ exports.Abi = [
             {
                 "indexed": false,
                 "name": "prices",
-                "type": "uint256[17]"
+                "type": "uint256[]"
             }
         ],
         "name": "Sell",
@@ -292,198 +705,6 @@ exports.Abi = [
         ],
         "name": "OwnershipTransferred",
         "type": "event"
-    },
-    {
-        "constant": false,
-        "inputs": [
-            {
-                "name": "newOwner",
-                "type": "address"
-            }
-        ],
-        "name": "transferOwnership",
-        "outputs": [],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "payable": true,
-        "stateMutability": "payable",
-        "type": "fallback"
-    },
-    {
-        "inputs": [
-            {
-                "name": "_token",
-                "type": "address"
-            },
-            {
-                "name": "_bank",
-                "type": "address"
-            },
-            {
-                "name": "_userData",
-                "type": "address"
-            }
-        ],
-        "payable": true,
-        "stateMutability": "payable",
-        "type": "constructor"
-    },
-    {
-        "constant": true,
-        "inputs": [
-            {
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "name": "admins",
-        "outputs": [
-            {
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "constant": true,
-        "inputs": [],
-        "name": "bank",
-        "outputs": [
-            {
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "constant": true,
-        "inputs": [
-            {
-                "name": "myid",
-                "type": "bytes32"
-            },
-            {
-                "name": "_cryptoValues",
-                "type": "uint256[17]"
-            }
-        ],
-        "name": "calculateValue",
-        "outputs": [
-            {
-                "name": "value",
-                "type": "uint256"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "constant": true,
-        "inputs": [
-            {
-                "name": "_cryptos",
-                "type": "uint256[]"
-            }
-        ],
-        "name": "craftUrl",
-        "outputs": [
-            {
-                "name": "",
-                "type": "string"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "constant": true,
-        "inputs": [],
-        "name": "customGasLimit",
-        "outputs": [
-            {
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "constant": true,
-        "inputs": [
-            {
-                "name": "myid",
-                "type": "bytes32"
-            },
-            {
-                "name": "_result",
-                "type": "string"
-            }
-        ],
-        "name": "decodePrices",
-        "outputs": [
-            {
-                "name": "prices",
-                "type": "uint256[17]"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "constant": true,
-        "inputs": [],
-        "name": "owner",
-        "outputs": [
-            {
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "constant": true,
-        "inputs": [],
-        "name": "token",
-        "outputs": [
-            {
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "constant": true,
-        "inputs": [],
-        "name": "userData",
-        "outputs": [
-            {
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
     }
 ];
 

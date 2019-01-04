@@ -110,11 +110,15 @@ const purchaseAsset = async (account, order, pending, coins, coIndex, wallet) =>
                 {
                     name: '_amounts',
                     type: 'uint256[]'
+                },
+                {
+                    name: '_isCoin',
+                    type: 'bool'
                 }
             ],
             name: 'buy',
             type: 'function'
-        }, [account.beneficiary, [cryptoId], [quantityInWei]]);
+        }, [account.beneficiary, [cryptoId], [quantityInWei]], false);
 
         TruffleService.getPreSignedHash(approveAndCallSig, sendAmountInWei, extraData, 40000000000, nonce)
             .then(txHash => {
@@ -270,11 +274,15 @@ const purchaseIndex = async (account, order, pending, coins, coIndex, wallet) =>
                 {
                     name: '_amounts',
                     type: 'uint256[]'
+                },
+                {
+                    name: '_isCoin',
+                    type: 'bool'
                 }
             ],
             name: 'buy',
             type: 'function'
-        }, [account.beneficiary, cryptoIds, quantitiesInWei]);
+        }, [account.beneficiary, cryptoIds, quantitiesInWei], false);
 
         TruffleService.getPreSignedHash(approveAndCallSig, sendAmountInWei, extraData, 40000000000, nonce)
             .then(txHash => {
@@ -398,11 +406,15 @@ const sellAsset = (account, order, pending, coins, coIndex) => {
                 {
                     name: '_amounts',
                     type: 'uint256[]'
+                },
+                {
+                    name: '_isCoin',
+                    type: 'bool'
                 }
             ],
             name: 'sell',
             type: 'function'
-        }, [account.beneficiary, [cryptoId], [quantityInWei]]);
+        }, [account.beneficiary, [cryptoId], [quantityInWei]], false);
 
         TruffleService.getPreSignedHash(approveAndCallSig, amountInWei, extraData, 40000000000, nonce)
             .then(txHash => {
@@ -503,11 +515,15 @@ const sellIndex = (account, order, pending, coins, coIndex) => {
                 {
                     name: '_amounts',
                     type: 'uint256[]'
+                },
+                {
+                    name: '_isCoin',
+                    type: 'bool'
                 }
             ],
             name: 'sell',
             type: 'function'
-        }, [account.beneficiary, cryptoIds, quantitiesInWei]);
+        }, [account.beneficiary, cryptoIds, quantitiesInWei], false);
 
         TruffleService.getPreSignedHash(approveAndCallSig, amountInWei, extraData, 40000000000, nonce)
             .then(txHash => {
