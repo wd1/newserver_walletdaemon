@@ -120,14 +120,14 @@ const purchaseAsset = async (account, order, pending, coins, coIndex, wallet) =>
             ],
             name: 'buy',
             type: 'function'
-        }, [account.beneficiary, [crypto.id], [quantityInWei]], false);
+        }, [account.beneficiary, [crypto.id], [quantityInWei]], true);
 
-        TruffleService.getPreSignedHash(approveAndCallSig, sendAmountInWei, extraData, 40000000000, nonce)
+        TruffleService.getPreSignedHash(approveAndCallSig, sendAmountInWei, extraData, 10000000000, nonce)
             .then(txHash => {
                 const signed = Web3Service.sign(txHash, account.beneficiary, pending.input);
                 const tempSign = signed.signature.substr(0, signed.signature.length - 2) + (signed.v === '0x1b' ? '00' : '01');
 
-                TruffleService.approveAndCallPreSigned(tempSign, sendAmountInWei, extraData, 40000000000, nonce)
+                TruffleService.approveAndCallPreSigned(tempSign, sendAmountInWei, extraData, 10000000000, nonce)
                     .then(tx => {
                         if (tx.receipt && tx.receipt.transactionHash) {
                             // Update order
@@ -286,14 +286,14 @@ const purchaseIndex = async (account, order, pending, coins, coIndex, wallet) =>
             ],
             name: 'buy',
             type: 'function'
-        }, [account.beneficiary, cryptoIds, quantitiesInWei], false);
+        }, [account.beneficiary, cryptoIds, quantitiesInWei], true);
 
-        TruffleService.getPreSignedHash(approveAndCallSig, sendAmountInWei, extraData, 40000000000, nonce)
+        TruffleService.getPreSignedHash(approveAndCallSig, sendAmountInWei, extraData, 10000000000, nonce)
             .then(txHash => {
                 const signed = Web3Service.sign(txHash, account.beneficiary, pending.input);
                 const tempSign = signed.signature.substr(0, signed.signature.length - 2) + (signed.v === '0x1b' ? '00' : '01');
 
-                TruffleService.approveAndCallPreSigned(tempSign, sendAmountInWei, extraData, 40000000000, nonce)
+                TruffleService.approveAndCallPreSigned(tempSign, sendAmountInWei, extraData, 10000000000, nonce)
                     .then(tx => {
                         if (tx.receipt && tx.receipt.transactionHash) {
                             // Update order
@@ -420,14 +420,14 @@ const sellAsset = (account, order, pending, coins, coIndex) => {
             ],
             name: 'sell',
             type: 'function'
-        }, [account.beneficiary, [crypto.id], [quantityInWei]], false);
+        }, [account.beneficiary, [crypto.id], [quantityInWei]], true);
 
-        TruffleService.getPreSignedHash(approveAndCallSig, amountInWei, extraData, 40000000000, nonce)
+        TruffleService.getPreSignedHash(approveAndCallSig, amountInWei, extraData, 10000000000, nonce)
             .then(txHash => {
                 const signed = Web3Service.sign(txHash, account.beneficiary, pending.input);
                 const tempSign = signed.signature.substr(0, signed.signature.length - 2) + (signed.v === '0x1b' ? '00' : '01');
 
-                TruffleService.approveAndCallPreSigned(tempSign, amountInWei, extraData, 40000000000, nonce)
+                TruffleService.approveAndCallPreSigned(tempSign, amountInWei, extraData, 10000000000, nonce)
                     .then(tx => {
                         if (tx.receipt && tx.receipt.transactionHash) {
                             // Update order
@@ -531,14 +531,14 @@ const sellIndex = (account, order, pending, coins, coIndex) => {
             ],
             name: 'sell',
             type: 'function'
-        }, [account.beneficiary, cryptoIds, quantitiesInWei], false);
+        }, [account.beneficiary, cryptoIds, quantitiesInWei], true);
 
-        TruffleService.getPreSignedHash(approveAndCallSig, amountInWei, extraData, 40000000000, nonce)
+        TruffleService.getPreSignedHash(approveAndCallSig, amountInWei, extraData, 10000000000, nonce)
             .then(txHash => {
                 const signed = Web3Service.sign(txHash, account.beneficiary, pending.input);
                 const tempSign = signed.signature.substr(0, signed.signature.length - 2) + (signed.v === '0x1b' ? '00' : '01');
 
-                TruffleService.approveAndCallPreSigned(tempSign, amountInWei, extraData, 40000000000, nonce)
+                TruffleService.approveAndCallPreSigned(tempSign, amountInWei, extraData, 10000000000, nonce)
                     .then(tx => {
                         if (tx.receipt && tx.receipt.transactionHash) {
                             // Update order
