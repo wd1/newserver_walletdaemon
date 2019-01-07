@@ -120,7 +120,7 @@ const purchaseAsset = async (account, order, pending, coins, coIndex, wallet) =>
             ],
             name: 'buy',
             type: 'function'
-        }, [account.beneficiary, [crypto.id], [quantityInWei]], true);
+        }, [account.beneficiary, [crypto.id], [quantityInWei], true]);
 
         TruffleService.getPreSignedHash(approveAndCallSig, sendAmountInWei, extraData, 10000000000, nonce)
             .then(txHash => {
@@ -286,7 +286,7 @@ const purchaseIndex = async (account, order, pending, coins, coIndex, wallet) =>
             ],
             name: 'buy',
             type: 'function'
-        }, [account.beneficiary, cryptoIds, quantitiesInWei], true);
+        }, [account.beneficiary, cryptoIds, quantitiesInWei, true]);
 
         TruffleService.getPreSignedHash(approveAndCallSig, sendAmountInWei, extraData, 10000000000, nonce)
             .then(txHash => {
@@ -420,7 +420,7 @@ const sellAsset = (account, order, pending, coins, coIndex) => {
             ],
             name: 'sell',
             type: 'function'
-        }, [account.beneficiary, [crypto.id], [quantityInWei]], true);
+        }, [account.beneficiary, [crypto.id], [quantityInWei], true]);
 
         TruffleService.getPreSignedHash(approveAndCallSig, amountInWei, extraData, 10000000000, nonce)
             .then(txHash => {
@@ -531,7 +531,7 @@ const sellIndex = (account, order, pending, coins, coIndex) => {
             ],
             name: 'sell',
             type: 'function'
-        }, [account.beneficiary, cryptoIds, quantitiesInWei], true);
+        }, [account.beneficiary, cryptoIds, quantitiesInWei, true]);
 
         TruffleService.getPreSignedHash(approveAndCallSig, amountInWei, extraData, 10000000000, nonce)
             .then(txHash => {
