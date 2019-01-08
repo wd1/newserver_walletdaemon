@@ -2,7 +2,20 @@ import Web3 from 'web3';
 import redisClient from '../redis';
 import { GETH_SOCKET_URL } from './Config';
 
-const web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(GETH_SOCKET_URL));
+let provider = new Web3.providers.WebsocketProvider(GETH_SOCKET_URL);
+
+const web3 = new Web3(Web3.givenProvider || provider);
+provider.on('error', e => console.error('[GETH] WS Error: ', e));
+provider.on('end', e => {
+    console.error('[GETH] WS Disconnected', e);
+    console.error('[GETH] WS Reconnecting...');
+
+    provider = new Web3.providers.WebsocketProvider(GETH_SOCKET_URL);
+    provider.on('connect', () => {
+        console.log('[GETH] WS Reconnected');
+    });
+    web3.setProvider(provider);
+});
 
 const processBlock = async (blockHashOrId, opts) => {
     try {
