@@ -2,7 +2,7 @@ import Web3 from 'web3';
 import redisClient from '../redis';
 import { GETH_SOCKET_URL } from './Config';
 
-const web3 = new Web3(Web3.givenProvider || GETH_SOCKET_URL);
+const web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(GETH_SOCKET_URL));
 
 const processBlock = async (blockHashOrId, opts) => {
     try {
