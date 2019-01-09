@@ -723,7 +723,7 @@ const eventsManager = async () => {
                                                 }
 
                                                 if (oIdx === -1) {
-                                                    const accountIdx = accounts.findIndex(account => account.beneficiary === e.args.buyer);
+                                                    const accountIdx = accounts.findIndex(account => account.beneficiary === e.args.buyer || account.beneficiary === e.args.seller);
                                                     if (accountIdx > -1 && accounts[accountIdx]._id == order.accountId) {
                                                         let type = 'asset';
                                                         const cryptoIds = e.args.cryptoIds.map(id => id.toString()) || [];
@@ -767,8 +767,13 @@ const eventsManager = async () => {
                                                                             });
                                                                         } else if (assets && assets.length > 0) {
                                                                             const assetIdx = assets.findIndex(a => (a._id == order.assetId && a.accountId == order.accountId));
+                                                                            console.log(assetIdx);
                                                                             if (assetIdx > -1) {
+                                                                                console.log(`Found asset...`);
+                                                                                console.log(`Asset quantity ${assets[assetIdx].quantity}`);
+                                                                                console.log(`order quantity ${order.quantity}`);
                                                                                 if (assets[assetIdx].quantity === order.quantity) {
+                                                                                    console.log(`Matched order and asset`);
                                                                                     // Delete asset in case of selling whole amount of asset
                                                                                     Assets.deleteOne({ _id: assets[assetIdx]._id }, err => {
                                                                                         if (err) {
