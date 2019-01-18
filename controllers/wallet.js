@@ -103,7 +103,7 @@ const asyncTokenMultiple = (wallet, beneficiary, contractAddress, idx) => new Pr
 
 const getTokenWallet = async () => {
     try {
-        const coins = await Coins.find({}, 'symbol', { lean: true }).exec();
+        const coins = await Coins.find({}, { symbol:1, address: 1}, { lean: true }).exec();
         if (coins && coins.length > 0) {
             const coinEthIdx = coins.findIndex(coin => coin.symbol === 'ETH');
             if (coinEthIdx > -1) {
