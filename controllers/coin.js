@@ -70,7 +70,7 @@ const getAssets = async () => {
             console.log('getAssets: ', response.status.error_message);
         }
     } catch (e) {
-        console.log('getAssets: ', e);
+        console.log('getAssets: error from CMC (check rate limits)');
     }
 
     setTimeout(getAssets, 3600000);
