@@ -82,7 +82,7 @@ const getEthWallet = async () => {
  * Promise function to get Token balance
  */
 const asyncTokenMultiple = (wallet, beneficiary, contractAddress, idx) => new Promise(resolve => {
-    setTimeout(() => {
+    //setTimeout(() => {
         TruffleService.coinBalanceOther(beneficiary, contractAddress)
             .then(balance => {
                 wallet.quantity = balance;
@@ -98,12 +98,15 @@ const asyncTokenMultiple = (wallet, beneficiary, contractAddress, idx) => new Pr
                 console.log('asyncTokenMultiple: ', err);
                 resolve();
             });
-    }, 50 * idx);
+    //}, 50 * idx);
 });
 
 const getTokenWallet = async () => {
+    let cnt = 1
+    var start = new Date()
+
     try {
-        const coins = await Coins.find({}, 'symbol', { lean: true }).exec();
+        const coins = await Coins.find({}, { symbol:1, address: 1}, { lean: true }).exec();
         if (coins && coins.length > 0) {
             const coinEthIdx = coins.findIndex(coin => coin.symbol === 'ETH');
             if (coinEthIdx > -1) {
@@ -148,8 +151,10 @@ const getTokenWallet = async () => {
     } catch (e) {
         console.log('getTokenWallet: ', e);
     }
-
-    setTimeout(getTokenWallet, 5000);
+    
+    var end = new Date() - start
+    // console.info('Execution time: %dms', end) -- Uncomment for Testing Benchmarks
+    setTimeout(getTokenWallet, 15000);
 };
 
 
@@ -186,10 +191,14 @@ const asyncTokenTransactionMultiple = (account, idx) => {
 };
 
 const getTokenTransactions = async () => {
+    var start = new Date()
+
     try {
         const coins = await Coins.find({}, 'symbol', { lean: true }).exec();
         if (coins && coins.length > 0) {
             const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
+
+            console.log('accounts:', accounts.length)
             if (accounts && accounts.length > 0) {
                 const actions = accounts.map(asyncTokenTransactionMultiple);
 
@@ -225,6 +234,8 @@ const getTokenTransactions = async () => {
                         if (symbol) {
                             const coinIndex = coins.findIndex(coin => coin.symbol === symbol);
                             if (coinIndex > -1) {
+                                console.log(dt.account._id, tx.hash)
+
                                 TokenTransactions.findOne({
                                     accountId: dt.account._id,
                                     coinId: coins[coinIndex]._id,
@@ -238,6 +249,7 @@ const getTokenTransactions = async () => {
                                     }
 
                                     if (!tokenTransaction) {
+
                                         tokenTransaction = new TokenTransactions({
                                             accountId: dt.account._id,
                                             coinId: coins[coinIndex]._id,
@@ -267,6 +279,9 @@ const getTokenTransactions = async () => {
         console.log('getTokenTransactions: ', e);
     }
 
+    var end = new Date() - start
+    console.info('Execution time: %dms', end)
+    
     setTimeout(getTokenTransactions, 30000);
 };
 
@@ -374,8 +389,10 @@ const getEtherTransactions = async () => {
 exports.walletSchedule = () => {
     getEthWallet();
 
+    console.log('start wallet')
     setTimeout(getTokenWallet, 1000);
 
+    console.log('start tx')
     setTimeout(getTokenTransactions, 4000);
 
     setTimeout(getEtherTransactions, 5000);
