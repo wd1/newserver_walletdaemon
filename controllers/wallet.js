@@ -87,11 +87,11 @@ const asyncTokenMultiple = (wallet, beneficiary, contractAddress, idx) => new Pr
             .then(balance => {
                 wallet.quantity = balance;
                 wallet.latest = new Date().toUTCString();
-                // wallet.save(err => {
-                //     if (err) {
-                //         console.log('asyncTokenMultiple - save: ', err);
-                //     }
-                // });
+                wallet.save(err => {
+                    if (err) {
+                        console.log('asyncTokenMultiple - save: ', err);
+                    }
+                });
                 resolve();
             })
             .catch(err => {
@@ -112,7 +112,7 @@ const getTokenWallet = async () => {
             if (coinEthIdx > -1) {
                 const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
                 const wallets = await Wallets.find({ coinId: { $ne: coins[coinEthIdx]._id } }).exec();
-                
+
                 if (
                     accounts && accounts.length > 0 &&
                     wallets && wallets.length > 0
