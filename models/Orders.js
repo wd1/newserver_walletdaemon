@@ -31,6 +31,8 @@ const ordersSchema = new mongoose.Schema({
         price: { type: Number, default: 0 },
         quantity: { type: Number, default: 0 }
     }],
+    inputHash: String,    // keccak256 hash (web3.utils.soliditySha3) of input params (beneficiary, coinIds, amounts, isCoin)
+    queryId: String,
     timestamp: Number
 }, { timestamps: true });
 

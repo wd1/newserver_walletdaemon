@@ -1,10 +1,17 @@
-/**
- * Module dependencies.
- */
-const express = require('express');
-const chalk = require('chalk');
-const errorHandler = require('errorhandler');
-const dotenv = require('dotenv');
+import express from 'express';
+import compression from 'compression';
+import bodyParser from 'body-parser';
+import logger from 'morgan';
+import chalk from 'chalk';
+import errorHandler from 'errorhandler';
+import lusca from 'lusca';
+import dotenv from 'dotenv';
+import path from 'path';
+import mongoose from 'mongoose';
+import { syncTransactionTask, handleIncomingChainData } from './controllers/transaction';
+import { fetchBalances } from './controllers/balance';
+import { fetchCoinPrices, fetchPricesFromCryptoCompare } from './controllers/coin';
+import { runPendingOrdersTask } from './controllers/order';
 
 /**
  * Load environment variables from .env file, where API keys and passwords are configured.
@@ -40,14 +47,12 @@ app.listen(app.get('port'), () => {
     console.log('  Press CTRL-C to stop\n');
 });
 
-const { coinSchedule } = require('./controllers/coin');
-// const { balanceSchedule } = require('./controllers/balance');
-const { walletSchedule } = require('./controllers/wallet');
-const { tradeSchedule } = require('./controllers/trade');
 
-coinSchedule();
-// balanceSchedule();
-walletSchedule();
-tradeSchedule();
+fetchCoinPrices();
+fetchPricesFromCryptoCompare();
+syncTransactionTask();
+fetchBalances();
+handleIncomingChainData();
+// runPendingOrdersTask();
 
 module.exports = app;

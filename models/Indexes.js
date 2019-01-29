@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const indexesSchema = new mongoose.Schema({
     accountId: String,
     name: String,
-    amount: { type: Number, default: 0.0 },
+    amount: String,
     assets: [{
         coinId: String,
         percentage: { type: Number, default: 0.0 },

@@ -1,13 +1,13 @@
-const util = require('util');
-const redis = require('redis');
-const redisCommands = require('redis-commands');
-const dotenv = require('dotenv');
+const util = require("util");
+const redis = require("redis");
+const redisCommands = require("redis-commands");
+const dotenv = require("dotenv");
 
 dotenv.config();
 
 const promisify = (obj, methods) => {
-    methods.forEach(method => {
-        obj[`${method}Async`] = util.promisify(obj[method]);
+    methods.forEach((method) => {
+        obj[method + 'Async'] = util.promisify(obj[method]);
     });
 };
 
