@@ -47,7 +47,6 @@ app.listen(app.get('port'), () => {
     console.log('  Press CTRL-C to stop\n');
 });
 
-
 fetchCoinPrices();
 fetchPricesFromCryptoCompare();
 syncTransactionTask();
