@@ -48,7 +48,7 @@ export const fetchBalances = async () => {
 
             return coin ? coin.address : null;
         }).filter((addr, pos, arr) => !!addr && arr.indexOf(addr) == pos);  // remove duplicates
-        tokenAddresses.push('0x0'); // add ether
+        tokenAddresses.push('0x0000000000000000000000000000000000000000'); // add ether
 
         // log
         console.log(`\n[BalanceDaemon] Fetching Balances for ${accounts.length} accounts and ${tokenAddresses.length} Tokens`);
@@ -64,7 +64,7 @@ export const fetchBalances = async () => {
                     let coin;
                     let version = null;
 
-                    if (tokenAddr === '0x0') {
+                    if (tokenAddr === '0x0000000000000000000000000000000000000000') {
                         coin = coins[coinEthIdx];
                     } else if (tokenAddr.toLowerCase() == COINVEST_TOKEN_ADDRESS_V1.toLowerCase()) {
                         coin = coins.find(coin => coin.symbol === 'COIN');
@@ -88,7 +88,7 @@ export const fetchBalances = async () => {
                         }
 
                         // if wallet isn't existed, create new for eth wallet, ignore for token wallet
-                        if (!wallet && tokenAddr === '0x0') {
+                        if (!wallet && tokenAddr === '0x0000000000000000000000000000000000000000') {
                             wallet = new Wallets({
                                 accountId: account._id,
                                 coinId: coin._id

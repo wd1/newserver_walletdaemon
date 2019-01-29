@@ -25,7 +25,7 @@ InvestmentContract.setProvider(web3.currentProvider);
 InvestmentContract.defaults({
     from: DEMO_MASTER_ADDRESS,
     gas: 1000000,
-    gasPrice: 40000000000
+    gasPrice: 10000000000
 });
 if (typeof InvestmentContract.currentProvider.sendAsync !== 'function') {
     InvestmentContract.currentProvider.sendAsync = function () {
@@ -42,7 +42,7 @@ TokenContract.setProvider(web3.currentProvider);
 TokenContract.defaults({
     from: DEMO_MASTER_ADDRESS,
     gas: 1000000,
-    gasPrice: 40000000000
+    gasPrice: 10000000000
 });
 if (typeof TokenContract.currentProvider.sendAsync !== 'function') {
     TokenContract.currentProvider.sendAsync = function () {
@@ -59,7 +59,7 @@ TokenContractOther.setProvider(web3.currentProvider);
 TokenContractOther.defaults({
     from: DEMO_MASTER_ADDRESS,
     gas: 1000000,
-    gasPrice: 40000000000
+    gasPrice: 10000000000
 });
 if (typeof TokenContractOther.currentProvider.sendAsync !== 'function') {
     TokenContractOther.currentProvider.sendAsync = function () {
@@ -76,7 +76,7 @@ FaucetContract.setProvider(web3.currentProvider);
 FaucetContract.defaults({
     from: DEMO_MASTER_ADDRESS,
     gas: 1000000,
-    gasPrice: 40000000000
+    gasPrice: 10000000000
 });
 if (typeof FaucetContract.currentProvider.sendAsync !== 'function') {
     FaucetContract.currentProvider.sendAsync = function () {
