@@ -18,35 +18,18 @@ import { runPendingOrdersTask } from './controllers/order';
  */
 dotenv.load({ path: '.env' });
 
+
+const AppConfig = require('./config');
+const Model = require('./models');
+
+
 /**
  * Create Express server.
  */
 const app = express();
+Model.initializeDB();
+AppConfig.initConfig(app);
 
-/**
- * Connect to MongoDB.
- */
-mongoose.connect(process.env.MONGODB_URI);
-mongoose.connection.on('error', err => {
-    console.error(err);
-    console.log('%s MongoDB connection error. Please make sure MongoDB is running.', chalk.red('✗'));
-
-    process.exit();
-});
-
-/**
- * Express configuration.
- */
-app.set('host', process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0');
-app.set('port', process.env.PORT || process.env.OPENSHIFT_NODEJS_PORT || 8000);
-app.use(compression());
-app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(lusca.xframe('SAMEORIGIN'));
-app.use(lusca.xssProtection(true));
-app.disable('x-powered-by');
-app.use(express.static(path.join(__dirname, 'public'), { maxAge: 31557600000 }));
 
 /**
  * Error Handler.

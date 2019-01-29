@@ -4,7 +4,7 @@ dotenv.config();
 
 exports.FAUCET_ADDRESS = process.env.FAUCET_ADDRESS;
 exports.INVESTMENT_CONTRACT_ADDRESS = process.env.INVESTMENT_CONTRACT_ADDRESS;
-exports.COINVEST_TOKEN_ADDRESS = process.env.COINVEST_TOKEN_ADDRESS_V2;
+exports.COINVEST_TOKEN_ADDRESS = process.env.COINVEST_TOKEN_ADDRESS_V3;
 exports.USER_DATA_ADDRESS = process.env.USER_DATA_ADDRESS;
 
 exports.COINVEST_TOKEN_ADDRESS_V1 = process.env.COINVEST_TOKEN_ADDRESS_V1;
@@ -1534,18 +1534,39 @@ exports.UserDataAbi = [
 ];
 
 exports.cryptoIdToSymbol = [
-    {id: 0, symbol: 'COIN', smallestUnitName: 'wei', limit: 18},
-    {id: 2, symbol: 'CASH', smallestUnitName: 'wei', limit: 18},
-    {id: 4, symbol: 'BTC', smallestUnitName: 'gwei', limit: 18},
-    {id: 6, symbol: 'ETH', smallestUnitName: 'wei', limit: 18},
-    {id: 8, symbol: 'XRP', smallestUnitName: 'szabo', limit: 18},
-    {id: 10, symbol: 'LTC', smallestUnitName: 'gwei', limit: 18},
-    {id: 12, symbol: 'DASH', smallestUnitName: 'gwei', limit: 18},
-    {id: 14, symbol: 'BCH', smallestUnitName: 'mwei', limit: 18},
-    {id: 16, symbol: 'XMR', smallestUnitName: 'mwei', limit: 18},
-    {id: 18, symbol: 'XEM', smallestUnitName: 'szabo', limit: 18},
-    {id: 20, symbol: 'EOS', smallestUnitName: 'wei', limit: 18},
-    // { symbol: 'IBTC', smallestUnitName: 'gwei', limit: 8 }
+    {
+        id: 0, symbol: 'COIN', smallestUnitName: 'wei', limit: 18
+    },
+    // {
+    //     id: 2, symbol: 'CASH', smallestUnitName: 'wei', limit: 18
+    // },
+    {
+        id: 4, symbol: 'BTC', smallestUnitName: 'gwei', limit: 18
+    },
+    {
+        id: 6, symbol: 'ETH', smallestUnitName: 'wei', limit: 18
+    },
+    {
+        id: 8, symbol: 'XRP', smallestUnitName: 'szabo', limit: 18
+    },
+    {
+        id: 10, symbol: 'LTC', smallestUnitName: 'gwei', limit: 18
+    },
+    {
+        id: 12, symbol: 'DASH', smallestUnitName: 'gwei', limit: 18
+    },
+    {
+        id: 14, symbol: 'BCH', smallestUnitName: 'mwei', limit: 18
+    },
+    {
+        id: 16, symbol: 'XMR', smallestUnitName: 'mwei', limit: 18
+    },
+    {
+        id: 18, symbol: 'XEM', smallestUnitName: 'szabo', limit: 18
+    },
+    {
+        id: 20, symbol: 'EOS', smallestUnitName: 'wei', limit: 18
+    }
 ];
 
 exports.tokenList = [
