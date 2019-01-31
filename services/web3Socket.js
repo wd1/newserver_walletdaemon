@@ -1,67 +1,84 @@
-const Web3 = require('web3');
+import Web3 from 'web3';
+import redisClient from '../redis';
+import { GETH_SOCKET_URL, LAST_BLOCK } from './Config';
 
-const {
-    GETH_SOCKET_URL,
-    INVESTMENT_CONTRACT_ADDRESS,
-    Abi
-} = require('./Config');
+let provider = new Web3.providers.WebsocketProvider(GETH_SOCKET_URL);
 
-const web3 = new Web3(Web3.givenProvider || GETH_SOCKET_URL);
-const tradingContract = new web3.eth.Contract(Abi, INVESTMENT_CONTRACT_ADDRESS);
+const web3 = new Web3(Web3.givenProvider || provider);
+provider.on('error', e => console.error('[GETH] WS Error: ', e));
+provider.on('end', e => {
+    console.error('[GETH] WS Disconnected', e);
+    console.error('[GETH] WS Reconnecting...');
+
+    provider = new Web3.providers.WebsocketProvider(GETH_SOCKET_URL);
+    provider.on('connect', () => {
+        console.log('[GETH] WS Reconnected');
+    });
+    web3.setProvider(provider);
+});
 
 const processBlock = async (blockHashOrId, opts) => {
-    const block = await web3.eth.getBlock(blockHashOrId, true);
-    opts.onTransactions ? opts.onTransactions(block, block.transactions) : null;
-    opts.onBlock ? opts.onBlock(blockHashOrId) : null;
-    return block;
+    try {
+        const block = await web3.eth.getBlock(blockHashOrId, true);
+
+        if (block) {
+            opts.onTransactions ? opts.onTransactions(block, block.transactions) : null;
+            opts.onBlock ? opts.onBlock(blockHashOrId) : null;
+        } else {
+            console.log(`Cannot fetch block: ${blockHashOrId}`);
+        }
+
+        return block;
+    } catch (error) {
+        console.log(`Error fetching blocks from Geth: ${error}`);
+        return null;
+    }
 };
 
 const syncToBlock = async (index, latest, opts) => {
-    if (index > latest) {
+    if (index >= latest) {
         return index;
     }
 
     await processBlock(index + 1, opts);
-    const result = await syncToBlock(index + 1, latest, opts);
-    return result;
+    return await syncToBlock(index + 1, latest, opts);
 };
 
 const syncBlocks = async (currentBlockNumber, opts) => {
     // @notice this is to use in case we need to traverse history blocks
-    // const latestBlockNumber = await web3.eth.getBlockNumber();
-    // const syncedBlockNumber = await syncToBlock(currentBlockNumber, latestBlockNumber, opts);
+    const latestBlockNumber = await web3.eth.getBlockNumber();
+    const syncedBlockNumber = await syncToBlock(currentBlockNumber, latestBlockNumber, opts);
 
+    // this subscribes new incoming blocks after old blocks are synced
     web3.eth.subscribe('newBlockHeaders', (error, result) => error && console.log(error))
         .on('data', async blockHeader => {
-            const block = await processBlock(blockHeader.number, opts);
-            return block;
+            return await processBlock(blockHeader.number, opts);
         });
 
-    // return syncedBlockNumber;
+    return syncedBlockNumber;
+};
+
+const updateBlockHead = async head => {
+    return await redisClient.setAsync('eth:last-block', head.toString());
 };
 
 const startSyncingBlocks = async handleTransactions => {
-    const lastBlockNumber = 0;
+    let lastBlockNumber = await redisClient.getAsync('eth:last-block');
+    if (!lastBlockNumber || lastBlockNumber < LAST_BLOCK) {
+        lastBlockNumber = LAST_BLOCK;
+    }
+
+    lastBlockNumber = parseInt(lastBlockNumber || 0, 10);
     syncBlocks(lastBlockNumber, {
-        onBlock: blockNumber => {
+        onBlock: (blockNumber) => {
             console.log(`BlockNumber: ${blockNumber}`);
+            updateBlockHead(blockNumber);
         },
         onTransactions: handleTransactions
     });
 };
 
-const subscribeToTradeEvents = handleTradeEvents => {
-    tradingContract.events.allEvents({
-        fromBlock: 0,
-        topics: [
-            '0x6a75660680cd3a8f7f34c5df6451086e3222c8a9e16e568b6e698098e8fd970b',
-            '0x6a75660680cd3a8f7f34c5df6451086e3222c8a9e16e568b6e698098e8fd970b'
-        ]
-    }).on('data', handleTradeEvents).on('error', error => console.log(error));
-};
-
 export {
     web3,
-    startSyncingBlocks,
-    subscribeToTradeEvents
+    startSyncingBlocks
 };
