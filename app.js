@@ -1,14 +1,8 @@
 import express from 'express';
-import compression from 'compression';
-import bodyParser from 'body-parser';
-import logger from 'morgan';
 import chalk from 'chalk';
 import errorHandler from 'errorhandler';
-import lusca from 'lusca';
 import dotenv from 'dotenv';
-import path from 'path';
-import mongoose from 'mongoose';
-import { syncTransactionTask, handleIncomingChainData } from './controllers/transaction';
+import { handleIncomingChainData } from './controllers/transaction';
 import { fetchBalances } from './controllers/balance';
 import { fetchCoinPrices, fetchPricesFromCryptoCompare } from './controllers/coin';
 import { runPendingOrdersTask } from './controllers/order';
@@ -49,7 +43,6 @@ app.listen(app.get('port'), () => {
 
 fetchCoinPrices();
 fetchPricesFromCryptoCompare();
-syncTransactionTask();
 fetchBalances();
 handleIncomingChainData();
 // runPendingOrdersTask();
