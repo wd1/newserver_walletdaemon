@@ -1,6 +1,6 @@
 import Web3 from 'web3';
 import redisClient from '../redis';
-import { GETH_SOCKET_URL } from './Config';
+import { GETH_SOCKET_URL, LAST_BLOCK } from './Config';
 
 let provider = new Web3.providers.WebsocketProvider(GETH_SOCKET_URL);
 
@@ -64,6 +64,10 @@ const updateBlockHead = async head => {
 
 const startSyncingBlocks = async handleTransactions => {
     let lastBlockNumber = await redisClient.getAsync('eth:last-block');
+    if (!lastBlockNumber || lastBlockNumber < LAST_BLOCK) {
+        lastBlockNumber = LAST_BLOCK;
+    }
+
     lastBlockNumber = parseInt(lastBlockNumber || 0, 10);
     syncBlocks(lastBlockNumber, {
         onBlock: (blockNumber) => {
