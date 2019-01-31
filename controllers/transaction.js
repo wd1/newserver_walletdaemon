@@ -164,14 +164,14 @@ export const handleIncomingChainData = async () => {
 
     startSyncingBlocks(async (block, transactions) => {
         const coins = await Coins.find({}, 'symbol address', {lean: true}).exec();
-        const accounts = await Accounts.find({txSynced: true}, 'beneficiary', { lean: true }).exec();
+        const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
 
         transactions.forEach(async tx => {
             const txReceipt = await web3.eth.getTransactionReceipt(tx.hash);
 
             try {
                 // handle smart contract transactions
-                if (txReceipt.logs.length > 0) {
+                if (txReceipt && txReceipt.logs.length > 0) {
                     // filter out event logs into different types by topics[0]
                     const transferEvents = txReceipt.logs.filter(log => log.topics.length > 0 && log.topics[0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef');
                     const tradeEvents = txReceipt.logs.filter(log => log.topics.length > 0 &&
