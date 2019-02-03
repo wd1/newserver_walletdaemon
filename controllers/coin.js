@@ -113,35 +113,32 @@ export const fetchPricesFromCryptoCompare = async () => {
 export const fetchCoinPrice = async () => {
     console.log(`\n------------- Fetching COIN Price From Coinvest Price API ------------`);
 
-    const requestOptions = {
-        method: 'GET',
-        uri: 'http://ec2-18-234-124-53.compute-1.amazonaws.com/api/priceApi',
-        qs: {
-            cryptos: "COIN"
-        },
-        json: true,
-        gzip: true
-    };
-
     try {
-        const response = await rp(requestOptions);
-        if (!response.status.error_code) {
-            await Promise.all(response.data.map(async coinItem => {
-                const coin = await Coins.findOne({ symbol: 'COIN' }).exec();
-                if (coin) {
-                    coin.price = response[coin.symbol].USD;
-                }
+        const coin = await Coins.findOne({ symbol: 'COIN' }).exec();
+        if (coin) {
+            const requestOptions = {
+                method: 'GET',
+                uri: 'http://ec2-18-234-124-53.compute-1.amazonaws.com/api/priceApi',
+                qs: {
+                    cryptos: coin.symbol
+                },
+                json: true,
+                gzip: true
+            };
 
-                return coin.save(err => {
-                    if (err) {
-                        console.log('getCOINPrice - save: ', err);
-                    }
-                });
-            }));
+            const response = await rp(requestOptions);
+
+            coin.price = response[coin.symbol].USD;
+            console.log(coin.price);
+            coin.save(err => {
+                if (err) {
+                    console.log('[CoinDaemon] Error fetching coin prices from Coinvest API - save: ', err);
+                }
+            });
         }
     } catch (e) {
-        console.log(`[CoinDaemon] Error updating coin quotes: ${e}`);
+        console.log('[CoinDaemon]: ', e);
     }
 
-    setTimeout(fetchCoinPrice, 60000);
+    setTimeout(fetchCoinPrice, 30000);
 };
