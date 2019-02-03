@@ -1,21 +1,29 @@
 import Web3 from 'web3';
+import net from 'net';
 import redisClient from '../redis';
-import { GETH_SOCKET_URL, LAST_BLOCK } from './Config';
+import { GETH_IPC_PATH, GETH_SOCKET_URL, LAST_BLOCK, IPC_ENABLED } from './Config';
 
-let provider = new Web3.providers.WebsocketProvider(GETH_SOCKET_URL);
+let web3;
 
-const web3 = new Web3(Web3.givenProvider || provider);
-provider.on('error', e => console.error('[GETH] WS Error: ', e));
-provider.on('end', e => {
-    console.error('[GETH] WS Disconnected', e);
-    console.error('[GETH] WS Reconnecting...');
+if(IPC_ENABLED) {
+    const client = new net.Socket();
+    web3 = new Web3(new Web3.providers.IpcProvider(GETH_IPC_PATH, client));
+} else {
+    let provider = new Web3.providers.WebsocketProvider(GETH_SOCKET_URL);
+    web3 = new Web3(provider);
 
-    provider = new Web3.providers.WebsocketProvider(GETH_SOCKET_URL);
-    provider.on('connect', () => {
-        console.log('[GETH] WS Reconnected');
+    provider.on('error', e => console.error('[GETH] WS Error: ', e));
+    provider.on('end', e => {
+        console.error('[GETH] WS Disconnected', e);
+        console.error('[GETH] WS Reconnecting...');
+
+        provider = new Web3.providers.WebsocketProvider(GETH_SOCKET_URL);
+        provider.on('connect', () => {
+            console.log('[GETH] WS Reconnected');
+        });
+        web3.setProvider(provider);
     });
-    web3.setProvider(provider);
-});
+}
 
 const processBlock = async (blockHashOrId, opts) => {
     try {
