@@ -25,8 +25,9 @@ export const fetchCoinPrices = async () => {
         const response = await rp(requestOptions);
         if (!response.status.error_code) {
             await Promise.all(response.data.map(async coinItem => {
+
                 let coin = await Coins.findOne({ symbol: coinItem.symbol }).exec();
-                if (coin) {
+                if (coin && coin.symbol !== "COIN") {
                     coin.set({
                         name: coinItem.name,
                         totalSupply: coinItem.total_supply,
@@ -72,7 +73,7 @@ export const fetchCoinPrices = async () => {
 export const fetchPricesFromCryptoCompare = async () => {
     console.log(`\n------------- Fetching Supported Asset Prices from CryptoCompare ------------`);
 
-    const symbols = cryptoIdToSymbol.map(crypto => crypto.symbol).filter(crypto => crypto.symbol !== 'CASH');
+    const symbols = cryptoIdToSymbol.map(crypto => crypto.symbol).filter(crypto => crypto.symbol !== 'COIN');
     const requestOptions = {
         method: 'GET',
         uri: `${CC_API_URL}/data/pricemulti`,
@@ -90,15 +91,17 @@ export const fetchPricesFromCryptoCompare = async () => {
     try {
         const response = await rp(requestOptions);
         await Promise.all(Object.keys(response).map(async symbol => {
-            let coin = await Coins.findOne({symbol});
-            if (!coin) {
-                coin = new Coins({
-                    symbol
-                });
-            }
+            if (symbol !== "COIN") {
+                let coin = await Coins.findOne({symbol});
+                if (!coin) {
+                    coin = new Coins({
+                        symbol
+                    });
+                }
 
-            coin.price = response[symbol].USD;
-            return coin.save();
+                coin.price = response[symbol].USD;
+                return coin.save();
+            }
         }));
     } catch (e) {
         console.log(`[CoinDaemon] Error fetching coin prices from CryptoCompare: ${e}`);
