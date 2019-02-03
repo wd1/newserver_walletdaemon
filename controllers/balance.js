@@ -3,68 +3,70 @@ import Accounts from '../models/Accounts';
 import Wallets from '../models/Wallets';
 import Coins from '../models/Coins';
 import { getAddressBalances, getAddressesBalances } from '../services/balanceChecker';
-import { COINVEST_TOKEN_ADDRESS_V1, COINVEST_TOKEN_ADDRESS_V2, COINVEST_TOKEN_ADDRESS_V3, COINVEST_TOKEN_ADDRESS } from '../services/Config';
+import { COINVEST_TOKEN_ADDRESS_V1, COINVEST_TOKEN_ADDRESS_V2, COINVEST_TOKEN_ADDRESS_V3, COINVEST_TOKEN_ADDRESS, BATCH_SIZE } from '../services/Config';
 
 export const fetchBalances = async () => {
     console.log(`\n------------- Synchronizing Eth/Token Balances ------------`);
 
     try {
-        const batchSize = 30;
         const batches = [];
         const coins = await Coins.find({}, 'symbol address', { lean: true }).exec();
         const coinEthIdx = coins.findIndex(coin => coin.symbol === 'ETH');
         const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
-        const wallets = await Wallets.find({ coinId: { $ne: coins[coinEthIdx]._id } }).exec();
 
-        if (accounts.length > batchSize) {
-            for (let i = 0; i < accounts.length / batchSize; i++) {
+        if (accounts.length > BATCH_SIZE) {
+            for (let i = 0; i < accounts.length / BATCH_SIZE; i++) {
                 const batch = [];
-                for (let j = 0; j < batchSize; j++) {
-                    if (accounts[i * batchSize + j]) {
-                        batch.push(accounts[i * batchSize + j].beneficiary);
+                for (let j = 0; j < BATCH_SIZE; j++) {
+                    if (accounts[i * BATCH_SIZE + j]) {
+                        batch.push(accounts[i * BATCH_SIZE + j]);
                     }
                 }
-                batches.push(batch);
+
+                if (batch.length) batches.push(batch);
             }
         } else {
             const batch = [];
             for (let j = 0; j < accounts.length; j++) {
-                batch.push(accounts[j].beneficiary);
+                batch.push(accounts[j]);
             }
-            batches.push(batch);
+
+            if (batch.length) batches.push(batch);
         }
 
-        const tokenAddresses = wallets.map(wallet => {
-            const coin = coins.find(coin => coin._id == wallet.coinId);
-            if (coin && coin.symbol === 'COIN') {
-                if (wallet.version === 'v1') {
-                    return COINVEST_TOKEN_ADDRESS_V1;
-                } else if (wallet.version === 'v2') {
-                    return COINVEST_TOKEN_ADDRESS_V2;
-                } else if (wallet.version === 'v3') {
-                    return COINVEST_TOKEN_ADDRESS_V3;
-                }
-            }
-
-            return coin ? coin.address : null;
-        }).filter((addr, pos, arr) => !!addr && arr.indexOf(addr) == pos);  // remove duplicates
-        tokenAddresses.push('0x0000000000000000000000000000000000000000'); // add ether
-
-        // log
-        console.log(`\n[BalanceDaemon] Fetching Balances for ${accounts.length} accounts and ${tokenAddresses.length} Tokens`);
-
         await Promise.all(batches.map(async batch => {
-            const balances = await getAddressesBalances(batch, tokenAddresses);
+            const addresses = batch.map(item => item.beneficiary);
+            const accountIds = batch.map(item => item._id);
+            const userWallets = await Wallets.find({accountId: accountIds});
+            const tokenAddresses = userWallets.map(wallet => {
+                const coin = coins.find(coin => coin._id == wallet.coinId);
+                if (coin && coin.symbol === 'COIN') {
+                    if (wallet.version === 'v1') {
+                        return COINVEST_TOKEN_ADDRESS_V1;
+                    } else if (wallet.version === 'v2') {
+                        return COINVEST_TOKEN_ADDRESS_V2;
+                    } else if (wallet.version === 'v3') {
+                        return COINVEST_TOKEN_ADDRESS_V3;
+                    }
+                }
+
+                return coin ? coin.address : null;
+            }).filter((addr, pos, arr) => !!addr && arr.indexOf(addr) == pos);  // remove duplicates
+            tokenAddresses.push('0x0000000000000000000000000000000000000000'); // add ether
+
+            // log
+            console.log(`\n[BalanceDaemon] Fetching Balances for ${accounts.length} accounts, ${batch.length} addresses and ${tokenAddresses.length} Tokens per batch`);
+
+            const balances = await getAddressesBalances(addresses, tokenAddresses);
             // console.log(balances);
 
-            return Promise.all(batch.map(address => {
-                const balancesForAddress = balances[address];
-                const account = accounts.find(item => item.beneficiary.toLowerCase() == address.toLowerCase());
+            return Promise.all(batch.map(account => {
+                const balancesForAddress = balances[account.beneficiary];
                 return Promise.all(tokenAddresses.map(async tokenAddr => {
                     let coin;
                     let version = null;
 
-                    if (tokenAddr === '0x0000000000000000000000000000000000000000') {
+                    if (tokenAddr == '0x0000000000000000000000000000000000000000') {
                         coin = coins[coinEthIdx];
                     } else if (tokenAddr.toLowerCase() == COINVEST_TOKEN_ADDRESS_V1.toLowerCase()) {
                         coin = coins.find(coin => coin.symbol === 'COIN');
@@ -88,7 +90,7 @@ export const fetchBalances = async () => {
                         }
 
                         // if wallet isn't existed, create new for eth wallet, ignore for token wallet
-                        if (!wallet && tokenAddr === '0x0000000000000000000000000000000000000000') {
+                        if (!wallet && tokenAddr == '0x0000000000000000000000000000000000000000') {
                             wallet = new Wallets({
                                 accountId: account._id,
                                 coinId: coin._id

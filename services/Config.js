@@ -29,6 +29,7 @@ exports.CC_API_KEY = process.env.CC_API_KEY;
 exports.GETH_SOCKET_URL = process.env.GETH_SOCKET;
 
 exports.LAST_BLOCK = process.env.LAST_BLOCK || 4000000;
+exports.BATCH_SIZE = process.env.BATCH_SIZE || 50;
 
 exports.Abi = [{
     "constant": true,
