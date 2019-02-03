@@ -106,3 +106,39 @@ export const fetchPricesFromCryptoCompare = async () => {
 
     setTimeout(fetchPricesFromCryptoCompare, 60000);
 };
+
+export const fetchCoinPrice = async () => {
+    console.log(`\n------------- Fetching COIN Price From Coinvest Price API ------------`);
+
+    const requestOptions = {
+        method: 'GET',
+        uri: 'http://ec2-18-234-124-53.compute-1.amazonaws.com/api/priceApi',
+        qs: {
+            cryptos: "COIN"
+        },
+        json: true,
+        gzip: true
+    };
+
+    try {
+        const response = await rp(requestOptions);
+        if (!response.status.error_code) {
+            await Promise.all(response.data.map(async coinItem => {
+                const coin = await Coins.findOne({ symbol: 'COIN' }).exec();
+                if (coin) {
+                    coin.price = response[coin.symbol].USD;
+                }
+
+                return coin.save(err => {
+                    if (err) {
+                        console.log('getCOINPrice - save: ', err);
+                    }
+                });
+            }));
+        }
+    } catch (e) {
+        console.log(`[CoinDaemon] Error updating coin quotes: ${e}`);
+    }
+
+    setTimeout(fetchCoinPrice, 60000);
+};
