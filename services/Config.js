@@ -28,6 +28,7 @@ exports.CC_API_KEY = process.env.CC_API_KEY;
 
 exports.GETH_IPC_PATH = process.env.GETH_IPC;
 exports.GETH_SOCKET_URL = process.env.GETH_SOCKET;
+exports.GETH_INFURA = process.env.GETH_INFURA;
 exports.IPC_ENABLED = process.env.WEB3_PROVIDER === 'ipc'; // ipc | websocket
 
 exports.LAST_BLOCK = process.env.LAST_BLOCK || 4000000;
