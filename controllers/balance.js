@@ -13,7 +13,7 @@ export const fetchBalances = async () => {
         const ethAddress = '0x0000000000000000000000000000000000000000';
         const coins = await Coins.find({}, 'symbol address', { lean: true }).exec();
         const coinEthIdx = coins.findIndex(coin => coin.symbol === 'ETH');
-        const accounts = await Accounts.find({}, 'beneficiary', { lean: true }).exec();
+        const accounts = await Accounts.find({isActive: true}, 'beneficiary', { lean: true }).exec();
         const userIds = accounts.map(account => account._id);
         const wallets = await Wallets.find({accountId: userIds}, 'coinId accountId version', {lean: true}).exec();
 
@@ -44,7 +44,7 @@ export const fetchBalances = async () => {
         // run greedy algorithm to split optimized [Am * Tn]
         let head = 0;
         let trail = accounts.length - 1;
-        while (head < trail) {
+        while (head <= trail) {
             const headAccount = accounts[head];
             const mergedTokens = headAccount.tokens;
             const batch = [headAccount];
@@ -69,13 +69,14 @@ export const fetchBalances = async () => {
             head++;
         }
 
-        // console.log(batches);
+        // log
+        console.log(`\n[BalanceDaemon] Total count of batches: ${batches.length}`);
 
         await Promise.all(batches.map(async batch => {
             // extract addresses from accounts
             const addresses = batch.accounts.map(item => item.beneficiary);
             // log
-            console.log(`\n[BalanceDaemon] Fetching Balances for ${accounts.length} total accounts, ${addresses.length} addresses and ${batch.tokens.length} Tokens`);
+            console.log(`\n[BalanceDaemon] Fetching Balances for ${accounts.length} total active accounts, ${addresses.length} addresses and ${batch.tokens.length} Tokens`);
 
             const balances = await getAddressesBalances(addresses, batch.tokens);
             // console.log(balances);
