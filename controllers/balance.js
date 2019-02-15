@@ -3,7 +3,7 @@ import Accounts from '../models/Accounts';
 import Wallets from '../models/Wallets';
 import Coins from '../models/Coins';
 import { getAddressesBalances } from '../services/balanceChecker';
-import { COINVEST_TOKEN_ADDRESS_V1, COINVEST_TOKEN_ADDRESS_V2, COINVEST_TOKEN_ADDRESS_V3, COINVEST_TOKEN_ADDRESS, BATCH_SIZE } from '../services/Config';
+import { COINVEST_TOKEN_ADDRESS_V1, COINVEST_TOKEN_ADDRESS_V2, COINVEST_TOKEN_ADDRESS_V3, COINVEST_TOKEN_ADDRESS } from '../services/Config';
 
 export const fetchBalances = async () => {
     console.log(`\n------------- Synchronizing Eth/Token Balances ------------`);
