@@ -1,12 +1,11 @@
 import Web3 from 'web3';
 import net from 'net';
 import redisClient from '../redis';
-import { GETH_IPC_PATH, GETH_SOCKET_URL, GETH_INFURA, LAST_BLOCK, IPC_ENABLED } from './Config';
+import {GETH_IPC_PATH, GETH_SOCKET_URL, LAST_BLOCK, IPC_ENABLED, GETH_INFURA} from './Config';
 
-let web3 = null;
+let web3;
 const web3Infura = !!GETH_INFURA ? new Web3(new Web3.providers.HttpProvider(GETH_INFURA)) : null;
 
-const init = () => {
     if (IPC_ENABLED) {
         const client = new net.Socket();
         web3 = new Web3(new Web3.providers.IpcProvider(GETH_IPC_PATH, client));
@@ -26,7 +25,6 @@ const init = () => {
             web3.setProvider(provider);
         });
     }
-};
 
 const processBlock = async (blockHashOrId, opts) => {
     try {
@@ -88,8 +86,6 @@ const startSyncingBlocks = async handleTransactions => {
         onTransactions: handleTransactions
     });
 };
-
-init();
 
 export {
     web3,
