@@ -6,25 +6,25 @@ import {GETH_IPC_PATH, GETH_SOCKET_URL, LAST_BLOCK, IPC_ENABLED, GETH_INFURA} fr
 let web3;
 const web3Infura = !!GETH_INFURA ? new Web3(new Web3.providers.HttpProvider(GETH_INFURA)) : null;
 
-    if (IPC_ENABLED) {
-        const client = new net.Socket();
-        web3 = new Web3(new Web3.providers.IpcProvider(GETH_IPC_PATH, client));
-    } else {
-        let provider = new Web3.providers.WebsocketProvider(GETH_SOCKET_URL);
-        web3 = new Web3(provider);
+if(IPC_ENABLED) {
+    const client = new net.Socket();
+    web3 = new Web3(new Web3.providers.IpcProvider(GETH_IPC_PATH, client));
+} else {
+    let provider = new Web3.providers.WebsocketProvider(GETH_SOCKET_URL);
+    web3 = new Web3(provider);
 
-        provider.on('error', e => console.error('[GETH] WS Error: ', e));
-        provider.on('end', e => {
-            console.error('[GETH] WS Disconnected', e);
-            console.error('[GETH] WS Reconnecting...');
+    provider.on('error', e => console.error('[GETH] WS Error: ', e));
+    provider.on('end', e => {
+        console.error('[GETH] WS Disconnected', e);
+        console.error('[GETH] WS Reconnecting...');
 
-            provider = new Web3.providers.WebsocketProvider(GETH_SOCKET_URL);
-            provider.on('connect', () => {
-                console.log('[GETH] WS Reconnected');
-            });
-            web3.setProvider(provider);
+        provider = new Web3.providers.WebsocketProvider(GETH_SOCKET_URL);
+        provider.on('connect', () => {
+            console.log('[GETH] WS Reconnected');
         });
-    }
+        web3.setProvider(provider);
+    });
+}
 
 const processBlock = async (blockHashOrId, opts) => {
     try {
