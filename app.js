@@ -4,7 +4,7 @@ import errorHandler from 'errorhandler';
 import dotenv from 'dotenv';
 import { handleIncomingChainData } from './controllers/transaction';
 import { fetchBalances } from './controllers/balance';
-import { fetchCoinPrices, fetchPricesFromCryptoCompare } from './controllers/coin';
+import { fetchCoinPrices, fetchPricesFromCryptoCompare, fetchCoinPrice } from './controllers/coin';
 import { runPendingOrdersTask } from './controllers/order';
 
 /**
@@ -41,6 +41,7 @@ app.listen(app.get('port'), () => {
     console.log('  Press CTRL-C to stop\n');
 });
 
+fetchCoinPrice();
 fetchCoinPrices();
 fetchPricesFromCryptoCompare();
 fetchBalances();

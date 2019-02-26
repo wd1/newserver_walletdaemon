@@ -44,6 +44,7 @@
     "quote-props": "warn",
     "prefer-spread": "warn",
     "prefer-rest-params": "warn",
+    "no-irregular-whitespace": "warn",
     "no-trailing-spaces": 0,
     "object-curly-spacing": 0,
     "no-multi-spaces": 0

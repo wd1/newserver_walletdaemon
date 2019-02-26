@@ -110,7 +110,6 @@ export const handleTradeEvents = async events => {
                                     existAsset.txId.push(event.transactionHash);
                                     existAsset.orderType = order.type;
                                     await existAsset.save();
-
                                 }
                             }
                         }
