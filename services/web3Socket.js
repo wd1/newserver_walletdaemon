@@ -1,29 +1,32 @@
 import Web3 from 'web3';
 import net from 'net';
 import redisClient from '../redis';
-import { GETH_IPC_PATH, GETH_SOCKET_URL, LAST_BLOCK, IPC_ENABLED } from './Config';
+import { GETH_IPC_PATH, GETH_SOCKET_URL, GETH_INFURA, LAST_BLOCK, IPC_ENABLED } from './Config';
 
-let web3;
+let web3 = null;
+const web3Infura = !!GETH_INFURA ? new Web3(new Web3.providers.HttpProvider(GETH_INFURA)) : null;
 
-if(IPC_ENABLED) {
-    const client = new net.Socket();
-    web3 = new Web3(new Web3.providers.IpcProvider(GETH_IPC_PATH, client));
-} else {
-    let provider = new Web3.providers.WebsocketProvider(GETH_SOCKET_URL);
-    web3 = new Web3(provider);
+const init = () => {
+    if (IPC_ENABLED) {
+        const client = new net.Socket();
+        web3 = new Web3(new Web3.providers.IpcProvider(GETH_IPC_PATH, client));
+    } else {
+        let provider = new Web3.providers.WebsocketProvider(GETH_SOCKET_URL);
+        web3 = new Web3(provider);
 
-    provider.on('error', e => console.error('[GETH] WS Error: ', e));
-    provider.on('end', e => {
-        console.error('[GETH] WS Disconnected', e);
-        console.error('[GETH] WS Reconnecting...');
+        provider.on('error', e => console.error('[GETH] WS Error: ', e));
+        provider.on('end', e => {
+            console.error('[GETH] WS Disconnected', e);
+            console.error('[GETH] WS Reconnecting...');
 
-        provider = new Web3.providers.WebsocketProvider(GETH_SOCKET_URL);
-        provider.on('connect', () => {
-            console.log('[GETH] WS Reconnected');
+            provider = new Web3.providers.WebsocketProvider(GETH_SOCKET_URL);
+            provider.on('connect', () => {
+                console.log('[GETH] WS Reconnected');
+            });
+            web3.setProvider(provider);
         });
-        web3.setProvider(provider);
-    });
-}
+    }
+};
 
 const processBlock = async (blockHashOrId, opts) => {
     try {
@@ -86,7 +89,10 @@ const startSyncingBlocks = async handleTransactions => {
     });
 };
 
+init();
+
 export {
     web3,
+    web3Infura,
     startSyncingBlocks
 };
