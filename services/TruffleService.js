@@ -1,3 +1,5 @@
+import { web3 as web3socket } from './web3Socket';
+
 const contract = require('truffle-contract');
 const standardAbi = require('human-standard-token-abi');
 
@@ -7,9 +9,11 @@ const {
     INVESTMENT_CONTRACT_ADDRESS,
     COINVEST_TOKEN_ADDRESS,
     DEMO_MASTER_ADDRESS,
+    USER_DATA_ADDRESS,
     Abi,
     FaucetAbi,
-    CoinvestTokenAbi
+    CoinvestTokenAbi,
+    userDataContractABI
 } = require('./Config');
 
 const { web3 } = require('./Web3Service');
@@ -81,6 +85,8 @@ if (typeof FaucetContract.currentProvider.sendAsync !== 'function') {
         return FaucetContract.currentProvider.send.apply(FaucetContract.currentProvider, arguments);
     };
 }
+
+const UserDataContract = new web3socket.eth.Contract(userDataContractABI, USER_DATA_ADDRESS);
 
 exports.getNonce = address => {
     const TokenContractInstance = TokenContract.at(COINVEST_TOKEN_ADDRESS);
@@ -182,3 +188,5 @@ exports.coinBalanceOther = (address, contractAddress) => {
             });
     });
 };
+
+exports.getUserHoldings = address => UserDataContract.methods.returnHoldings(address, 0, 20).call();
