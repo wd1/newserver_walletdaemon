@@ -1,7 +1,11 @@
+import { REDIS_CLIENT, REDIS_HOST, REDIS_PORT } from '../services/Config';
+
 const util = require("util");
 const redis = require("redis");
 const redisCommands = require("redis-commands");
 const dotenv = require("dotenv");
+
+let redisClient;
 
 dotenv.config();
 
@@ -14,9 +18,16 @@ const promisify = (obj, methods) => {
 promisify(redis.RedisClient.prototype, redisCommands.list);
 promisify(redis.Multi.prototype, ['exec', 'execAtomic']);
 
-const redisClient = redis.createClient({
-    host: process.env.REDIS_HOST || '127.0.0.1',
-    port: process.env.REDIS_PORT || 6379
-});
+if (REDIS_CLIENT == "IP") {
+        redisClient = redis.createClient({
+        host: process.env.REDIS_HOST || '127.0.0.1',
+        port: process.env.REDIS_PORT || 6379
+    });
+} else {
+    redisClient = redis.createClient({
+        scheme: 'unix',
+        path: process.env.REDIS_HOST
+    });
+}
 
 module.exports = redisClient;
