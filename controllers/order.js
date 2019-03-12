@@ -11,7 +11,7 @@ import Transactions from '../models/Transactions';
 
 import { web3, getPastBlocks } from '../services/web3Socket';
 import TruffleService from '../services/TruffleService';
-import { INVESTMENT_CONTRACT_ADDRESS, cryptoIdToSymbol } from '../services/Config';
+import { INVESTMENT_CONTRACT_ADDRESS, cryptoIdToSymbolAll } from '../services/Config';
 
 const {
     ETHSCAN_URI,
@@ -132,10 +132,12 @@ const handlePastTradeEvents = async events => {
                         tradeType = 'index';
                     }
 
+                    const cryptoIdToSymbols = await cryptoIdToSymbolAll();
+
                     // compare with all failed orders
                     failedOrders.forEach(order => {
                         if (tradeType === 'asset' && order.coinId) {
-                            const crypto = cryptoIdToSymbol.find(item => item.id == cryptoIds[0]);
+                            const crypto = cryptoIdToSymbols.find(item => item.id == cryptoIds[0]);
                             if (crypto) {
                                 const matchedCoin = coins.find(item => item.symbol === crypto.symbol);
                                 if (matchedCoin && matchedCoin._id == order.coinId && parseFloat(order.quantity).toFixed(8) === parseFloat(quantities[0]).toFixed(8)) {
@@ -148,7 +150,7 @@ const handlePastTradeEvents = async events => {
                             if (index && index.assets && index.assets.length == cryptoIds.length) {
                                 let match = true;
                                 for (let i = 0; i < cryptoIds.length; i++) {
-                                    const crypto = cryptoIdToSymbol.find(item => item.id == cryptoIds[i]);
+                                    const crypto = cryptoIdToSymbols.find(item => item.id == cryptoIds[i]);
                                     if (crypto) {
                                         const matchedCoin = coins.find(item => item.symbol === crypto.symbol);
                                         if (matchedCoin) {
