@@ -10,7 +10,7 @@ import Transactions from '../models/Transactions';
 import Pending from '../models/Pending';
 import Blocks from '../models/Blocks';
 
-import { cryptoIdToSymbol } from '../services/Config';
+import { cryptoIdToSymbolAll } from '../services/Config';
 import { hexToDec } from '../services/hex2dec';
 import { web3 } from '../services/web3Socket';
 
@@ -78,7 +78,8 @@ export const handleTradeEvents = async events => {
                 }
 
                 if (tradeType === 'asset') {
-                    const crypto = cryptoIdToSymbol.find(item => item.id === cryptoIds[0]);
+                    const cryptoIdToSymbols = await cryptoIdToSymbolAll();
+                    const crypto = cryptoIdToSymbols.find(item => item.id === cryptoIds[0]);
                     const coin = coins.find(coin => coin.symbol === crypto.symbol);
                     if (coin) {
                         order.txId = event.transactionHash;
