@@ -59,6 +59,8 @@ exports.getBalance = address => new Promise((resolve, reject) => {
     });
 });
 
+exports.isEqualAddress = (a, b) => !!a && !!b && (a.toLowerCase() === b.toLowerCase());
+
 exports.filter = address => new Promise((resolve, reject) => {
     web3.eth.filter({
         address,

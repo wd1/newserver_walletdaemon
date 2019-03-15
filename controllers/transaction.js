@@ -4,6 +4,7 @@ import Wallets from '../models/Wallets';
 import Coins from '../models/Coins';
 import TokenTransactions from '../models/TokenTransactions';
 import { web3, startSyncingBlocks } from '../services/web3Socket';
+import { isEqualAddress } from '../services/Web3Service';
 import { hexToDec } from '../services/hex2dec';
 import { handleNewOraclizeEvents, handleTradeEvents } from './trade';
 import {
@@ -23,6 +24,7 @@ const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
  * Daemon that synchronize user transaction history from etherscan
+ * todo this is deprecated as we fetch history transactions when user first signs up
  *
  * @returns {Promise<void>}
  */
@@ -190,25 +192,27 @@ export const handleIncomingChainData = async () => {
                         let matchedToken = null;
                         let version = null;
 
-                        if (log.address.toLowerCase() === COINVEST_TOKEN_ADDRESS_V1.toLowerCase()) {
+                        if (isEqualAddress(log.address, COINVEST_TOKEN_ADDRESS_V1)) {
                             matchedToken = coins.find(coin => coin.symbol === 'COIN');
                             version = 'v1';
-                        } else if (log.address.toLowerCase() === COINVEST_TOKEN_ADDRESS_V2.toLowerCase()) {
+                        } else if (isEqualAddress(log.address, COINVEST_TOKEN_ADDRESS_V2)) {
                             matchedToken = coins.find(coin => coin.symbol === 'COIN');
                             version = 'v2';
-                        } else if (log.address.toLowerCase() === COINVEST_TOKEN_ADDRESS_V3.toLowerCase()) {
+                        } else if (isEqualAddress(log.address, COINVEST_TOKEN_ADDRESS_V3)) {
                             matchedToken = coins.find(coin => coin.symbol === 'COIN');
                             version = 'v3';
                         } else {
-                            matchedToken = coins.find(coin => coin.address && coin.address.toLowerCase() === log.address.toLowerCase());
+                            matchedToken = coins.find(coin => isEqualAddress(log.address, coin.address));
                         }
+
 
                         // check if contract address is matched
                         if (!!matchedToken) {
                             const fromAddr = `0x${log.topics[1].slice(26)}`;
                             const toAddr = `0x${log.topics[2].slice(26)}`;
-                            const fromAccount = accounts.find(account => account.beneficiary.toLowerCase() === fromAddr.toLowerCase());
-                            const toAccount = accounts.find(account => account.beneficiary.toLowerCase() === toAddr.toLowerCase());
+                            const fromAccount = accounts.find(account => isEqualAddress(account.beneficiary, fromAddr));
+                            const toAccount = accounts.find(account => isEqualAddress(account.beneficiary, toAddr));
+
 
                             // check if 'from' address is same as current account
                             if (!!fromAccount) {
@@ -275,8 +279,9 @@ export const handleIncomingChainData = async () => {
                     });
                 } else if (tx.input === '0x' && tx.value !== '0') {
                     // handle Ether transactions
-                    const toAccount = accounts.find(account => account.beneficiary.toLowerCase() === tx.to.toLowerCase());
-                    const fromAccount = accounts.find(account => account.beneficiary.toLowerCase() === tx.from.toLowerCase());
+                    const toAccount = accounts.find(account => isEqualAddress(account.beneficiary, tx.to));
+                    const fromAccount = accounts.find(account => isEqualAddress(account.beneficiary, tx.from));
+
 
                     // receiving transaction
                     if (!!toAccount) {
