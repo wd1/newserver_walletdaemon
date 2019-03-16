@@ -46,6 +46,7 @@ export const handleNewOraclizeEvents = async events => {
 export const handleTradeEvents = async events => {
     // log
     console.log(`\n[TradeEventSubscriber] New Trade Events Detected.`);
+    const cryptoIdToSymbols = await cryptoIdToSymbolAll();
 
     events.forEach(async event => {
         const queryId = event.topics[1];
@@ -78,9 +79,8 @@ export const handleTradeEvents = async events => {
                 }
 
                 if (tradeType === 'asset') {
-                    const cryptoIdToSymbols = await cryptoIdToSymbolAll();
                     const crypto = cryptoIdToSymbols.find(item => item.id === cryptoIds[0]);
-                    const coin = coins.find(coin => coin.symbol === crypto.symbol);
+                    const coin = crypto ? coins.find(coin => coin.symbol === crypto.symbol) : null;
                     if (coin) {
                         order.txId = event.transactionHash;
                         order.status = 'Filled';
