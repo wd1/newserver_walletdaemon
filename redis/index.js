@@ -19,14 +19,14 @@ promisify(redis.RedisClient.prototype, redisCommands.list);
 promisify(redis.Multi.prototype, ['exec', 'execAtomic']);
 
 if (REDIS_CLIENT == "IP") {
-        redisClient = redis.createClient({
-        host: process.env.REDIS_HOST || '127.0.0.1',
-        port: process.env.REDIS_PORT || 6379
+    redisClient = redis.createClient({
+        host: REDIS_HOST || '127.0.0.1',
+        port: REDIS_PORT || 6379
     });
 } else {
     redisClient = redis.createClient({
         scheme: 'unix',
-        path: process.env.REDIS_HOST
+        path:REDIS_HOST
     });
 }
 
