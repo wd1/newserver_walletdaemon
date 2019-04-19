@@ -22,6 +22,8 @@ exports.VERIFY_URI = process.env.VERIFY_URI;
 
 exports.BALANCE_CHECKER_ADDRESS = process.env.BALANCE_CHECKER_CONTRACT || '0x065ad510b10731ee87cf96aeb2f8c2984695c729';
 
+exports.PRICE_API_URL = process.env.PRICE_API_URL;
+
 exports.CMC_API_URL = process.env.CMC_API_URL;
 exports.CMC_API_SECRET = process.env.CMC_API_SECRET;
 
@@ -30,11 +32,11 @@ exports.CC_API_KEY = process.env.CC_API_KEY;
 
 exports.GETH_IPC_PATH = process.env.GETH_IPC;
 exports.GETH_SOCKET_URL = process.env.GETH_SOCKET;
-exports.GETH_INFURA = process.env.GETH_INFURA;
 exports.IPC_ENABLED = process.env.WEB3_PROVIDER === 'ipc'; // ipc | websocket
 exports.GETH_INFURA = process.env.GETH_INFURA;
 
 exports.LAST_BLOCK = process.env.LAST_BLOCK || 4000000;
+exports.BATCH_SIZE = process.env.BATCH_SIZE || 50;
 
 exports.REDIS_HOST = process.env.REDIS_HOST;
 exports.REDIS_PORT = process.env.REDIS_PORT;
