@@ -1,9 +1,10 @@
 import Web3 from 'web3';
 import net from 'net';
 import redisClient from '../redis';
-import { GETH_IPC_PATH, GETH_SOCKET_URL, LAST_BLOCK, IPC_ENABLED } from './Config';
+import {GETH_IPC_PATH, GETH_SOCKET_URL, LAST_BLOCK, IPC_ENABLED, GETH_INFURA} from './Config';
 
 let web3;
+const web3Infura = !!GETH_INFURA ? new Web3(new Web3.providers.HttpProvider(GETH_INFURA)) : null;
 
 if(IPC_ENABLED) {
     const client = new net.Socket();
@@ -88,5 +89,6 @@ const startSyncingBlocks = async handleTransactions => {
 
 export {
     web3,
+    web3Infura,
     startSyncingBlocks
 };

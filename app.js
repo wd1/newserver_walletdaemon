@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 import { handleIncomingChainData } from './controllers/transaction';
 import { fetchBalances } from './controllers/balance';
 import { fetchCoinPrices, fetchPricesFromCryptoCompare, fetchCoinPrice } from './controllers/coin';
-import { runPendingOrdersTask } from './controllers/order';
+import { scanPastTradeEvents } from './controllers/order';
 
 /**
  * Load environment variables from .env file, where API keys and passwords are configured.
@@ -46,6 +46,6 @@ fetchCoinPrices();
 fetchPricesFromCryptoCompare();
 fetchBalances();
 handleIncomingChainData();
-// runPendingOrdersTask();
+scanPastTradeEvents();
 
 module.exports = app;

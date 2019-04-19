@@ -1,7 +1,7 @@
 import rp from 'request-promise';
 import redisClient from '../redis';
 import Coins from '../models/Coins';
-import { cryptoIdToSymbol, CMC_API_URL, CMC_API_SECRET, CC_API_URL, CC_API_KEY } from '../services/Config';
+import { cryptoIdToSymbolAll, CMC_API_URL, CMC_API_SECRET, CC_API_URL, CC_API_KEY } from '../services/Config';
 
 export const fetchCoinPrices = async () => {
     console.log(`\n------------- Fetching Token Prices from CoinMarketCap ------------`);
@@ -73,7 +73,8 @@ export const fetchCoinPrices = async () => {
 export const fetchPricesFromCryptoCompare = async () => {
     console.log(`\n------------- Fetching Supported Asset Prices from CryptoCompare ------------`);
 
-    const symbols = cryptoIdToSymbol.map(crypto => crypto.symbol).filter(crypto => crypto.symbol !== 'COIN');
+    const cryptoIdToSymbols = await cryptoIdToSymbolAll();
+    const symbols = cryptoIdToSymbols.map(crypto => crypto.symbol).filter(crypto => crypto.symbol !== 'COIN');
     const requestOptions = {
         method: 'GET',
         uri: `${CC_API_URL}/data/pricemulti`,

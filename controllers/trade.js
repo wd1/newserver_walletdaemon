@@ -10,7 +10,7 @@ import Transactions from '../models/Transactions';
 import Pending from '../models/Pending';
 import Blocks from '../models/Blocks';
 
-import { cryptoIdToSymbol } from '../services/Config';
+import { cryptoIdToSymbolAll } from '../services/Config';
 import { hexToDec } from '../services/hex2dec';
 import { web3 } from '../services/web3Socket';
 
@@ -46,6 +46,7 @@ export const handleNewOraclizeEvents = async events => {
 export const handleTradeEvents = async events => {
     // log
     console.log(`\n[TradeEventSubscriber] New Trade Events Detected.`);
+    const cryptoIdToSymbols = await cryptoIdToSymbolAll();
 
     events.forEach(async event => {
         const queryId = event.topics[1];
@@ -78,8 +79,8 @@ export const handleTradeEvents = async events => {
                 }
 
                 if (tradeType === 'asset') {
-                    const crypto = cryptoIdToSymbol.find(item => item.id === cryptoIds[0]);
-                    const coin = coins.find(coin => coin.symbol === crypto.symbol);
+                    const crypto = cryptoIdToSymbols.find(item => item.id === cryptoIds[0]);
+                    const coin = crypto ? coins.find(coin => coin.symbol === crypto.symbol) : null;
                     if (coin) {
                         order.txId = event.transactionHash;
                         order.status = 'Filled';
