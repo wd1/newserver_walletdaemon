@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import errorHandler from 'errorhandler';
 import dotenv from 'dotenv';
 import { handleIncomingChainData } from './controllers/transaction';
-import { fetchBalances } from './controllers/balance';
+import { fetchBalances, checkCoinBalances } from './controllers/balance';
 import { fetchCoinPrices, fetchPricesFromCryptoCompare, fetchCoinPrice } from './controllers/coin';
 import { scanPastTradeEvents } from './controllers/order';
 
@@ -47,5 +47,6 @@ fetchPricesFromCryptoCompare();
 fetchBalances();
 handleIncomingChainData();
 scanPastTradeEvents();
+checkCoinBalances();
 
 module.exports = app;

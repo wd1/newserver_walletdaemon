@@ -36,6 +36,14 @@ exports.GETH_INFURA = process.env.GETH_INFURA;
 
 exports.LAST_BLOCK = process.env.LAST_BLOCK || 4000000;
 
+exports.REDIS_HOST = process.env.REDIS_HOST;
+exports.REDIS_PORT = process.env.REDIS_PORT;
+exports.REDIS_CLIENT = process.env.REDIS_CLIENT;
+exports.ETHSCAN_API_KEY1 = process.env.ETHSCAN_API_KEY1;
+exports.ETHSCAN_API_KEY2 = process.env.ETHSCAN_API_KEY2;
+exports.ETHSCAN_API_KEY3 = process.env.ETHSCAN_API_KEY3;
+exports.ETHSCAN_URI = process.env.ETHSCAN_URI;
+
 exports.Abi = [
     {
         "constant": true,

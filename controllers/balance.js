@@ -3,7 +3,8 @@ import Accounts from '../models/Accounts';
 import Wallets from '../models/Wallets';
 import Coins from '../models/Coins';
 import { getAddressesBalances } from '../services/balanceChecker';
-import { COINVEST_TOKEN_ADDRESS_V1, COINVEST_TOKEN_ADDRESS_V2, COINVEST_TOKEN_ADDRESS_V3, COINVEST_TOKEN_ADDRESS } from '../services/Config';
+import { getCoinVersion } from '../services/coinChecker';
+import { COINVEST_TOKEN_ADDRESS_V1, COINVEST_TOKEN_ADDRESS_V2, COINVEST_TOKEN_ADDRESS_V3, COINVEST_TOKEN_ADDRESS, ETHSCAN_API_KEY1, } from '../services/Config';
 
 export const fetchBalances = async () => {
     console.log(`\n------------- Synchronizing Eth/Token Balances ------------`);
@@ -132,4 +133,42 @@ export const fetchBalances = async () => {
     }
 
     setTimeout(fetchBalances, 15000);
+};
+
+export const checkCoinBalances = async () => {
+    console.log(`\n------------- Check COIN Balances & Version ------------`);
+
+    try {
+        const wallets = await Wallets.find({coinId: '5bdb8414ff482551a6115da6', version: null});
+
+        // log
+        // console.log(`\n[CheckCoinDaemon] Total count of batches: ${wallets.length}`);
+
+        await asyncForEach(wallets, async wallet => {
+            const account = await Accounts.findOne({_id: wallet.accountId});
+            const coinVersions = await getCoinVersion(account.beneficiary);
+
+            if (coinVersions.length > 0) {
+                await asyncForEach(coinVersions, async coinVersion => {
+                    console.log(coinVersion);
+                    const coinWallet = await Wallets.findOne({accountId: wallet.accountId, coinId: '5bdb8414ff482551a6115da6', version: null});
+
+                    if (coinWallet) {
+                        coinWallet.version = coinVersion;
+                        await coinWallet.save();
+                    }
+                });
+            }
+        });
+    } catch (error) {
+        console.log(`[CheckCoinDaemon] Error fetching balances ${error}`);
+    }
+
+    setTimeout(fetchBalances, 60000);
+};
+
+const asyncForEach = async (array, callback) => {
+    for (let index = 0; index < array.length; index++) {
+        await callback(array[index], index, array)
+    }
 };
