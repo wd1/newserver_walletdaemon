@@ -2,6 +2,7 @@ import rp from 'request-promise';
 import redisClient from '../redis';
 import Coins from '../models/Coins';
 import { cryptoIdToSymbolAll, CMC_API_URL, CMC_API_SECRET, CC_API_URL, CC_API_KEY } from '../services/Config';
+import { cryptoIdToSymbol, CMC_API_URL, CMC_API_SECRET, CC_API_URL, CC_API_KEY, PRICE_API_URL } from '../services/Config';
 
 export const fetchCoinPrices = async () => {
     console.log(`\n------------- Fetching Token Prices from CoinMarketCap ------------`);
@@ -35,6 +36,19 @@ export const fetchCoinPrices = async () => {
                         maxSupply: coinItem.max_supply,
                         price: coinItem.quote.USD.price,
                         marketCap: coinItem.quote.USD.market_cap,
+                        volume24h: coinItem.quote.USD.volume_24h,
+                        percentageChange1h: coinItem.quote.USD.percent_change_1h,
+                        percentageChange24h: coinItem.quote.USD.percent_change_24h,
+                        percentageChange7d: coinItem.quote.USD.percent_change_7d,
+                        lastUpdated: coinItem.last_updated,
+                        created: coinItem.date_added
+                    });
+                } else if (coin && coin.symbol === "COIN") {
+                    coin.set({
+                        name: coinItem.name,
+                        totalSupply: coinItem.total_supply,
+                        circulatingSupply: coinItem.circulating_supply,
+                        maxSupply: coinItem.max_supply,
                         volume24h: coinItem.quote.USD.volume_24h,
                         percentageChange1h: coinItem.quote.USD.percent_change_1h,
                         percentageChange24h: coinItem.quote.USD.percent_change_24h,
@@ -119,7 +133,7 @@ export const fetchCoinPrice = async () => {
         if (coin) {
             const requestOptions = {
                 method: 'GET',
-                uri: 'http://ec2-18-234-124-53.compute-1.amazonaws.com/api/priceApi',
+                uri: PRICE_API_URL,
                 qs: {
                     cryptos: coin.symbol
                 },
@@ -130,6 +144,7 @@ export const fetchCoinPrice = async () => {
             const response = await rp(requestOptions);
 
             coin.price = response[coin.symbol].USD;
+            coin.marketCap = coin.price * coin.circulatingSupply;
             console.log(coin.price);
             coin.save(err => {
                 if (err) {

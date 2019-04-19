@@ -2,10 +2,12 @@
     "presets": [
         [
             "env", {
-                "targets": {
-                    "node": "current"
-                }
+            "targets": {
+                "node": "current"
             }
+        }
         ]
-    ]
-} 
+    ],
+    "plugins": ["transform-object-rest-spread"]
+
+}
