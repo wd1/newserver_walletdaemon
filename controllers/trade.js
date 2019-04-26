@@ -30,7 +30,7 @@ export const handleNewOraclizeEvents = async events => {
             console.log(`queryid: ${queryId}`);
 
             try {
-                const order = await Orders.findOne({ status: 'Open', inputHash: hash, queryId: undefined }).exec();
+                const order = await Orders.findOne({ status: 'Open', inputHash: hash, 'receipt.transactionHash': event.transactionHash }).exec();
                 if (order) {
                     order.queryId = queryId;
                     await order.save();
