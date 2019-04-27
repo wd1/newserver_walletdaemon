@@ -4,9 +4,11 @@ import redisClient from '../redis';
 import {GETH_IPC_PATH, GETH_SOCKET_URL, LAST_BLOCK, IPC_ENABLED, GETH_INFURA} from './Config';
 
 let web3;
-const web3Infura = !!GETH_INFURA ? new Web3(new Web3.providers.HttpProvider(GETH_INFURA)) : null;
 
-if(IPC_ENABLED) {
+const web3Infura = !!GETH_INFURA ? new Web3(new Web3.providers.HttpProvider(GETH_INFURA)) : null;
+const { logger } = require('../services/logger');
+
+if (IPC_ENABLED) {
     const client = new net.Socket();
     web3 = new Web3(new Web3.providers.IpcProvider(GETH_IPC_PATH, client));
 } else {
@@ -15,12 +17,11 @@ if(IPC_ENABLED) {
 
     provider.on('error', e => console.error('[GETH] WS Error: ', e));
     provider.on('end', e => {
-        console.error('[GETH] WS Disconnected', e);
-        console.error('[GETH] WS Reconnecting...');
+        logger.log('error', { label: 'WebSocket', message: `WebSocket Disconnected: ${e}` });
 
         provider = new Web3.providers.WebsocketProvider(GETH_SOCKET_URL);
         provider.on('connect', () => {
-            console.log('[GETH] WS Reconnected');
+            logger.log('info', { label: 'WebSocket', message: 'WebSocket Reconnected' });
         });
         web3.setProvider(provider);
     });
@@ -34,12 +35,13 @@ const processBlock = async (blockHashOrId, opts) => {
             opts.onTransactions ? opts.onTransactions(block, block.transactions) : null;
             opts.onBlock ? opts.onBlock(blockHashOrId) : null;
         } else {
-            console.log(`Cannot fetch block: ${blockHashOrId}`);
+            logger.log('info', { label: 'WebSocket', message: `Cannot fetch block: ${blockHashOrId}` });
         }
 
         return block;
     } catch (error) {
-        console.log(`Error fetching blocks from Geth: ${error}`);
+        logger.log('error', { label: 'WebSocket', message: `Error fetching blocks from Geth: ${error}` });
+
         return null;
     }
 };
@@ -59,7 +61,9 @@ const syncBlocks = async (currentBlockNumber, opts) => {
     const syncedBlockNumber = await syncToBlock(currentBlockNumber, latestBlockNumber, opts);
 
     // this subscribes new incoming blocks after old blocks are synced
-    web3.eth.subscribe('newBlockHeaders', (error, result) => error && console.log(error))
+    web3.eth.subscribe('newBlockHeaders', (error, result) => {
+        logger.log('error', { label: 'WebSocket', message: `New block subscription error: ${error}` });
+    })
         .on('data', async blockHeader => {
             return await processBlock(blockHeader.number, opts);
         });
@@ -80,7 +84,8 @@ const startSyncingBlocks = async handleTransactions => {
     lastBlockNumber = parseInt(lastBlockNumber || 0, 10);
     syncBlocks(lastBlockNumber, {
         onBlock: (blockNumber) => {
-            console.log(`BlockNumber: ${blockNumber}`);
+            logger.log('info', { label: 'WebSocket', message: `BlockNumber: ${blockNumber}` });
+
             updateBlockHead(blockNumber);
         },
         onTransactions: handleTransactions

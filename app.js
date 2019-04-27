@@ -52,13 +52,13 @@ app.listen(app.get('port'), () => {
  */
 unlockMasterAccount()
     .then(response => {
-        // fetchCoinPrice();
-        // fetchCoinPrices();
-        // fetchPricesFromCryptoCompare();
-        // fetchBalances();
+        fetchCoinPrice();
+        fetchCoinPrices();
+        fetchPricesFromCryptoCompare();
+        fetchBalances();
         handleIncomingChainData();
         // scanPastTradeEvents();
-        // checkCoinBalances();
+        checkCoinBalances();
     })
     .catch(err => {
         logger.log('error', { label: 'Web3Service', message: `Failed to unlock the master account.` });
