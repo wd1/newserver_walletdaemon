@@ -73,7 +73,7 @@ export const fetchBalances = async () => {
         }
 
         // log
-        logger.log('info', { label: 'BalanceDaemon', message: ` Total count of batches: ${batches.length}` });
+        logger.log('info', { label: 'BalanceDaemon', message: `Total count of batches: ${batches.length}` });
 
         await Promise.all(batches.map(async batch => {
             // extract addresses from accounts
