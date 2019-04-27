@@ -30,6 +30,7 @@ exports.CMC_API_SECRET = process.env.CMC_API_SECRET;
 exports.CC_API_URL = process.env.CC_API_URL;
 exports.CC_API_KEY = process.env.CC_API_KEY;
 
+exports.GETH = process.env.GETH;
 exports.GETH_IPC_PATH = process.env.GETH_IPC;
 exports.GETH_SOCKET_URL = process.env.GETH_SOCKET;
 exports.IPC_ENABLED = process.env.WEB3_PROVIDER === 'ipc'; // ipc | websocket
