@@ -21,6 +21,7 @@ const {
 } = process.env;
 
 const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
+const { logger } = require('../services/logger');
 
 /**
  * Daemon that synchronize user transaction history from etherscan
@@ -29,7 +30,7 @@ const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
  * @returns {Promise<void>}
  */
 export const syncTransactionTask = async () => {
-    console.log(`\n------------- Synchronizing Transactions from Etherscan ----------`);
+    logger.log('info', { label: 'TransactionTask', message: 'Synchronizing Transactions from Etherscan' });
 
     try {
         const requestOptions = {
@@ -42,7 +43,8 @@ export const syncTransactionTask = async () => {
         const coins = await Coins.find({}, 'symbol', { lean: true }).exec();
         const accounts = await Accounts.find({txSynced: {$ne: true}, beneficiary: {$exists: true}}).exec();
 
-        console.log(`[TransactionTask] Count of non-synced accounts: ${accounts.length}`);
+        logger.log('error', { label: 'TransactionTask', message: `Count of non-synced accounts: ${accounts.length}` });
+
         await Promise.all(accounts.map(async (account, index) => {
             try {
                 requestOptions.uri = `${ETHSCAN_URI}&action=txlist&startblock=0&endblock=latest&sort=desc&apikey=${ETHSCAN_API_KEY5}&address=${account.beneficiary}`;
@@ -144,12 +146,12 @@ export const syncTransactionTask = async () => {
                 timeout(index * 300);
                 account.txSynced = true;
                 return account.save();
-            } catch (e) {
-                console.log(`[TransactionTask] Error fetching from Etherscan ${e}`);
+            } catch (error) {
+                logger.log('error', { label: 'TransactionTask', message: `Error fetching from Etherscan: ${error}` });
             }
         }));
-    } catch (e) {
-        console.log(`[TransactionTask] Error fetching etherscan`);
+    } catch (error) {
+        logger.log('error', { label: 'TransactionTask', message: `Error fetching from Etherscan: ${error}` });
     }
 
     // new blocks are mined avg 15 sec in Ethereum
@@ -205,7 +207,6 @@ export const handleIncomingChainData = async () => {
                             matchedToken = coins.find(coin => isEqualAddress(log.address, coin.address));
                         }
 
-
                         // check if contract address is matched
                         if (!!matchedToken) {
                             const fromAddr = `0x${log.topics[1].slice(26)}`;
@@ -217,9 +218,8 @@ export const handleIncomingChainData = async () => {
                             // check if 'from' address is same as current account
                             if (!!fromAccount) {
                                 const value = hexToDec(log.data);
-                                console.log(`[TransactionSubscriber] New Transfer Event`);
-                                console.log(`From: ${fromAddr}`);
-                                console.log(`Amount: ${value}`);
+
+                                logger.log('info', { label: 'TransactionSubscriber', message: `\nNew Transfer Event:\n${JSON.stringify({ From: fromAddr, Amount: value }, undefined, 4)}` });
 
                                 let tokenTx = await TokenTransactions.findOne({
                                     accountId: fromAccount._id,
@@ -248,9 +248,8 @@ export const handleIncomingChainData = async () => {
                             // check if 'to' address is same as current account
                             if (!!toAccount) {
                                 const value = hexToDec(log.data);
-                                console.log(`[TransactionSubscriber] New Transfer Event`);
-                                console.log(`To: ${toAddr}`);
-                                console.log(`Amount: ${value}`);
+
+                                logger.log('info', { label: 'TransactionSubscriber', message: `\nNew Transfer Event:\n${JSON.stringify({ To: toAddr, Amount: value }, undefined, 4)}` });
 
                                 let tokenTx = await TokenTransactions.findOne({
                                     accountId: toAccount._id,
@@ -285,9 +284,7 @@ export const handleIncomingChainData = async () => {
 
                     // receiving transaction
                     if (!!toAccount) {
-                        console.log(`[TransactionSubscriber] New Ether Transaction Found`);
-                        console.log(`To: ${tx.to}`);
-                        console.log(`Amount: ${tx.value}`);
+                        logger.log('info', { label: 'TransactionSubscriber', message: `\nNew Ether Transaction Found:\n${JSON.stringify({ To: tx.to, Amount: tx.value }, undefined, 4)}` });
 
                         let transaction = await TokenTransactions.findOne({
                             accountId: toAccount._id,
@@ -316,9 +313,9 @@ export const handleIncomingChainData = async () => {
 
                     // sending transaction : we need to save same transaction for both account in case 'from' and 'to' both matched
                     if (!!fromAccount) {
-                        console.log(`[TransactionSubscriber] New Ether Transaction Found`);
-                        console.log(`From: ${tx.from}`);
-                        console.log(`Amount: ${tx.value}`);
+                        logger.log('info', { label: 'TransactionSubscriber', message: 'New Ether Transaction Found' });
+                        logger.log('info', { label: 'TransactionSubscriber', message: `From: ${tx.from}` });
+                        logger.log('info', { label: 'TransactionSubscriber', message: `Amount: ${tx.value}` });
 
                         let transaction = await TokenTransactions.findOne({
                             accountId: fromAccount._id,
@@ -345,8 +342,8 @@ export const handleIncomingChainData = async () => {
                         }
                     }
                 }
-            } catch (e) {
-                console.log(`[TransactionsSubscriber] Error processing new transactions\n ${e}`);
+            } catch (error) {
+                logger.log('error', { label: 'TransactionsSubscriber', message: `Error processing new transactions: ${error}` });
             }
         });
     });

@@ -19,9 +19,10 @@ const {
     ETHSCAN_API_KEY6
 } = process.env;
 
+const { logger } = require('../services/logger');
+
 export const scanPastTradeEvents = async () => {
-    // log
-    console.log(`\n------------- Scanning Past Trade Events to audit 'failed' orders ------------`);
+    logger.log('info', { label: 'FailedOrderDaemon', message: 'Scanning Past Trade Events to audit failed orders' });
 
     // check count of failed orders FIRST
     const failedOrdersCount = await Orders.count({status: 'Failed'}).exec();
@@ -50,7 +51,7 @@ export const scanPastTradeEvents = async () => {
                 // first set largest block number to redis to prevent duplicated work
                 const maxBlockNumber = Math.max.apply(Math, ethTx.map(tx => parseInt(tx.blockNumber, 10)));
 
-                console.log(`\n[FailedOrderDaemon] Set last blocknumber of Trade events: ${maxBlockNumber}`);
+                logger.log('info', { label: 'FailedOrderDaemon', message: `Set last blocknumber of Trade events: ${maxBlockNumber}` });
                 await redisClient.setAsync('eth:order:last-block', maxBlockNumber.toString());
 
                 let tradeEvents = [];
@@ -71,17 +72,17 @@ export const scanPastTradeEvents = async () => {
                 }));
 
                 if (tradeEvents.length) {
-                    console.log(`[FailedOrderDaemon] Fetched ${tradeEvents.length} new Trade events from block ${lastBlockNumber}`);
+                    logger.log('info', { label: 'FailedOrderDaemon', message: `Fetched ${tradeEvents.length} new Trade events from block ${lastBlockNumber}` });
                     handlePastTradeEvents(tradeEvents);
                 } else {
-                    console.log(`\n[FailedOrderDaemon] No new trade events found on blockchain`);
+                    logger.log('info', { label: 'FailedOrderDaemon', message: 'No new trade events found on blockchain' });
                 }
             } else {
-                console.log(`\n[FailedOrderDaemon] Response from Etherscan: ${ethResponse.message}`);
+                logger.log('info', { label: 'FailedOrderDaemon', message: `Response from Etherscan: ${ethResponse.message}` });
             }
         }
     } else {
-        console.log(`\n[FailedOrderDaemon] No failed orders found`);
+        logger.log('info', { label: 'FailedOrderDaemon', message: 'No failed orders found' });
     }
 
     // re-run after 1 hour
@@ -96,11 +97,10 @@ const handlePastTradeEvents = async events => {
     const indexes = await Indexes.find({}).exec();
 
     if (failedOrders.length === 0) {
-        console.log(`\n[FailedOrderDaemon] No failed orders found`);
+        logger.log('info', { label: 'FailedOrderDaemon', message: 'No failed orders found' });
         return;
     }
-
-    console.log(`\n[FailedOrderDaemon] Found ${failedOrders.length} failed orders`);
+    logger.log('info', { label: 'FailedOrderDaemon', message: `Found ${failedOrders.length} failed orders` });
 
     // iterate all events
     return Promise.all(events.map(async event => {
@@ -177,7 +177,8 @@ const handlePastTradeEvents = async events => {
                 if (!matchedOrder) return;
 
                 // log
-                console.log(`\n[FailedOrderDaemon] Found matched failed orderId: ${matchedOrder._id} for the trade event from txHash: ${event.transactionHash}, processing...`);
+                logger.log('info', { label: 'FailedOrderDaemon', message: `Found matched failed orderId: ${matchedOrder._id} for the trade event from txHash: ${event.transactionHash}, processing...` });
+
                 matchedOrder.txId = event.transactionHash;
                 matchedOrder.status = 'Filled';
                 await matchedOrder.save();
@@ -239,8 +240,8 @@ const handlePastTradeEvents = async events => {
                 });
 
                 await transaction.save();
-            } catch (e) {
-                console.log(`[FailedOrderDaemon] Error proccessing failed orders\n ${e}`);
+            } catch (error) {
+                logger.log('error', { label: 'FailedOrderDaemon', message: `Error proccessing failed orders: ${error}` });
             }
         }
 
@@ -258,7 +259,7 @@ export const auditAssetHoldings = async () => {
         if (!account) return;
 
         const holdings = await TruffleService.getUserHoldings(account.beneficiary);
-        console.log(holdings);
+
         return true;
     }));
 };

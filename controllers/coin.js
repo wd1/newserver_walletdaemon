@@ -3,8 +3,10 @@ import redisClient from '../redis';
 import Coins from '../models/Coins';
 import { cryptoIdToSymbolAll, CMC_API_URL, CMC_API_SECRET, CC_API_URL, CC_API_KEY, PRICE_API_URL } from '../services/Config';
 
+const { logger } = require('../services/logger');
+
 export const fetchCoinPrices = async () => {
-    console.log(`\n------------- Fetching Token Prices from CoinMarketCap ------------`);
+    logger.log('info', { label: 'CoinDaemon', message: 'Fetching Token Prices from CoinMarketCap' });
 
     const requestOptions = {
         method: 'GET',
@@ -76,15 +78,15 @@ export const fetchCoinPrices = async () => {
                 return coin.save();
             }));
         }
-    } catch (e) {
-        console.log(`[CoinDaemon] Error updating coin quotes: ${e}`);
+    } catch (error) {
+        logger.log('error', { label: 'CoinDaemon', message: `Error updating coin quotes: ${error}` });
     }
 
     setTimeout(fetchCoinPrices, 3600000);
 };
 
 export const fetchPricesFromCryptoCompare = async () => {
-    console.log(`\n------------- Fetching Supported Asset Prices from CryptoCompare ------------`);
+    logger.log('info', { label: 'CoinDaemon', message: 'Fetching Supported Asset Prices from CryptoCompare' });
 
     const cryptoIdToSymbols = await cryptoIdToSymbolAll();
     const symbols = cryptoIdToSymbols.map(crypto => crypto.symbol).filter(crypto => crypto.symbol !== 'COIN');
@@ -117,15 +119,15 @@ export const fetchPricesFromCryptoCompare = async () => {
                 return coin.save();
             }
         }));
-    } catch (e) {
-        console.log(`[CoinDaemon] Error fetching coin prices from CryptoCompare: ${e}`);
+    } catch (error) {
+        logger.log('error', { label: 'CoinDaemon', message: `Error fetching coin prices from CryptoCompare: ${error}` });
     }
 
     setTimeout(fetchPricesFromCryptoCompare, 60000);
 };
 
 export const fetchCoinPrice = async () => {
-    console.log(`\n------------- Fetching COIN Price From Coinvest Price API ------------`);
+    logger.log('info', { label: 'CoinDaemon', message: 'Fetching COIN Price From Coinvest Price API' });
 
     try {
         const coin = await Coins.findOne({ symbol: 'COIN' }).exec();
@@ -144,15 +146,17 @@ export const fetchCoinPrice = async () => {
 
             coin.price = response[coin.symbol].USD;
             coin.marketCap = coin.price * coin.circulatingSupply;
-            console.log(coin.price);
+
+            logger.log('info', { label: 'CoinDaemon', message: `COIN Price: ${coin.price}` });
+
             coin.save(err => {
                 if (err) {
-                    console.log('[CoinDaemon] Error fetching coin prices from Coinvest API - save: ', err);
+                    logger.log('error', { label: 'CoinDaemon', message: `Error fetching coin prices from Coinvest API - save: ${err}` });
                 }
             });
         }
-    } catch (e) {
-        console.log('[CoinDaemon]: ', e);
+    } catch (error) {
+        logger.log('error', { label: 'CoinDaemon', message: `Error fetching coin prices: ${error}` });
     }
 
     setTimeout(fetchCoinPrice, 30000);

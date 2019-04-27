@@ -6,8 +6,10 @@ import { getAddressesBalances } from '../services/balanceChecker';
 import { getCoinVersion } from '../services/coinChecker';
 import { COINVEST_TOKEN_ADDRESS_V1, COINVEST_TOKEN_ADDRESS_V2, COINVEST_TOKEN_ADDRESS_V3, COINVEST_TOKEN_ADDRESS, ETHSCAN_API_KEY1, } from '../services/Config';
 
+const { logger } = require('../services/logger');
+
 export const fetchBalances = async () => {
-    console.log(`\n------------- Synchronizing Eth/Token Balances ------------`);
+    logger.log('info', { label: 'BalanceDaemon', message: 'Synchronizing Eth/Token Balances' });
 
     try {
         const batches = [];
@@ -71,16 +73,16 @@ export const fetchBalances = async () => {
         }
 
         // log
-        console.log(`\n[BalanceDaemon] Total count of batches: ${batches.length}`);
+        logger.log('info', { label: 'BalanceDaemon', message: ` Total count of batches: ${batches.length}` });
 
         await Promise.all(batches.map(async batch => {
             // extract addresses from accounts
             const addresses = batch.accounts.map(item => item.beneficiary);
+
             // log
-            console.log(`\n[BalanceDaemon] Fetching Balances for ${accounts.length} total active accounts, ${addresses.length} addresses and ${batch.tokens.length} Tokens`);
+            logger.log('info', { label: 'BalanceDaemon', message: `Fetching Balances for ${accounts.length} total active accounts, ${addresses.length} addresses and ${batch.tokens.length} Tokens` });
 
             const balances = await getAddressesBalances(addresses, batch.tokens);
-            // console.log(balances);
 
             return Promise.all(batch.accounts.map(account => {
                 const balancesForAddress = balances[account.beneficiary];
@@ -129,20 +131,18 @@ export const fetchBalances = async () => {
             }));
         }));
     } catch (error) {
-        console.log(`[BalanceDaemon] Error fetching balances ${error}`);
+        logger.log('error', { label: 'BalanceDaemon', message: `Error fetching balances: ${error}` });
+
     }
 
     setTimeout(fetchBalances, 15000);
 };
 
 export const checkCoinBalances = async () => {
-    console.log(`\n------------- Check COIN Balances & Version ------------`);
+    logger.log('info', { label: 'BalanceDaemon', message: 'Check COIN Balances & Version' });
 
     try {
         const wallets = await Wallets.find({coinId: '5bdb8414ff482551a6115da6', version: null});
-
-        // log
-        // console.log(`\n[CheckCoinDaemon] Total count of batches: ${wallets.length}`);
 
         await asyncForEach(wallets, async wallet => {
             const account = await Accounts.findOne({_id: wallet.accountId});
@@ -150,7 +150,6 @@ export const checkCoinBalances = async () => {
 
             if (coinVersions.length > 0) {
                 await asyncForEach(coinVersions, async coinVersion => {
-                    console.log(coinVersion);
                     const coinWallet = await Wallets.findOne({accountId: wallet.accountId, coinId: '5bdb8414ff482551a6115da6', version: null});
 
                     if (coinWallet) {
@@ -161,7 +160,8 @@ export const checkCoinBalances = async () => {
             }
         });
     } catch (error) {
-        console.log(`[CheckCoinDaemon] Error fetching balances ${error}`);
+        logger.log('error', { label: 'BalanceDaemon', message: `Error fetching COIN balances: ${error}` });
+
     }
 
     setTimeout(fetchBalances, 60000);
