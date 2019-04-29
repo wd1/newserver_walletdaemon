@@ -1,13 +1,16 @@
-const { web3 } = require('./Web3Socket');
-const { balanceCheckerAbi, BALANCE_CHECKER_ADDRESS } = require('./Config');
+import { web3 } from './web3Socket';
+import { balanceCheckerAbi, BALANCE_CHECKER_ADDRESS } from './Config';
 
 export const formatAddressBalances = (values, addresses, tokens) => {
     const balances = {};
+
     addresses.forEach((addr, addrIdx) => {
         balances[addr] = {};
         tokens.forEach((tokenAddr, tokenIdx) => {
             const balance = values[addrIdx * tokens.length + tokenIdx];
-            balances[addr][tokenAddr] = balance.toString();
+            if (balance) {
+                balances[addr][tokenAddr] = balance.toString();
+            }
         });
     });
 

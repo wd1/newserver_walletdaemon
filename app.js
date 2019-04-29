@@ -1,10 +1,11 @@
-/**
- * Module dependencies.
- */
-const express = require('express');
-const chalk = require('chalk');
-const errorHandler = require('errorhandler');
-const dotenv = require('dotenv');
+import express from 'express';
+import chalk from 'chalk';
+import errorHandler from 'errorhandler';
+import dotenv from 'dotenv';
+import { handleIncomingChainData } from './controllers/transaction';
+import { fetchBalances } from './controllers/balance';
+import { fetchCoinPrices, fetchPricesFromCryptoCompare, fetchCoinPrice } from './controllers/coin';
+import { scanPastTradeEvents } from './controllers/order';
 
 /**
  * Load environment variables from .env file, where API keys and passwords are configured.
@@ -40,14 +41,11 @@ app.listen(app.get('port'), () => {
     console.log('  Press CTRL-C to stop\n');
 });
 
-const { coinSchedule } = require('./controllers/coin');
-// const { balanceSchedule } = require('./controllers/balance');
-const { walletSchedule } = require('./controllers/wallet');
-const { tradeSchedule } = require('./controllers/trade');
-
-coinSchedule();
-// balanceSchedule();
-walletSchedule();
-tradeSchedule();
+fetchCoinPrice();
+fetchCoinPrices();
+fetchPricesFromCryptoCompare();
+fetchBalances();
+handleIncomingChainData();
+scanPastTradeEvents();
 
 module.exports = app;

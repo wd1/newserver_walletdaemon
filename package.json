@@ -9,7 +9,8 @@
   "author": "Dusan Bakos",
   "license": "MIT",
   "scripts": {
-    "start": "node app.js",
+    "start": "babel-node app.js --presets es2015,stage-2",
+    "dev": "nodemon app.js --exec babel-node --presets es2015,stage-2",
     "lint": "eslint **/*.js"
   },
   "dependencies": {
@@ -37,7 +38,7 @@
     "request-promise": "^4.2.2",
     "rxjs": "^6.2.0",
     "truffle-contract": "^3.0.5",
-    "web3": "^1.0.0-beta.34"
+    "web3": "^1.0.0-beta.46"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
